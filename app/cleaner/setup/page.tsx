@@ -22,8 +22,7 @@ const BED_LABELS  = ["1 bed", "2 beds", "3 beds", "4 beds", "5+ beds"];
 const BATH_LABELS = ["1 bath", "2 baths", "3 baths", "4 baths", "5+ baths"];
 
 export default function CleanerSetupPage() {
-  const router   = useRouter();
-  const supabase = createBrowserClient();
+  const router = useRouter();
   const [cleanerId, setCleanerId] = useState<string | null>(null);
   const [token,     setToken]     = useState<string | null>(null);
   const [cleaner,   setCleaner]   = useState<Cleaner | null>(null);
@@ -32,26 +31,32 @@ export default function CleanerSetupPage() {
   const [toast,     setToast]     = useState("");
   const [copied,    setCopied]    = useState(false);
 
-  // ── Auth guard ──────────────────────────────────────────────────────────────
+  // ── Auth guard → fetch profile ───────────────────────────────────────────────
+  // Both steps run sequentially in a single effect so the fetch never fires
+  // before we've confirmed there is an active session.
   useEffect(() => {
+    const supabase = createBrowserClient();
+
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { router.replace("/cleaner/login"); return; }
-      setCleanerId(session.user.id);
-      setToken(session.access_token);
+      if (!session) {
+        router.replace("/cleaner/login");
+        return;
+      }
+
+      const id          = session.user.id;
+      const accessToken = session.access_token;
+      setCleanerId(id);
+      setToken(accessToken);
+
+      fetch(`/api/cleaners/${id}`)
+        .then((r) => r.json())
+        .then((data: Cleaner) => {
+          if (data && data.id) setCleaner(data);
+          setLoading(false);
+        })
+        .catch(() => setLoading(false));
     });
   }, [router]);
-
-  // ── Fetch cleaner data ──────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!cleanerId) return;
-    fetch(`/api/cleaners/${cleanerId}`)
-      .then((r) => r.json())
-      .then((data: Cleaner) => {
-        if (data && data.id) setCleaner(data);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, [cleanerId]);
 
   function toggleBlock(day: DayOfWeek, block: "morning" | "afternoon") {
     if (!cleaner) return;
@@ -111,7 +116,7 @@ export default function CleanerSetupPage() {
   }
 
   async function handleLogout() {
-    await supabase.auth.signOut();
+    await createBrowserClient().auth.signOut();
     router.replace("/cleaner/login");
   }
 
