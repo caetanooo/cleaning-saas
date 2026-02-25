@@ -1,0 +1,91 @@
+{
+  "cleaners": [
+    {
+      "id": "cleaner-1",
+      "name": "Maria Santos",
+      "email": "maria@sparkleclean.com",
+      "availability": {
+        "monday": {
+          "morning": true,
+          "afternoon": false
+        },
+        "tuesday": {
+          "morning": false,
+          "afternoon": true
+        },
+        "wednesday": {
+          "morning": true,
+          "afternoon": true
+        },
+        "thursday": {
+          "morning": false,
+          "afternoon": false
+        },
+        "friday": {
+          "morning": true,
+          "afternoon": true
+        },
+        "saturday": {
+          "morning": true,
+          "afternoon": true
+        },
+        "sunday": {
+          "morning": false,
+          "afternoon": false
+        }
+      },
+      "pricingTable": {
+        "1-1": 80,
+        "1-2": 99,
+        "1-3": 110,
+        "1-4": 130,
+        "1-5": 150,
+        "2-1": 95,
+        "2-2": 115,
+        "2-3": 135,
+        "2-4": 155,
+        "2-5": 175,
+        "3-1": 115,
+        "3-2": 140,
+        "3-3": 160,
+        "3-4": 185,
+        "3-5": 210,
+        "4-1": 135,
+        "4-2": 165,
+        "4-3": 190,
+        "4-4": 220,
+        "4-5": 250,
+        "5-1": 160,
+        "5-2": 195,
+        "5-3": 225,
+        "5-4": 260,
+        "5-5": 295
+      },
+      "frequencyDiscounts": {
+        "weekly": 20,
+        "biweekly": 10,
+        "monthly": 5
+      }
+    }
+  ],
+  "bookings": [
+    {
+      "id": "booking-1772034865647-7ib9g",
+      "cleanerId": "cleaner-1",
+      "customerName": "Pedro Caetano",
+      "customerPhone": "214214214124",
+      "customerAddress": "pedro rua",
+      "hasPets": true,
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "frequency": "weekly",
+      "date": "2026-02-27",
+      "timeBlock": "afternoon",
+      "startTime": "13:30",
+      "endTime": "18:00",
+      "totalPrice": 92,
+      "status": "confirmed",
+      "createdAt": "2026-02-25T15:54:25.647Z"
+    }
+  ]
+}

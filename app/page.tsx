@@ -94,7 +94,7 @@ function ServiceCard({
         ))}
       </ul>
       <Link
-        href="#quote"
+        href="/book"
         className="block text-center bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white font-semibold py-3 rounded-xl transition-colors duration-200"
       >
         Get a Quote
@@ -142,7 +142,7 @@ export default function HomePage() {
             <Link href="#testimonials" className="hover:text-sky-500 transition-colors">Reviews</Link>
           </div>
           <Link
-            href="#quote"
+            href="/book"
             className="bg-sky-500 hover:bg-sky-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors duration-200"
           >
             Get a Quote
@@ -170,7 +170,7 @@ export default function HomePage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="#quote"
+              href="/book"
               className="bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white font-bold text-lg px-10 py-4 rounded-2xl shadow-lg shadow-sky-200 transition-all duration-200 hover:-translate-y-0.5"
             >
               Get a Free Quote
