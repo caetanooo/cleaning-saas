@@ -33,39 +33,59 @@ export default function CleanerSetupPage() {
   const [apiError,  setApiError]  = useState("");
 
   // ── Auth guard → fetch profile ───────────────────────────────────────────────
-  // Both steps run sequentially in a single effect so the fetch never fires
-  // before we've confirmed there is an active session.
   useEffect(() => {
-    const supabase = createBrowserClient();
+    let cancelled = false;
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        router.replace("/cleaner/login");
-        return;
+    // Safety net: if nothing resolves within 10 s, stop the spinner.
+    const timeout = setTimeout(() => {
+      if (!cancelled) {
+        setApiError("Loading timed out. Please refresh the page.");
+        setLoading(false);
       }
+    }, 10_000);
 
-      const id          = session.user.id;
-      const accessToken = session.access_token;
-      setCleanerId(id);
-      setToken(accessToken);
+    async function init() {
+      try {
+        const supabase = createBrowserClient();
+        const { data: { session } } = await supabase.auth.getSession();
 
-      fetch(`/api/cleaners/${id}`)
-        .then((r) => r.json())
-        .then((data: Cleaner & { error?: string }) => {
-          if (data && data.id) {
-            setCleaner(data);
-          } else {
-            setApiError(data?.error || "Unknown error from API.");
-          }
-          setLoading(false);
-        })
-        .catch((err) => {
-          setApiError(String(err));
-          setLoading(false);
-        });
-    });
+        if (cancelled) return;
+
+        if (!session) {
+          // No session — navigate away; loading state resolves via finally.
+          router.replace("/cleaner/login");
+          return;
+        }
+
+        setCleanerId(session.user.id);
+        setToken(session.access_token);
+
+        const res  = await fetch(`/api/cleaners/${session.user.id}`);
+        const data = (await res.json()) as Cleaner & { error?: string };
+
+        if (cancelled) return;
+
+        if (data?.id) {
+          setCleaner(data);
+        } else {
+          setApiError(data?.error ?? "Could not load profile. Check Supabase tables.");
+        }
+      } catch (err) {
+        if (!cancelled) setApiError(String(err));
+      } finally {
+        clearTimeout(timeout);
+        // Always stop the spinner — this was the root cause of the infinite load.
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    init();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  // Empty deps: intentionally runs only once on mount.
 
   function toggleBlock(day: DayOfWeek, block: "morning" | "afternoon") {
     if (!cleaner) return;

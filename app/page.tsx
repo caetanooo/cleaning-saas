@@ -9,14 +9,16 @@ export default function HomePage() {
 
   useEffect(() => {
     const supabase = createBrowserClient();
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        router.replace("/cleaner/setup");
-      } else {
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        router.replace(session ? "/cleaner/setup" : "/cleaner/login");
+      })
+      .catch(() => {
+        // If session check fails for any reason, send to login.
         router.replace("/cleaner/login");
-      }
-    });
-  }, [router]);
+      });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center">
