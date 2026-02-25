@@ -64,7 +64,8 @@ export default function CleanerSetupPage() {
           setLoading(false);
         });
     });
-  }, [router]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Empty deps: intentionally runs only once on mount.
 
   function toggleBlock(day: DayOfWeek, block: "morning" | "afternoon") {
     if (!cleaner) return;
