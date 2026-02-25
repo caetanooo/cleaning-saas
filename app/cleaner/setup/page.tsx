@@ -46,7 +46,10 @@ export default function CleanerSetupPage() {
     if (!cleanerId) return;
     fetch(`/api/cleaners/${cleanerId}`)
       .then((r) => r.json())
-      .then((data: Cleaner) => { setCleaner(data); setLoading(false); })
+      .then((data: Cleaner) => {
+        if (data && data.id) setCleaner(data);
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, [cleanerId]);
 
