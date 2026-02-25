@@ -1,8 +1,11 @@
-import { redirect } from "next/navigation";
+import Link from "next/link";
 
-// Server-side redirect — no JavaScript, no loading screen, no Supabase call.
-// Authenticated users land on /cleaner/login, which checks session and
-// forwards them to /cleaner/setup automatically.
 export default function HomePage() {
-  redirect("/cleaner/login");
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <Link href="/cleaner/login" style={{ padding: "1rem 2rem", background: "#0ea5e9", color: "#fff", borderRadius: "12px", fontWeight: "bold", fontSize: "1.2rem", textDecoration: "none" }}>
+        ENTRAR
+      </Link>
+    </div>
+  );
 }
