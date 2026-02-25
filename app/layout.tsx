@@ -8,9 +8,9 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "SparkleClean – Professional Home Cleaning Services",
+  title: "CleanClick – Professional Home Cleaning Services",
   description:
-    "Top-rated residential cleaning services. Book a standard, deep, or move-in/out clean today and get a free instant quote.",
+    "Top-rated residential cleaning services. Book a clean today and get a free instant quote in under 60 seconds.",
 };
 
 export default function RootLayout({

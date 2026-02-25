@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { createBrowserClient } from "@/lib/supabase";
 import type { Cleaner, DayOfWeek } from "@/types";
-
-const CLEANER_ID = "cleaner-1";
 
 const DAYS: { key: DayOfWeek; label: string }[] = [
   { key: "monday",    label: "Monday" },
@@ -16,29 +16,39 @@ const DAYS: { key: DayOfWeek; label: string }[] = [
   { key: "sunday",    label: "Sunday" },
 ];
 
-const BEDS   = [1, 2, 3, 4, 5];
-const BATHS  = [1, 2, 3, 4, 5];
+const BEDS        = [1, 2, 3, 4, 5];
+const BATHS       = [1, 2, 3, 4, 5];
 const BED_LABELS  = ["1 bed", "2 beds", "3 beds", "4 beds", "5+ beds"];
 const BATH_LABELS = ["1 bath", "2 baths", "3 baths", "4 baths", "5+ baths"];
 
 export default function CleanerSetupPage() {
-  const [cleaner, setCleaner]   = useState<Cleaner | null>(null);
-  const [loading, setLoading]   = useState(true);
-  const [saving, setSaving]     = useState(false);
-  const [toast, setToast]       = useState("");
-  const [copied, setCopied]     = useState(false);
+  const router   = useRouter();
+  const supabase = createBrowserClient();
+  const [cleanerId, setCleanerId] = useState<string | null>(null);
+  const [token,     setToken]     = useState<string | null>(null);
+  const [cleaner,   setCleaner]   = useState<Cleaner | null>(null);
+  const [loading,   setLoading]   = useState(true);
+  const [saving,    setSaving]    = useState(false);
+  const [toast,     setToast]     = useState("");
+  const [copied,    setCopied]    = useState(false);
 
-  const bookingLink =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/book?cleanerId=${CLEANER_ID}`
-      : `/book?cleanerId=${CLEANER_ID}`;
-
+  // ── Auth guard ──────────────────────────────────────────────────────────────
   useEffect(() => {
-    fetch(`/api/cleaners/${CLEANER_ID}`)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) { router.replace("/cleaner/login"); return; }
+      setCleanerId(session.user.id);
+      setToken(session.access_token);
+    });
+  }, [router]);
+
+  // ── Fetch cleaner data ──────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!cleanerId) return;
+    fetch(`/api/cleaners/${cleanerId}`)
       .then((r) => r.json())
       .then((data: Cleaner) => { setCleaner(data); setLoading(false); })
       .catch(() => setLoading(false));
-  }, []);
+  }, [cleanerId]);
 
   function toggleBlock(day: DayOfWeek, block: "morning" | "afternoon") {
     if (!cleaner) return;
@@ -46,10 +56,7 @@ export default function CleanerSetupPage() {
       ...cleaner,
       availability: {
         ...cleaner.availability,
-        [day]: {
-          ...cleaner.availability[day],
-          [block]: !cleaner.availability[day][block],
-        },
+        [day]: { ...cleaner.availability[day], [block]: !cleaner.availability[day][block] },
       },
     });
   }
@@ -57,13 +64,9 @@ export default function CleanerSetupPage() {
   function updatePrice(beds: number, baths: number, value: string) {
     if (!cleaner) return;
     const num = parseFloat(value);
-    const key = `${beds}-${baths}`;
     setCleaner({
       ...cleaner,
-      pricingTable: {
-        ...cleaner.pricingTable,
-        [key]: isNaN(num) ? 0 : num,
-      },
+      pricingTable: { ...cleaner.pricingTable, [`${beds}-${baths}`]: isNaN(num) ? 0 : num },
     });
   }
 
@@ -80,15 +83,18 @@ export default function CleanerSetupPage() {
   }
 
   async function handleSave() {
-    if (!cleaner) return;
+    if (!cleaner || !cleanerId || !token) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/cleaners/${CLEANER_ID}`, {
+      const res = await fetch(`/api/cleaners/${cleanerId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
         body: JSON.stringify({
-          availability: cleaner.availability,
-          pricingTable: cleaner.pricingTable,
+          availability:       cleaner.availability,
+          pricingTable:       cleaner.pricingTable,
           frequencyDiscounts: cleaner.frequencyDiscounts,
         }),
       });
@@ -101,18 +107,29 @@ export default function CleanerSetupPage() {
     }
   }
 
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    router.replace("/cleaner/login");
+  }
+
   function showToast(msg: string) {
     setToast(msg);
     setTimeout(() => setToast(""), 3000);
   }
 
+  const bookingLink =
+    typeof window !== "undefined" && cleanerId
+      ? `${window.location.origin}/book?cleanerId=${cleanerId}`
+      : "";
+
   async function copyLink() {
+    if (!bookingLink) return;
     await navigator.clipboard.writeText(bookingLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   }
 
-  if (loading) {
+  if (loading || !cleanerId) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <p className="text-slate-500 animate-pulse">Loading…</p>
@@ -123,7 +140,7 @@ export default function CleanerSetupPage() {
   if (!cleaner) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <p className="text-red-500">Could not load cleaner data.</p>
+        <p className="text-red-500">Could not load your profile.</p>
       </div>
     );
   }
@@ -135,9 +152,17 @@ export default function CleanerSetupPage() {
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <span className="text-2xl">✨</span>
-            <span className="text-xl font-extrabold text-slate-800">SparkleClean</span>
+            <span className="text-xl font-extrabold text-slate-800">CleanClick</span>
           </Link>
-          <span className="text-sm text-slate-500 font-medium">Cleaner Setup</span>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-slate-500 hidden sm:block">{cleaner.name}</span>
+            <button
+              onClick={handleLogout}
+              className="text-sm text-slate-500 hover:text-red-500 font-medium transition-colors"
+            >
+              Log out
+            </button>
+          </div>
         </div>
       </header>
 
@@ -161,7 +186,7 @@ export default function CleanerSetupPage() {
           <div className="px-6 py-4 border-b border-slate-100">
             <h2 className="font-bold text-slate-800 text-lg">Weekly Schedule</h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Morning&nbsp;=&nbsp;9:00am–1:00pm &nbsp;|&nbsp; Afternoon&nbsp;=&nbsp;1:30pm–6:00pm
+              Morning = 9:00am–1:00pm &nbsp;|&nbsp; Afternoon = 1:30pm–6:00pm
             </p>
           </div>
           <div className="divide-y divide-slate-50">
@@ -206,14 +231,14 @@ export default function CleanerSetupPage() {
           <div className="px-6 py-4 border-b border-slate-100">
             <h2 className="font-bold text-slate-800 text-lg">Pricing Table</h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Set your flat rate (in $) for each bedroom × bathroom combination.
+              Set your flat rate ($) for each bedroom × bathroom combination.
             </p>
           </div>
           <div className="overflow-x-auto px-6 py-5">
             <table className="w-full text-sm">
               <thead>
                 <tr>
-                  <th className="text-left text-slate-400 font-medium pb-3 pr-4"></th>
+                  <th className="text-left text-slate-400 font-medium pb-3 pr-4" />
                   {BATH_LABELS.map((b) => (
                     <th key={b} className="text-center text-slate-500 font-semibold pb-3 px-2 min-w-[72px]">
                       {b}
@@ -227,24 +252,21 @@ export default function CleanerSetupPage() {
                     <td className="text-slate-600 font-semibold py-2.5 pr-4 whitespace-nowrap">
                       {BED_LABELS[bi]}
                     </td>
-                    {BATHS.map((baths) => {
-                      const key = `${beds}-${baths}`;
-                      return (
-                        <td key={baths} className="py-2.5 px-2">
-                          <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400">
-                            <span className="px-2 text-slate-400 text-xs">$</span>
-                            <input
-                              type="number"
-                              min={0}
-                              step={1}
-                              value={cleaner.pricingTable[key] ?? ""}
-                              onChange={(e) => updatePrice(beds, baths, e.target.value)}
-                              className="w-16 py-1.5 pr-2 text-sm text-slate-800 bg-white focus:outline-none"
-                            />
-                          </div>
-                        </td>
-                      );
-                    })}
+                    {BATHS.map((baths) => (
+                      <td key={baths} className="py-2.5 px-2">
+                        <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400">
+                          <span className="px-2 text-slate-400 text-xs">$</span>
+                          <input
+                            type="number"
+                            min={0}
+                            step={1}
+                            value={cleaner.pricingTable[`${beds}-${baths}`] ?? ""}
+                            onChange={(e) => updatePrice(beds, baths, e.target.value)}
+                            className="w-16 py-1.5 pr-2 text-sm text-slate-800 bg-white focus:outline-none"
+                          />
+                        </div>
+                      </td>
+                    ))}
                   </tr>
                 ))}
               </tbody>
@@ -256,9 +278,7 @@ export default function CleanerSetupPage() {
         <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100">
             <h2 className="font-bold text-slate-800 text-lg">Frequency Discounts</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Percentage off for repeat bookings.
-            </p>
+            <p className="text-xs text-slate-400 mt-0.5">Percentage off for repeat bookings.</p>
           </div>
           <div className="px-6 py-5 grid grid-cols-3 gap-6">
             {(
@@ -303,9 +323,7 @@ export default function CleanerSetupPage() {
               type="button"
               onClick={copyLink}
               className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
-                copied
-                  ? "bg-green-500 text-white"
-                  : "bg-sky-500 hover:bg-sky-600 text-white"
+                copied ? "bg-green-500 text-white" : "bg-sky-500 hover:bg-sky-600 text-white"
               }`}
             >
               {copied ? "Copied!" : "Copy"}

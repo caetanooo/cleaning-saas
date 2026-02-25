@@ -34,7 +34,7 @@ const testimonials = [
     name: "Sarah M.",
     location: "Austin, TX",
     quote:
-      "They transformed my apartment in just 2 hours. I've tried three other services and SparkleClean is miles ahead.",
+      "They transformed my apartment in just 2 hours. I've tried three other services and CleanClick is miles ahead.",
     rating: 5,
   },
   {
@@ -133,7 +133,7 @@ export default function HomePage() {
           <div className="flex items-center gap-2">
             <span className="text-2xl">✨</span>
             <span className="text-xl font-extrabold text-slate-800 tracking-tight">
-              SparkleClean
+              CleanClick
             </span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
@@ -341,10 +341,10 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="text-xl">✨</span>
-            <span className="text-white font-bold text-lg">SparkleClean</span>
+            <span className="text-white font-bold text-lg">CleanClick</span>
           </div>
           <p className="text-sm">
-            © {new Date().getFullYear()} SparkleClean. All rights reserved.
+            © {new Date().getFullYear()} CleanClick. All rights reserved.
           </p>
           <div className="flex gap-6 text-sm">
             <Link href="#" className="hover:text-white transition-colors">Privacy</Link>
