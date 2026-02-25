@@ -30,6 +30,7 @@ export default function CleanerSetupPage() {
   const [saving,    setSaving]    = useState(false);
   const [toast,     setToast]     = useState("");
   const [copied,    setCopied]    = useState(false);
+  const [apiError,  setApiError]  = useState("");
 
   // ── Auth guard → fetch profile ───────────────────────────────────────────────
   // Both steps run sequentially in a single effect so the fetch never fires
@@ -50,11 +51,18 @@ export default function CleanerSetupPage() {
 
       fetch(`/api/cleaners/${id}`)
         .then((r) => r.json())
-        .then((data: Cleaner) => {
-          if (data && data.id) setCleaner(data);
+        .then((data: Cleaner & { error?: string }) => {
+          if (data && data.id) {
+            setCleaner(data);
+          } else {
+            setApiError(data?.error || "Unknown error from API.");
+          }
           setLoading(false);
         })
-        .catch(() => setLoading(false));
+        .catch((err) => {
+          setApiError(String(err));
+          setLoading(false);
+        });
     });
   }, [router]);
 
@@ -147,8 +155,25 @@ export default function CleanerSetupPage() {
 
   if (!cleaner) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <p className="text-red-500">Could not load your profile.</p>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+        <div className="bg-white rounded-2xl border border-red-100 shadow-sm p-8 max-w-lg w-full space-y-4">
+          <p className="font-bold text-slate-800 text-lg">Could not load your profile</p>
+          {apiError && (
+            <pre className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs text-red-700 overflow-auto whitespace-pre-wrap break-all">
+              {apiError}
+            </pre>
+          )}
+          <p className="text-sm text-slate-500">
+            Make sure the <strong>cleaners</strong> table has been created in your Supabase project.
+            Run the SQL schema in the Supabase SQL Editor, then reload this page.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="w-full bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 rounded-xl text-sm transition-colors"
+          >
+            Reload
+          </button>
+        </div>
       </div>
     );
   }
