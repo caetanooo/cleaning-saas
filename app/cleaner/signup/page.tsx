@@ -26,7 +26,12 @@ export default function CleanerSignupPage() {
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { name } },
+      options: {
+        data: { name },
+        // After email confirmation, Supabase redirects here; the page
+        // exchanges the auth code and forwards to /cleaner/setup
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
     });
 
     if (signUpError) {
