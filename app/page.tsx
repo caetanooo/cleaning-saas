@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+
 export default function HomePage() {
-  return <h1>TESTE</h1>;
+  redirect("/cleaner/login");
 }
