@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import type { Cleaner, Booking, FrequencyType, TimeBlock, BlockAvailability, CleaningServiceType } from "@/types";
+import type { Cleaner, Booking, FrequencyType, TimeBlock, BlockAvailability, CleaningServiceType, DayOfWeek } from "@/types";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -32,6 +32,11 @@ const BLOCK_INFO: Record<TimeBlock, { label: string; start: string }> = {
   morning:   { label: "Morning",   start: "9:00 AM" },
   afternoon: { label: "Afternoon", start: "2:00 PM" },
 };
+
+// Sunday=0 … Saturday=6 → our DayOfWeek union
+const JS_TO_DAY: DayOfWeek[] = [
+  "sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday",
+];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -71,6 +76,41 @@ function formatDate(dateStr: string): string {
   return new Date(year, month - 1, day).toLocaleDateString("en-US", {
     weekday: "long", year: "numeric", month: "long", day: "numeric",
   });
+}
+
+// ─── Week-view day list ───────────────────────────────────────────────────────
+
+interface DayCard {
+  dateStr:   string;   // "YYYY-MM-DD"
+  dayName:   string;   // "Mon"
+  dayNum:    number;   // 27
+  monthName: string;   // "Feb"
+  isOff:     boolean;  // cleaner not working that day of week
+  isToday:   boolean;
+}
+
+function computeNextDays(cleaner: Cleaner, count = 14): DayCard[] {
+  const cards: DayCard[] = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  for (let i = 0; i < count; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    const avail = cleaner.availability[JS_TO_DAY[d.getDay()]];
+    cards.push({
+      dateStr:   [
+        d.getFullYear(),
+        String(d.getMonth() + 1).padStart(2, "0"),
+        String(d.getDate()).padStart(2, "0"),
+      ].join("-"),
+      dayName:   d.toLocaleDateString("en-US", { weekday: "short" }),
+      dayNum:    d.getDate(),
+      monthName: d.toLocaleDateString("en-US", { month: "short" }),
+      isOff:     !avail.morning && !avail.afternoon,
+      isToday:   i === 0,
+    });
+  }
+  return cards;
 }
 
 // ─── SMS body: only what the client filled in ─────────────────────────────────
@@ -160,7 +200,8 @@ function BookPageInner() {
       .catch(() => setCleanerLoading(false));
   }, [cleanerId]);
 
-  const price = calcPrice(cleaner, state.bedrooms, state.bathrooms, state.frequency, state.serviceType);
+  const price    = calcPrice(cleaner, state.bedrooms, state.bathrooms, state.frequency, state.serviceType);
+  const nextDays = cleaner ? computeNextDays(cleaner) : [];
 
   // ── Step 0 → 1 ──────────────────────────────────────────────────────────────
   function goStep1() {
@@ -491,16 +532,43 @@ function BookPageInner() {
               </div>
             )}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Select a Date
-              </label>
-              <input
-                type="date"
-                value={state.date}
-                min={new Date().toISOString().slice(0, 10)}
-                onChange={(e) => handleDateChange(e.target.value)}
-                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 bg-white"
-              />
+              <p className="text-sm font-semibold text-slate-700 mb-3">Select a Date</p>
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {nextDays.map((d) => {
+                  const isSelected = state.date === d.dateStr;
+                  return (
+                    <button
+                      key={d.dateStr}
+                      type="button"
+                      disabled={d.isOff}
+                      onClick={() => !d.isOff && handleDateChange(d.dateStr)}
+                      className={`flex flex-col items-center rounded-xl border-2 py-3 px-2.5 min-w-[56px] shrink-0 transition-colors ${
+                        d.isOff
+                          ? "border-slate-100 bg-slate-50 cursor-not-allowed"
+                          : isSelected
+                          ? "border-sky-500 bg-sky-500"
+                          : "border-slate-200 bg-white hover:border-sky-300"
+                      }`}
+                    >
+                      <span className={`text-[10px] font-semibold leading-none mb-1 ${
+                        d.isOff ? "text-slate-300" : isSelected ? "text-sky-100" : "text-slate-400"
+                      }`}>
+                        {d.isToday ? "Today" : d.dayName}
+                      </span>
+                      <span className={`text-lg font-extrabold leading-tight ${
+                        d.isOff ? "text-slate-300" : isSelected ? "text-white" : "text-slate-800"
+                      }`}>
+                        {d.dayNum}
+                      </span>
+                      <span className={`text-[10px] leading-none mt-1 ${
+                        d.isOff ? "text-slate-300" : isSelected ? "text-sky-100" : "text-slate-400"
+                      }`}>
+                        {d.monthName}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {state.blockLoading && (
