@@ -32,6 +32,11 @@ export interface FrequencyDiscounts {
   monthly: number;
 }
 
+export interface ServiceAddons {
+  deep: number;  // extra $ for deep cleaning
+  move: number;  // extra $ for move-in/out
+}
+
 /** key = "{beds}-{baths}", value = flat price in USD */
 export type PricingTable = Record<string, number>;
 
@@ -44,6 +49,7 @@ export interface Cleaner {
   availability: Record<DayOfWeek, DayAvailability>;
   pricingTable: PricingTable;
   frequencyDiscounts: FrequencyDiscounts;
+  serviceAddons: ServiceAddons;
 }
 
 export interface Booking {

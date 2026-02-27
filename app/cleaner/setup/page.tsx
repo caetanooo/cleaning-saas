@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createBrowserClient } from "@/lib/supabase";
-import type { Cleaner, DayOfWeek, CleaningServiceType } from "@/types";
+import type { Cleaner, DayOfWeek } from "@/types";
 
 const DAYS: { key: DayOfWeek; label: string }[] = [
   { key: "monday",    label: "Monday" },
@@ -16,10 +16,13 @@ const DAYS: { key: DayOfWeek; label: string }[] = [
   { key: "sunday",    label: "Sunday" },
 ];
 
-const BEDS        = [1, 2, 3, 4, 5];
-const BATHS       = [1, 2, 3, 4, 5];
-const BED_LABELS  = ["1 bed", "2 beds", "3 beds", "4 beds", "5+ beds"];
-const BATH_LABELS = ["1 bath", "2 baths", "3 baths", "4 baths", "5+ baths"];
+const BEDS       = [1, 2, 3, 4, 5];
+const BATHS      = [1, 2, 3, 4, 5];
+const BED_LABELS = ["1 Bedroom", "2 Bedrooms", "3 Bedrooms", "4 Bedrooms", "5+ Bedrooms"];
+
+function bathLabel(n: number) {
+  return n === 1 ? "1 bath" : `${n} baths`;
+}
 
 export default function CleanerSetupPage() {
   const router = useRouter();
@@ -31,7 +34,6 @@ export default function CleanerSetupPage() {
   const [toast,     setToast]     = useState("");
   const [copied,    setCopied]    = useState(false);
   const [apiError,  setApiError]  = useState("");
-  const [pricingTab, setPricingTab] = useState<CleaningServiceType>("regular");
 
   // ── Auth guard → fetch profile ────────────────────────────────────────────
   useEffect(() => {
@@ -99,10 +101,18 @@ export default function CleanerSetupPage() {
   function updatePrice(beds: number, baths: number, value: string) {
     if (!cleaner) return;
     const num = parseFloat(value);
-    const key = pricingTab === "regular" ? `${beds}-${baths}` : `${beds}-${baths}-${pricingTab}`;
     setCleaner({
       ...cleaner,
-      pricingTable: { ...cleaner.pricingTable, [key]: isNaN(num) ? 0 : num },
+      pricingTable: { ...cleaner.pricingTable, [`${beds}-${baths}`]: isNaN(num) ? 0 : num },
+    });
+  }
+
+  function updateAddon(field: "deep" | "move", value: string) {
+    if (!cleaner) return;
+    const num = parseFloat(value);
+    setCleaner({
+      ...cleaner,
+      serviceAddons: { ...cleaner.serviceAddons, [field]: isNaN(num) ? 0 : num },
     });
   }
 
@@ -134,6 +144,7 @@ export default function CleanerSetupPage() {
           availability:       cleaner.availability,
           pricingTable:       cleaner.pricingTable,
           frequencyDiscounts: cleaner.frequencyDiscounts,
+          serviceAddons:      cleaner.serviceAddons,
         }),
       });
       if (!res.ok) throw new Error("Save failed");
@@ -187,7 +198,6 @@ export default function CleanerSetupPage() {
           )}
           <p className="text-sm text-slate-500">
             Make sure the <strong>cleaners</strong> table has been created in your Supabase project.
-            Run the SQL schema in the Supabase SQL Editor, then reload this page.
           </p>
           <button
             onClick={() => window.location.reload()}
@@ -245,7 +255,6 @@ export default function CleanerSetupPage() {
             </p>
           </div>
           <div className="px-6 py-5 space-y-5">
-            {/* Phone */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1">
                 Phone Number (SMS / WhatsApp)
@@ -258,14 +267,13 @@ export default function CleanerSetupPage() {
                 className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-400"
               />
             </div>
-            {/* Messenger */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1">
                 Facebook Messenger Username{" "}
                 <span className="text-slate-400 font-normal">(optional)</span>
               </label>
               <p className="text-xs text-slate-400 mb-2">
-                Your Messenger username — found at facebook.com/your.username. Example: <span className="font-mono">janedoe.cleaner</span>
+                Found at facebook.com/your.username. Example: <span className="font-mono">janedoe.cleaner</span>
               </p>
               <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-sky-400">
                 <span className="px-3 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-3 select-none">
@@ -328,89 +336,84 @@ export default function CleanerSetupPage() {
           </div>
         </section>
 
-        {/* ── Pricing Table ── */}
+        {/* ── Pricing List ── */}
         <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100">
-            <h2 className="font-bold text-slate-800 text-lg">Pricing Table</h2>
+            <h2 className="font-bold text-slate-800 text-lg">Regular Cleaning Prices</h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Set your flat rate ($) per service type and house size.
+              Set your flat rate for each house size. Deep Cleaning and Move-in/out add-ons are configured below.
             </p>
           </div>
-
-          {/* Service type tabs */}
-          <div className="flex border-b border-slate-100">
-            {([
-              { value: "regular", label: "Regular Cleaning" },
-              { value: "deep",    label: "Deep Cleaning" },
-              { value: "move",    label: "Move-in / Move-out" },
-            ] as { value: CleaningServiceType; label: string }[]).map((tab) => (
-              <button
-                key={tab.value}
-                type="button"
-                onClick={() => setPricingTab(tab.value)}
-                className={`flex-1 py-3 text-sm font-semibold border-b-2 transition-colors ${
-                  pricingTab === tab.value
-                    ? "border-sky-500 text-sky-600"
-                    : "border-transparent text-slate-400 hover:text-slate-600"
-                }`}
-              >
-                {tab.label}
-              </button>
+          <div className="px-6 py-5 space-y-6">
+            {BEDS.map((beds, bi) => (
+              <div key={beds}>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">
+                  {BED_LABELS[bi]}
+                </p>
+                <div className="space-y-2">
+                  {BATHS.map((baths) => (
+                    <div key={baths} className="flex items-center justify-between gap-4">
+                      <span className="text-sm text-slate-600 w-32 shrink-0">
+                        {bathLabel(baths)}
+                      </span>
+                      <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400 max-w-[120px] w-full">
+                        <span className="px-2.5 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-2 select-none">$</span>
+                        <input
+                          type="number"
+                          min={0}
+                          step={1}
+                          value={cleaner.pricingTable[`${beds}-${baths}`] ?? ""}
+                          onChange={(e) => updatePrice(beds, baths, e.target.value)}
+                          className="flex-1 px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
+        </section>
 
-          {/* Price description per tab */}
-          <div className="px-6 pt-3 pb-1 text-xs text-slate-400">
-            {pricingTab === "regular" && "Standard cleaning of all rooms."}
-            {pricingTab === "deep"    && "Includes inside oven, baseboards, blinds, and windows."}
-            {pricingTab === "move"    && "Deep cleaning + inside appliances, cabinets, and closets."}
+        {/* ── Service Add-ons ── */}
+        <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100">
+            <h2 className="font-bold text-slate-800 text-lg">Service Add-ons</h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Extra charge added on top of the regular price for upgrade services.
+            </p>
           </div>
-
-          <div className="overflow-x-auto px-6 py-4">
-            <table className="w-full text-sm">
-              <thead>
-                <tr>
-                  <th className="text-left text-slate-400 font-medium pb-3 pr-4" />
-                  {BATH_LABELS.map((b) => (
-                    <th key={b} className="text-center text-slate-500 font-semibold pb-3 px-2 min-w-[72px]">
-                      {b}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {BEDS.map((beds, bi) => {
-                  const rowKey = pricingTab === "regular" ? `${beds}` : `${beds}`;
-                  return (
-                    <tr key={rowKey}>
-                      <td className="text-slate-600 font-semibold py-2.5 pr-4 whitespace-nowrap">
-                        {BED_LABELS[bi]}
-                      </td>
-                      {BATHS.map((baths) => {
-                        const key = pricingTab === "regular"
-                          ? `${beds}-${baths}`
-                          : `${beds}-${baths}-${pricingTab}`;
-                        return (
-                          <td key={baths} className="py-2.5 px-2">
-                            <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400">
-                              <span className="px-2 text-slate-400 text-xs">$</span>
-                              <input
-                                type="number"
-                                min={0}
-                                step={1}
-                                value={cleaner.pricingTable[key] ?? ""}
-                                onChange={(e) => updatePrice(beds, baths, e.target.value)}
-                                className="w-16 py-1.5 pr-2 text-sm text-slate-800 bg-white focus:outline-none"
-                              />
-                            </div>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="px-6 py-5 space-y-4">
+            {([
+              {
+                field: "deep" as const,
+                label: "Deep Cleaning",
+                description: "Includes inside oven, baseboards, blinds, and windows.",
+              },
+              {
+                field: "move" as const,
+                label: "Move-in / Move-out",
+                description: "Deep cleaning + inside appliances, cabinets, and closets.",
+              },
+            ]).map(({ field, label, description }) => (
+              <div key={field} className="flex items-center gap-4">
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-slate-700">{label}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">{description}</p>
+                </div>
+                <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400 w-[110px] shrink-0">
+                  <span className="px-2.5 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-2 select-none">+$</span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={cleaner.serviceAddons?.[field] ?? ""}
+                    onChange={(e) => updateAddon(field, e.target.value)}
+                    className="flex-1 px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none"
+                  />
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 

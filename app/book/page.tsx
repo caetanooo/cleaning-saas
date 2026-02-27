@@ -43,15 +43,18 @@ function calcPrice(
   service: CleaningServiceType = "regular",
 ): number | null {
   if (!cleaner || beds === null || baths === null) return null;
-  const key = service === "regular" ? `${beds}-${baths}` : `${beds}-${baths}-${service}`;
-  const base = cleaner.pricingTable[key];
+  const base = cleaner.pricingTable[`${beds}-${baths}`];
   if (base === undefined) return null;
-  if (!freq || freq === "one_time") return base;
+  const addon = service === "deep" ? (cleaner.serviceAddons?.deep ?? 0)
+              : service === "move" ? (cleaner.serviceAddons?.move ?? 0)
+              : 0;
+  const total = base + addon;
+  if (!freq || freq === "one_time") return total;
   const { frequencyDiscounts: fd } = cleaner;
   const pct =
     freq === "weekly"   ? fd.weekly   :
     freq === "biweekly" ? fd.biweekly : fd.monthly;
-  return Math.round(base * (1 - pct / 100) * 100) / 100;
+  return Math.round(total * (1 - pct / 100) * 100) / 100;
 }
 
 function discountLabel(cleaner: Cleaner, freq: FrequencyType): string {
@@ -372,6 +375,9 @@ function BookPageInner() {
                 <div className="space-y-2">
                   {SERVICE_OPTIONS.map((opt) => {
                     const svcPrice = calcPrice(cleaner, state.bedrooms, state.bathrooms, null, opt.value);
+                    const addonAmt = opt.value === "deep" ? cleaner.serviceAddons?.deep
+                                   : opt.value === "move" ? cleaner.serviceAddons?.move
+                                   : null;
                     return (
                       <button
                         key={opt.value}
@@ -385,7 +391,14 @@ function BookPageInner() {
                       >
                         <div className="flex items-center justify-between gap-4">
                           <div>
-                            <p className="font-bold text-slate-800 text-sm">{opt.label}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-bold text-slate-800 text-sm">{opt.label}</p>
+                              {addonAmt != null && addonAmt > 0 && (
+                                <span className="text-xs font-semibold text-sky-600 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded-full">
+                                  +${addonAmt}
+                                </span>
+                              )}
+                            </div>
                             <p className="text-xs text-slate-400 mt-0.5">{opt.description}</p>
                           </div>
                           {svcPrice !== null && (

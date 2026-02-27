@@ -15,28 +15,20 @@ const DEFAULT_AVAILABILITY: Cleaner["availability"] = {
 };
 
 const DEFAULT_PRICING: Cleaner["pricingTable"] = {
-  // Regular cleaning
   "1-1": 80,  "1-2": 95,  "1-3": 110, "1-4": 130, "1-5": 150,
   "2-1": 95,  "2-2": 115, "2-3": 135, "2-4": 155, "2-5": 175,
   "3-1": 115, "3-2": 140, "3-3": 160, "3-4": 185, "3-5": 210,
   "4-1": 135, "4-2": 165, "4-3": 190, "4-4": 220, "4-5": 250,
   "5-1": 160, "5-2": 195, "5-3": 225, "5-4": 260, "5-5": 295,
-  // Deep cleaning (~+40%)
-  "1-1-deep": 115, "1-2-deep": 135, "1-3-deep": 155, "1-4-deep": 180, "1-5-deep": 210,
-  "2-1-deep": 135, "2-2-deep": 160, "2-3-deep": 190, "2-4-deep": 215, "2-5-deep": 245,
-  "3-1-deep": 160, "3-2-deep": 195, "3-3-deep": 225, "3-4-deep": 260, "3-5-deep": 295,
-  "4-1-deep": 190, "4-2-deep": 230, "4-3-deep": 265, "4-4-deep": 310, "4-5-deep": 350,
-  "5-1-deep": 225, "5-2-deep": 275, "5-3-deep": 315, "5-4-deep": 365, "5-5-deep": 415,
-  // Move-in / Move-out (~+80%)
-  "1-1-move": 145, "1-2-move": 170, "1-3-move": 200, "1-4-move": 235, "1-5-move": 270,
-  "2-1-move": 170, "2-2-move": 205, "2-3-move": 245, "2-4-move": 280, "2-5-move": 315,
-  "3-1-move": 205, "3-2-move": 250, "3-3-move": 290, "3-4-move": 335, "3-5-move": 380,
-  "4-1-move": 245, "4-2-move": 295, "4-3-move": 340, "4-4-move": 395, "4-5-move": 450,
-  "5-1-move": 290, "5-2-move": 350, "5-3-move": 405, "5-4-move": 470, "5-5-move": 530,
 };
 
 const DEFAULT_DISCOUNTS: Cleaner["frequencyDiscounts"] = {
   weekly: 15, biweekly: 10, monthly: 5,
+};
+
+const DEFAULT_ADDONS: Cleaner["serviceAddons"] = {
+  deep: 50,
+  move: 80,
 };
 
 function rowToCleaner(row: Record<string, unknown>): Cleaner {
@@ -49,6 +41,7 @@ function rowToCleaner(row: Record<string, unknown>): Cleaner {
     availability:       (row.availability        as Cleaner["availability"])        || DEFAULT_AVAILABILITY,
     pricingTable:       (row.pricing_table       as Cleaner["pricingTable"])        || DEFAULT_PRICING,
     frequencyDiscounts: (row.frequency_discounts as Cleaner["frequencyDiscounts"])  || DEFAULT_DISCOUNTS,
+    serviceAddons:      (row.service_addons      as Cleaner["serviceAddons"])       || DEFAULT_ADDONS,
   };
 }
 
@@ -67,8 +60,6 @@ export async function GET(
     .eq("id", id)
     .single();
 
-  // Profile not found — auto-create it.
-  // This handles users who signed up before the DB trigger was in place.
   if (!data || error) {
     const { data: authUser } = await supabase.auth.admin.getUserById(id);
     const name  = authUser?.user?.user_metadata?.name  || "New Cleaner";
@@ -116,6 +107,7 @@ export async function PUT(
   if (body.availability        !== undefined) patch.availability         = body.availability;
   if (body.pricingTable        !== undefined) patch.pricing_table        = body.pricingTable;
   if (body.frequencyDiscounts  !== undefined) patch.frequency_discounts  = body.frequencyDiscounts;
+  if (body.serviceAddons       !== undefined) patch.service_addons       = body.serviceAddons;
 
   const { data, error } = await supabase
     .from("cleaners")
