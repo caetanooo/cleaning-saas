@@ -32,11 +32,10 @@ export default function CleanerSetupPage() {
   const [copied,    setCopied]    = useState(false);
   const [apiError,  setApiError]  = useState("");
 
-  // ── Auth guard → fetch profile ───────────────────────────────────────────────
+  // ── Auth guard → fetch profile ────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
 
-    // Safety net: if nothing resolves within 10 s, stop the spinner.
     const timeout = setTimeout(() => {
       if (!cancelled) {
         setApiError("Loading timed out. Please refresh the page.");
@@ -52,7 +51,6 @@ export default function CleanerSetupPage() {
         if (cancelled) return;
 
         if (!session) {
-          // No session — navigate away; loading state resolves via finally.
           router.replace("/cleaner/login");
           return;
         }
@@ -74,7 +72,6 @@ export default function CleanerSetupPage() {
         if (!cancelled) setApiError(String(err));
       } finally {
         clearTimeout(timeout);
-        // Always stop the spinner — this was the root cause of the infinite load.
         if (!cancelled) setLoading(false);
       }
     }
@@ -130,6 +127,7 @@ export default function CleanerSetupPage() {
           "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({
+          phone:              cleaner.phone,
           availability:       cleaner.availability,
           pricingTable:       cleaner.pricingTable,
           frequencyDiscounts: cleaner.frequencyDiscounts,
@@ -234,6 +232,25 @@ export default function CleanerSetupPage() {
             Hi, {cleaner.name}. Configure your schedule and rates below.
           </p>
         </div>
+
+        {/* ── Phone Number (WhatsApp/SMS) ── */}
+        <section className="bg-white rounded-2xl shadow-sm border border-sky-100 overflow-hidden">
+          <div className="px-6 py-4 border-b border-sky-100 bg-sky-50">
+            <h2 className="font-bold text-slate-800 text-lg">Phone Number (WhatsApp/SMS)</h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Clients will send their booking details to this number via SMS. Required for the SMS button to work.
+            </p>
+          </div>
+          <div className="px-6 py-5">
+            <input
+              type="tel"
+              placeholder="+1 (512) 555-0100"
+              value={cleaner.phone ?? ""}
+              onChange={(e) => setCleaner({ ...cleaner, phone: e.target.value })}
+              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-400"
+            />
+          </div>
+        </section>
 
         {/* ── Weekly Schedule ── */}
         <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">

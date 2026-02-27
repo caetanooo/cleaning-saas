@@ -38,6 +38,7 @@ export interface Cleaner {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   availability: Record<DayOfWeek, DayAvailability>;
   pricingTable: PricingTable;
   frequencyDiscounts: FrequencyDiscounts;

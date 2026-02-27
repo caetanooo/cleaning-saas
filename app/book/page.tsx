@@ -21,7 +21,7 @@ const BLOCK_INFO: Record<TimeBlock, { label: string; hours: string }> = {
   afternoon: { label: "Afternoon", hours: "1:30pm – 6:00pm" },
 };
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function calcPrice(
   cleaner: Cleaner | null,
@@ -57,31 +57,24 @@ function formatDate(dateStr: string): string {
   });
 }
 
-function buildClipboardMessage(booking: Booking): string {
+// ─── SMS body: only what the client filled in ─────────────────────────────────
+
+function buildSmsBody(booking: Booking): string {
   const freqMap: Record<FrequencyType, string> = {
     one_time: "One-Time",
     weekly:   "Weekly",
     biweekly: "Bi-Weekly",
     monthly:  "Monthly",
   };
-  const basePrice = booking.totalPrice;
   const block = BLOCK_INFO[booking.timeBlock];
+  const beds  = booking.bedrooms  === 5 ? "5+" : booking.bedrooms;
+  const baths = booking.bathrooms === 5 ? "5+" : booking.bathrooms;
   return [
-    "--- New Cleaning Request ---",
-    `Name:      ${booking.customerName}`,
-    `Phone:     ${booking.customerPhone}`,
-    `Address:   ${booking.customerAddress}`,
-    `Pets:      ${booking.hasPets ? "Yes" : "No"}`,
-    "",
-    `Bedrooms:  ${booking.bedrooms === 5 ? "5+" : booking.bedrooms}`,
-    `Bathrooms: ${booking.bathrooms === 5 ? "5+" : booking.bathrooms}`,
-    `Frequency: ${freqMap[booking.frequency]}`,
-    "",
-    `Date:  ${formatDate(booking.date)}`,
-    `Time:  ${block.label} (${block.hours})`,
-    "",
-    `Total: $${basePrice.toFixed(2)}`,
-    `Booking ID: ${booking.id}`,
+    `Name: ${booking.customerName}`,
+    `Date: ${formatDate(booking.date)} · ${block.label} (${block.hours})`,
+    `Address: ${booking.customerAddress}`,
+    `Type of Cleaning: ${beds} bed · ${baths} bath — ${freqMap[booking.frequency]}`,
+    `Notes: Pets: ${booking.hasPets ? "Yes" : "No"}`,
   ].join("\n");
 }
 
@@ -104,7 +97,6 @@ interface WizardState {
   submitting: boolean;
   submitError: string;
   confirmedBooking: Booking | null;
-  copied: boolean;
 }
 
 const INITIAL: WizardState = {
@@ -124,18 +116,17 @@ const INITIAL: WizardState = {
   submitting: false,
   submitError: "",
   confirmedBooking: null,
-  copied: false,
 };
 
-// ─── Inner page (needs useSearchParams) ──────────────────────────────────────
+// ─── Inner page (needs useSearchParams) ───────────────────────────────────────
 
 function BookPageInner() {
   const searchParams = useSearchParams();
   const cleanerId = searchParams.get("cleanerId") ?? "cleaner-1";
 
-  const [cleaner, setCleaner]           = useState<Cleaner | null>(null);
+  const [cleaner, setCleaner]               = useState<Cleaner | null>(null);
   const [cleanerLoading, setCleanerLoading] = useState(true);
-  const [state, setState]               = useState<WizardState>(INITIAL);
+  const [state, setState]                   = useState<WizardState>(INITIAL);
 
   function update(patch: Partial<WizardState>) {
     setState((s) => ({ ...s, ...patch }));
@@ -150,19 +141,19 @@ function BookPageInner() {
 
   const price = calcPrice(cleaner, state.bedrooms, state.bathrooms, state.frequency);
 
-  // ── Step 0 → 1 ─────────────────────────────────────────────────────────────
+  // ── Step 0 → 1 ──────────────────────────────────────────────────────────────
   function goStep1() {
     if (state.bedrooms === null || state.bathrooms === null) return;
     update({ step: 1 });
   }
 
-  // ── Step 1 → 2 ─────────────────────────────────────────────────────────────
+  // ── Step 1 → 2 ──────────────────────────────────────────────────────────────
   function goStep2() {
     if (!state.frequency) return;
     update({ step: 2, date: "", timeBlock: null, blockAvail: null, blockError: "" });
   }
 
-  // ── Step 2: date change ─────────────────────────────────────────────────────
+  // ── Step 2: date change ──────────────────────────────────────────────────────
   async function handleDateChange(date: string) {
     if (!date) return;
     update({ date, timeBlock: null, blockAvail: null, blockLoading: true, blockError: "" });
@@ -176,13 +167,13 @@ function BookPageInner() {
     }
   }
 
-  // ── Step 2 → 3 ─────────────────────────────────────────────────────────────
+  // ── Step 2 → 3 ──────────────────────────────────────────────────────────────
   function goStep3() {
     if (!state.timeBlock) return;
     update({ step: 3, submitError: "" });
   }
 
-  // ── Submit ──────────────────────────────────────────────────────────────────
+  // ── Submit ───────────────────────────────────────────────────────────────────
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!state.frequency || !state.timeBlock || state.bedrooms === null || state.bathrooms === null) return;
@@ -223,15 +214,7 @@ function BookPageInner() {
     }
   }
 
-  // ── Copy to clipboard ───────────────────────────────────────────────────────
-  async function handleCopy() {
-    if (!state.confirmedBooking) return;
-    await navigator.clipboard.writeText(buildClipboardMessage(state.confirmedBooking));
-    update({ copied: true });
-    setTimeout(() => update({ copied: false }), 2500);
-  }
-
-  // ── Size selection button ───────────────────────────────────────────────────
+  // ── Size selection button ────────────────────────────────────────────────────
   function SizeBtn({
     value, selected, label, onClick,
   }: { value: number; selected: boolean; label: string; onClick: () => void }) {
@@ -250,7 +233,7 @@ function BookPageInner() {
     );
   }
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  // ── Render ───────────────────────────────────────────────────────────────────
 
   if (cleanerLoading) {
     return (
@@ -275,7 +258,7 @@ function BookPageInner() {
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <span className="text-2xl">✨</span>
-            <span className="text-xl font-extrabold text-slate-800">SparkleClean</span>
+            <span className="text-xl font-extrabold text-slate-800">CleanClick</span>
           </Link>
           <span className="text-sm text-slate-500">Booking</span>
         </div>
@@ -668,20 +651,19 @@ function BookPageInner() {
               </div>
             </div>
 
-            {/* Copy to clipboard */}
-            <button
-              onClick={handleCopy}
-              className={`w-full font-bold py-4 rounded-2xl transition-colors text-base ${
-                state.copied
-                  ? "bg-green-500 text-white"
-                  : "bg-sky-500 hover:bg-sky-600 text-white"
-              }`}
-            >
-              {state.copied ? "Copied to Clipboard!" : "Copy Booking Details"}
-            </button>
-            <p className="text-center text-xs text-slate-400">
-              Paste this message in Messenger, WhatsApp or SMS to send your details to the cleaner.
-            </p>
+            {/* Confirm & Send via Text Message */}
+            {cleaner.phone ? (
+              <a
+                href={`sms:${cleaner.phone}?body=${encodeURIComponent(buildSmsBody(state.confirmedBooking))}`}
+                className="w-full font-bold py-4 rounded-2xl transition-colors text-base bg-sky-500 hover:bg-sky-600 text-white flex items-center justify-center"
+              >
+                Confirm &amp; Send via Text Message
+              </a>
+            ) : (
+              <p className="text-center text-sm text-slate-500 bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4">
+                Contact your cleaner directly to confirm the booking details.
+              </p>
+            )}
 
             <button
               onClick={() => setState(INITIAL)}
@@ -696,7 +678,7 @@ function BookPageInner() {
   );
 }
 
-// ─── Page export wrapped in Suspense for useSearchParams ─────────────────────
+// ─── Page export wrapped in Suspense for useSearchParams ──────────────────────
 
 export default function BookPage() {
   return (
