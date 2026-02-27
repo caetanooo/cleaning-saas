@@ -128,6 +128,7 @@ export default function CleanerSetupPage() {
         },
         body: JSON.stringify({
           phone:              cleaner.phone,
+          messengerUsername:  cleaner.messengerUsername,
           availability:       cleaner.availability,
           pricingTable:       cleaner.pricingTable,
           frequencyDiscounts: cleaner.frequencyDiscounts,
@@ -233,22 +234,50 @@ export default function CleanerSetupPage() {
           </p>
         </div>
 
-        {/* ── Phone Number (WhatsApp/SMS) ── */}
+        {/* ── Contact Channels ── */}
         <section className="bg-white rounded-2xl shadow-sm border border-sky-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-sky-100 bg-sky-50">
-            <h2 className="font-bold text-slate-800 text-lg">Phone Number (WhatsApp/SMS)</h2>
+            <h2 className="font-bold text-slate-800 text-lg">Contact Channels</h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Clients will send their booking details to this number via SMS. Required for the SMS button to work.
+              Clients will use these to send you their booking details. Fill in at least one.
             </p>
           </div>
-          <div className="px-6 py-5">
-            <input
-              type="tel"
-              placeholder="+1 (512) 555-0100"
-              value={cleaner.phone ?? ""}
-              onChange={(e) => setCleaner({ ...cleaner, phone: e.target.value })}
-              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-400"
-            />
+          <div className="px-6 py-5 space-y-5">
+            {/* Phone */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">
+                Phone Number (SMS / WhatsApp)
+              </label>
+              <input
+                type="tel"
+                placeholder="+1 (512) 555-0100"
+                value={cleaner.phone ?? ""}
+                onChange={(e) => setCleaner({ ...cleaner, phone: e.target.value })}
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-400"
+              />
+            </div>
+            {/* Messenger */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">
+                Facebook Messenger Username{" "}
+                <span className="text-slate-400 font-normal">(optional)</span>
+              </label>
+              <p className="text-xs text-slate-400 mb-2">
+                Your Messenger username — found at facebook.com/your.username. Example: <span className="font-mono">janedoe.cleaner</span>
+              </p>
+              <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-sky-400">
+                <span className="px-3 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-3 select-none">
+                  m.me/
+                </span>
+                <input
+                  type="text"
+                  placeholder="janedoe.cleaner"
+                  value={cleaner.messengerUsername ?? ""}
+                  onChange={(e) => setCleaner({ ...cleaner, messengerUsername: e.target.value })}
+                  className="flex-1 px-3 py-3 text-sm text-slate-800 bg-white focus:outline-none"
+                />
+              </div>
+            </div>
           </div>
         </section>
 

@@ -31,7 +31,8 @@ function rowToCleaner(row: Record<string, unknown>): Cleaner {
     id:                 row.id    as string,
     name:               (row.name  as string) || "New Cleaner",
     email:              (row.email as string) || "",
-    phone:              (row.phone as string) || "",
+    phone:              (row.phone              as string) || "",
+    messengerUsername:  (row.messenger_username as string) || "",
     availability:       (row.availability        as Cleaner["availability"])        || DEFAULT_AVAILABILITY,
     pricingTable:       (row.pricing_table       as Cleaner["pricingTable"])        || DEFAULT_PRICING,
     frequencyDiscounts: (row.frequency_discounts as Cleaner["frequencyDiscounts"])  || DEFAULT_DISCOUNTS,
@@ -98,6 +99,7 @@ export async function PUT(
   const body = (await request.json()) as Partial<Cleaner>;
   const patch: Record<string, unknown> = {};
   if (body.phone               !== undefined) patch.phone                = body.phone;
+  if (body.messengerUsername   !== undefined) patch.messenger_username   = body.messengerUsername;
   if (body.availability        !== undefined) patch.availability         = body.availability;
   if (body.pricingTable        !== undefined) patch.pricing_table        = body.pricingTable;
   if (body.frequencyDiscounts  !== undefined) patch.frequency_discounts  = body.frequencyDiscounts;

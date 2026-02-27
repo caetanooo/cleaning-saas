@@ -97,6 +97,7 @@ interface WizardState {
   submitting: boolean;
   submitError: string;
   confirmedBooking: Booking | null;
+  messengerCopied: boolean;
 }
 
 const INITIAL: WizardState = {
@@ -116,6 +117,7 @@ const INITIAL: WizardState = {
   submitting: false,
   submitError: "",
   confirmedBooking: null,
+  messengerCopied: false,
 };
 
 // ─── Inner page (needs useSearchParams) ───────────────────────────────────────
@@ -212,6 +214,15 @@ function BookPageInner() {
     } catch (err) {
       update({ submitting: false, submitError: (err as Error).message });
     }
+  }
+
+  // ── Messenger: copy details then open m.me ───────────────────────────────────
+  async function handleMessenger() {
+    if (!state.confirmedBooking || !cleaner?.messengerUsername) return;
+    await navigator.clipboard.writeText(buildSmsBody(state.confirmedBooking));
+    update({ messengerCopied: true });
+    setTimeout(() => update({ messengerCopied: false }), 5000);
+    window.open(`https://m.me/${cleaner.messengerUsername}`, "_blank");
   }
 
   // ── Size selection button ────────────────────────────────────────────────────
@@ -651,19 +662,43 @@ function BookPageInner() {
               </div>
             </div>
 
-            {/* Confirm & Send via Text Message */}
-            {cleaner.phone ? (
-              <a
-                href={`sms:${cleaner.phone}?body=${encodeURIComponent(buildSmsBody(state.confirmedBooking))}`}
-                className="w-full font-bold py-4 rounded-2xl transition-colors text-base bg-sky-500 hover:bg-sky-600 text-white flex items-center justify-center"
-              >
-                Confirm &amp; Send via Text Message
-              </a>
-            ) : (
-              <p className="text-center text-sm text-slate-500 bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4">
-                Contact your cleaner directly to confirm the booking details.
-              </p>
-            )}
+            {/* Action buttons */}
+            <div className="space-y-3">
+              {/* SMS */}
+              {cleaner.phone ? (
+                <a
+                  href={`sms:${cleaner.phone}?body=${encodeURIComponent(buildSmsBody(state.confirmedBooking))}`}
+                  className="w-full font-bold py-4 rounded-2xl transition-colors text-base bg-sky-500 hover:bg-sky-600 text-white flex items-center justify-center gap-2"
+                >
+                  Send via Text Message (SMS)
+                </a>
+              ) : null}
+
+              {/* Facebook Messenger */}
+              {cleaner.messengerUsername ? (
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={handleMessenger}
+                    className="w-full font-bold py-4 rounded-2xl transition-colors text-base bg-[#1877F2] hover:bg-[#1464d8] text-white flex items-center justify-center gap-2"
+                  >
+                    Send via Facebook Messenger
+                  </button>
+                  {state.messengerCopied && (
+                    <p className="text-center text-sm text-green-700 bg-green-50 border border-green-200 rounded-xl px-4 py-2.5">
+                      Details copied! Paste them in the Messenger chat.
+                    </p>
+                  )}
+                </div>
+              ) : null}
+
+              {/* Fallback if neither channel is set */}
+              {!cleaner.phone && !cleaner.messengerUsername && (
+                <p className="text-center text-sm text-slate-500 bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4">
+                  Contact your cleaner directly to confirm the booking details.
+                </p>
+              )}
+            </div>
 
             <button
               onClick={() => setState(INITIAL)}

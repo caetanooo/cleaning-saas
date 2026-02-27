@@ -39,6 +39,7 @@ export interface Cleaner {
   name: string;
   email: string;
   phone?: string;
+  messengerUsername?: string;
   availability: Record<DayOfWeek, DayAvailability>;
   pricingTable: PricingTable;
   frequencyDiscounts: FrequencyDiscounts;
