@@ -23,7 +23,7 @@ export async function GET(request: Request) {
   // Fetch cleaner availability
   const { data: cleanerRow, error: cleanerError } = await supabase
     .from("cleaners")
-    .select("availability, days_off")
+    .select("availability, blocked_dates")
     .eq("id", cleanerId)
     .single();
   if (cleanerError || !cleanerRow) {
@@ -32,8 +32,8 @@ export async function GET(request: Request) {
 
   const dayName  = DAY_NAMES[new Date(date + "T00:00:00").getDay()];
   const dayAvail = (cleanerRow.availability as Cleaner["availability"])[dayName];
-  const daysOff  = (cleanerRow.days_off as string[]) ?? [];
-  const isDayOff = daysOff.includes(date);
+  const blockedDates  = (cleanerRow.blocked_dates as string[]) ?? [];
+  const isBlocked = blockedDates.includes(date);
 
   // Fetch existing bookings for this date
   const { data: bookings } = await supabase
@@ -54,8 +54,8 @@ export async function GET(request: Request) {
   const afternoonPast = date === todayStr && nowMinutes >= 18 * 60;
 
   const result: BlockAvailability = {
-    morning:   !isDayOff && dayAvail.morning   && !morningBooked   && !morningPast,
-    afternoon: !isDayOff && dayAvail.afternoon && !afternoonBooked && !afternoonPast,
+    morning:   !isBlocked && dayAvail.morning   && !morningBooked   && !morningPast,
+    afternoon: !isBlocked && dayAvail.afternoon && !afternoonBooked && !afternoonPast,
   };
 
   return NextResponse.json(result);

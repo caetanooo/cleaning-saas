@@ -89,7 +89,7 @@ interface DayCard {
   isToday:   boolean;
 }
 
-function computeNextDays(cleaner: Cleaner, count = 14): DayCard[] {
+function computeNextDays(cleaner: Cleaner, count = 30): DayCard[] {
   const cards: DayCard[] = [];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -106,7 +106,7 @@ function computeNextDays(cleaner: Cleaner, count = 14): DayCard[] {
       dayName:   d.toLocaleDateString("en-US", { weekday: "short" }),
       dayNum:    d.getDate(),
       monthName: d.toLocaleDateString("en-US", { month: "short" }),
-      isOff:     (!avail.morning && !avail.afternoon) || (cleaner.daysOff ?? []).includes(dateStr),
+      isOff:     (!avail.morning && !avail.afternoon) || (cleaner.blockedDates ?? []).includes(dateStr),
       isToday:   i === 0,
     });
   }

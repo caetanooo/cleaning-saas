@@ -32,7 +32,7 @@ export default function CleanerSetupPage() {
   const [apiError,    setApiError]    = useState("");
   // Raw string drafts so inputs can be empty while the user is editing
   const [draftPrices, setDraftPrices] = useState<Record<string, string>>({});
-  const [newDayOff,   setNewDayOff]   = useState("");
+  const [newBlockedDate,   setNewDayOff]   = useState("");
 
   // ── Auth guard → fetch profile ────────────────────────────────────────────
   useEffect(() => {
@@ -117,19 +117,19 @@ export default function CleanerSetupPage() {
     });
   }
 
-  function addDayOff() {
-    if (!cleaner || !newDayOff) return;
-    if ((cleaner.daysOff ?? []).includes(newDayOff)) return;
-    setCleaner({ ...cleaner, daysOff: [...(cleaner.daysOff ?? []), newDayOff].sort() });
+  function addBlockedDate() {
+    if (!cleaner || !newBlockedDate) return;
+    if ((cleaner.blockedDates ?? []).includes(newBlockedDate)) return;
+    setCleaner({ ...cleaner, blockedDates: [...(cleaner.blockedDates ?? []), newBlockedDate].sort() });
     setNewDayOff("");
   }
 
-  function removeDayOff(date: string) {
+  function removeBlockedDate(date: string) {
     if (!cleaner) return;
-    setCleaner({ ...cleaner, daysOff: (cleaner.daysOff ?? []).filter((d) => d !== date) });
+    setCleaner({ ...cleaner, blockedDates: (cleaner.blockedDates ?? []).filter((d) => d !== date) });
   }
 
-  function formatDayOff(dateStr: string): string {
+  function formatBlockedDate(dateStr: string): string {
     const [y, m, d] = dateStr.split("-").map(Number);
     return new Date(y, m - 1, d).toLocaleDateString("en-US", {
       weekday: "long", month: "long", day: "numeric",
@@ -165,7 +165,7 @@ export default function CleanerSetupPage() {
           pricingFormula:     cleaner.pricingFormula,
           frequencyDiscounts: cleaner.frequencyDiscounts,
           serviceAddons:      cleaner.serviceAddons,
-          daysOff:            cleaner.daysOff ?? [],
+          blockedDates:            cleaner.blockedDates ?? [],
         }),
       });
       if (!res.ok) throw new Error("Save failed");
@@ -374,30 +374,30 @@ export default function CleanerSetupPage() {
             <div className="flex gap-3">
               <input
                 type="date"
-                value={newDayOff}
+                value={newBlockedDate}
                 min={new Date().toISOString().slice(0, 10)}
                 onChange={(e) => setNewDayOff(e.target.value)}
                 className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-400 bg-white"
               />
               <button
                 type="button"
-                disabled={!newDayOff}
-                onClick={addDayOff}
+                disabled={!newBlockedDate}
+                onClick={addBlockedDate}
                 className="px-5 py-2.5 bg-sky-500 hover:bg-sky-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-colors shrink-0"
               >
                 Add
               </button>
             </div>
-            {(cleaner.daysOff ?? []).length === 0 ? (
+            {(cleaner.blockedDates ?? []).length === 0 ? (
               <p className="text-xs text-slate-400 italic">No specific days off added yet.</p>
             ) : (
               <ul className="space-y-1.5">
-                {(cleaner.daysOff ?? []).map((d) => (
+                {(cleaner.blockedDates ?? []).map((d) => (
                   <li key={d} className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-2.5">
-                    <span className="text-sm text-slate-700 font-medium">{formatDayOff(d)}</span>
+                    <span className="text-sm text-slate-700 font-medium">{formatBlockedDate(d)}</span>
                     <button
                       type="button"
-                      onClick={() => removeDayOff(d)}
+                      onClick={() => removeBlockedDate(d)}
                       className="text-slate-400 hover:text-red-500 transition-colors text-sm font-semibold ml-4 shrink-0"
                     >
                       Remove

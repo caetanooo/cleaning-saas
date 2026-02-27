@@ -51,7 +51,7 @@ export interface Cleaner {
   phone?: string;
   messengerUsername?: string;
   availability: Record<DayOfWeek, DayAvailability>;
-  daysOff: string[];              // "YYYY-MM-DD" dates blocked regardless of weekly schedule
+  blockedDates: string[];         // "YYYY-MM-DD" dates blocked regardless of weekly schedule
   pricingFormula: PricingFormula;
   frequencyDiscounts: FrequencyDiscounts;
   serviceAddons: ServiceAddons;
