@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
-import type { Booking, FrequencyType, TimeBlock, Cleaner } from "@/types";
+import type { Booking, FrequencyType, TimeBlock, CleaningServiceType, PricingFormula, FrequencyDiscounts, ServiceAddons } from "@/types";
 
 const BLOCK_TIMES: Record<TimeBlock, { startTime: string; endTime: string }> = {
   morning:   { startTime: "09:00", endTime: "13:00" },
@@ -31,6 +31,7 @@ export async function POST(request: Request) {
     hasPets: boolean;
     bedrooms: number;
     bathrooms: number;
+    serviceType?: CleaningServiceType;
     frequency: FrequencyType;
     date: string;
     timeBlock: TimeBlock;
@@ -41,27 +42,35 @@ export async function POST(request: Request) {
   // Fetch cleaner pricing
   const { data: cleanerRow, error: cleanerError } = await supabase
     .from("cleaners")
-    .select("pricing_table, frequency_discounts")
+    .select("pricing_formula, service_addons, frequency_discounts")
     .eq("id", body.cleanerId)
     .single();
   if (cleanerError || !cleanerRow) {
     return NextResponse.json({ error: "Cleaner not found" }, { status: 404 });
   }
 
-  const pricingTable       = cleanerRow.pricing_table       as Cleaner["pricingTable"];
-  const frequencyDiscounts = cleanerRow.frequency_discounts as Cleaner["frequencyDiscounts"];
+  const formula: PricingFormula = (cleanerRow.pricing_formula as PricingFormula) ?? {
+    base: 90, extraPerBedroom: 20, extraPerBathroom: 15,
+  };
+  const addons: ServiceAddons = (cleanerRow.service_addons as ServiceAddons) ?? {
+    deep: 50, move: 80,
+  };
+  const frequencyDiscounts = cleanerRow.frequency_discounts as FrequencyDiscounts;
 
-  const key       = `${body.bedrooms}-${body.bathrooms}`;
-  const basePrice = pricingTable[key];
-  if (basePrice === undefined) {
-    return NextResponse.json({ error: "Invalid bedroom/bathroom combination" }, { status: 400 });
-  }
+  const baseTotal =
+    formula.base +
+    (body.bedrooms  - 1) * formula.extraPerBedroom +
+    (body.bathrooms - 1) * formula.extraPerBathroom;
+  const addon =
+    body.serviceType === "deep" ? (addons.deep ?? 0) :
+    body.serviceType === "move" ? (addons.move ?? 0) : 0;
+  const subtotal = baseTotal + addon;
 
   const discountPct =
     body.frequency === "weekly"   ? frequencyDiscounts.weekly   :
     body.frequency === "biweekly" ? frequencyDiscounts.biweekly :
     body.frequency === "monthly"  ? frequencyDiscounts.monthly  : 0;
-  const totalPrice = Math.round(basePrice * (1 - discountPct / 100) * 100) / 100;
+  const totalPrice = Math.round(subtotal * (1 - discountPct / 100) * 100) / 100;
 
   // Race-condition guard: check if block is still available
   const { data: existing } = await supabase

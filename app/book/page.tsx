@@ -211,6 +211,7 @@ function BookPageInner() {
           hasPets:         state.hasPets,
           bedrooms:        state.bedrooms,
           bathrooms:       state.bathrooms,
+          serviceType:     state.serviceType,
           frequency:       state.frequency,
           date:            state.date,
           timeBlock:       state.timeBlock,
