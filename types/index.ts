@@ -17,6 +17,7 @@ export type DayOfWeek =
   | "sunday";
 
 export type FrequencyType = "one_time" | "weekly" | "biweekly" | "monthly";
+export type CleaningServiceType = "regular" | "deep" | "move";
 export type TimeBlock = "morning" | "afternoon";
 
 /** Morning = 09:00–13:00 | Afternoon = 13:30–18:00 */

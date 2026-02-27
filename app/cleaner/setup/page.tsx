@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createBrowserClient } from "@/lib/supabase";
-import type { Cleaner, DayOfWeek } from "@/types";
+import type { Cleaner, DayOfWeek, CleaningServiceType } from "@/types";
 
 const DAYS: { key: DayOfWeek; label: string }[] = [
   { key: "monday",    label: "Monday" },
@@ -31,6 +31,7 @@ export default function CleanerSetupPage() {
   const [toast,     setToast]     = useState("");
   const [copied,    setCopied]    = useState(false);
   const [apiError,  setApiError]  = useState("");
+  const [pricingTab, setPricingTab] = useState<CleaningServiceType>("regular");
 
   // ── Auth guard → fetch profile ────────────────────────────────────────────
   useEffect(() => {
@@ -98,9 +99,10 @@ export default function CleanerSetupPage() {
   function updatePrice(beds: number, baths: number, value: string) {
     if (!cleaner) return;
     const num = parseFloat(value);
+    const key = pricingTab === "regular" ? `${beds}-${baths}` : `${beds}-${baths}-${pricingTab}`;
     setCleaner({
       ...cleaner,
-      pricingTable: { ...cleaner.pricingTable, [`${beds}-${baths}`]: isNaN(num) ? 0 : num },
+      pricingTable: { ...cleaner.pricingTable, [key]: isNaN(num) ? 0 : num },
     });
   }
 
@@ -331,10 +333,40 @@ export default function CleanerSetupPage() {
           <div className="px-6 py-4 border-b border-slate-100">
             <h2 className="font-bold text-slate-800 text-lg">Pricing Table</h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Set your flat rate ($) for each bedroom × bathroom combination.
+              Set your flat rate ($) per service type and house size.
             </p>
           </div>
-          <div className="overflow-x-auto px-6 py-5">
+
+          {/* Service type tabs */}
+          <div className="flex border-b border-slate-100">
+            {([
+              { value: "regular", label: "Regular Cleaning" },
+              { value: "deep",    label: "Deep Cleaning" },
+              { value: "move",    label: "Move-in / Move-out" },
+            ] as { value: CleaningServiceType; label: string }[]).map((tab) => (
+              <button
+                key={tab.value}
+                type="button"
+                onClick={() => setPricingTab(tab.value)}
+                className={`flex-1 py-3 text-sm font-semibold border-b-2 transition-colors ${
+                  pricingTab === tab.value
+                    ? "border-sky-500 text-sky-600"
+                    : "border-transparent text-slate-400 hover:text-slate-600"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Price description per tab */}
+          <div className="px-6 pt-3 pb-1 text-xs text-slate-400">
+            {pricingTab === "regular" && "Standard cleaning of all rooms."}
+            {pricingTab === "deep"    && "Includes inside oven, baseboards, blinds, and windows."}
+            {pricingTab === "move"    && "Deep cleaning + inside appliances, cabinets, and closets."}
+          </div>
+
+          <div className="overflow-x-auto px-6 py-4">
             <table className="w-full text-sm">
               <thead>
                 <tr>
@@ -347,28 +379,36 @@ export default function CleanerSetupPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {BEDS.map((beds, bi) => (
-                  <tr key={beds}>
-                    <td className="text-slate-600 font-semibold py-2.5 pr-4 whitespace-nowrap">
-                      {BED_LABELS[bi]}
-                    </td>
-                    {BATHS.map((baths) => (
-                      <td key={baths} className="py-2.5 px-2">
-                        <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400">
-                          <span className="px-2 text-slate-400 text-xs">$</span>
-                          <input
-                            type="number"
-                            min={0}
-                            step={1}
-                            value={cleaner.pricingTable[`${beds}-${baths}`] ?? ""}
-                            onChange={(e) => updatePrice(beds, baths, e.target.value)}
-                            className="w-16 py-1.5 pr-2 text-sm text-slate-800 bg-white focus:outline-none"
-                          />
-                        </div>
+                {BEDS.map((beds, bi) => {
+                  const rowKey = pricingTab === "regular" ? `${beds}` : `${beds}`;
+                  return (
+                    <tr key={rowKey}>
+                      <td className="text-slate-600 font-semibold py-2.5 pr-4 whitespace-nowrap">
+                        {BED_LABELS[bi]}
                       </td>
-                    ))}
-                  </tr>
-                ))}
+                      {BATHS.map((baths) => {
+                        const key = pricingTab === "regular"
+                          ? `${beds}-${baths}`
+                          : `${beds}-${baths}-${pricingTab}`;
+                        return (
+                          <td key={baths} className="py-2.5 px-2">
+                            <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400">
+                              <span className="px-2 text-slate-400 text-xs">$</span>
+                              <input
+                                type="number"
+                                min={0}
+                                step={1}
+                                value={cleaner.pricingTable[key] ?? ""}
+                                onChange={(e) => updatePrice(beds, baths, e.target.value)}
+                                className="w-16 py-1.5 pr-2 text-sm text-slate-800 bg-white focus:outline-none"
+                              />
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import type { Cleaner, Booking, FrequencyType, TimeBlock, BlockAvailability } from "@/types";
+import type { Cleaner, Booking, FrequencyType, TimeBlock, BlockAvailability, CleaningServiceType } from "@/types";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -15,6 +15,18 @@ const FREQ_OPTIONS: { value: FrequencyType; label: string; description: string }
   { value: "biweekly",  label: "Bi-Weekly", description: "Every two weeks" },
   { value: "monthly",   label: "Monthly",   description: "Once a month" },
 ];
+
+const SERVICE_OPTIONS: { value: CleaningServiceType; label: string; description: string }[] = [
+  { value: "regular", label: "Regular Cleaning",  description: "Thorough cleaning of all rooms." },
+  { value: "deep",    label: "Deep Cleaning",      description: "Includes inside oven, baseboards, blinds, and windows." },
+  { value: "move",    label: "Move-in / Move-out", description: "Deep cleaning + inside appliances, cabinets, and closets." },
+];
+
+const SERVICE_LABELS: Record<CleaningServiceType, string> = {
+  regular: "Regular Cleaning",
+  deep:    "Deep Cleaning",
+  move:    "Move-in / Move-out",
+};
 
 const BLOCK_INFO: Record<TimeBlock, { label: string; start: string }> = {
   morning:   { label: "Morning",   start: "9:00 AM" },
@@ -28,9 +40,10 @@ function calcPrice(
   beds: number | null,
   baths: number | null,
   freq: FrequencyType | null,
+  service: CleaningServiceType = "regular",
 ): number | null {
   if (!cleaner || beds === null || baths === null) return null;
-  const key = `${beds}-${baths}`;
+  const key = service === "regular" ? `${beds}-${baths}` : `${beds}-${baths}-${service}`;
   const base = cleaner.pricingTable[key];
   if (base === undefined) return null;
   if (!freq || freq === "one_time") return base;
@@ -59,7 +72,7 @@ function formatDate(dateStr: string): string {
 
 // ─── SMS body: only what the client filled in ─────────────────────────────────
 
-function buildSmsBody(booking: Booking): string {
+function buildSmsBody(booking: Booking, serviceType: CleaningServiceType): string {
   const freqMap: Record<FrequencyType, string> = {
     one_time: "One-Time",
     weekly:   "Weekly",
@@ -74,7 +87,7 @@ function buildSmsBody(booking: Booking): string {
     `Date: ${formatDate(booking.date)}`,
     `Preferred Time: ${block.label} starting at ${block.start}`,
     `Address: ${booking.customerAddress}`,
-    `Type of Cleaning: ${beds} bed · ${baths} bath — ${freqMap[booking.frequency]}`,
+    `Service: ${SERVICE_LABELS[serviceType]} — ${beds} bed · ${baths} bath — ${freqMap[booking.frequency]}`,
     `Notes: Pets: ${booking.hasPets ? "Yes" : "No"}`,
   ].join("\n");
 }
@@ -85,6 +98,7 @@ interface WizardState {
   step: number;
   bedrooms: number | null;
   bathrooms: number | null;
+  serviceType: CleaningServiceType;
   frequency: FrequencyType | null;
   date: string;
   timeBlock: TimeBlock | null;
@@ -105,6 +119,7 @@ const INITIAL: WizardState = {
   step: 0,
   bedrooms: null,
   bathrooms: null,
+  serviceType: "regular",
   frequency: null,
   date: "",
   timeBlock: null,
@@ -142,7 +157,7 @@ function BookPageInner() {
       .catch(() => setCleanerLoading(false));
   }, [cleanerId]);
 
-  const price = calcPrice(cleaner, state.bedrooms, state.bathrooms, state.frequency);
+  const price = calcPrice(cleaner, state.bedrooms, state.bathrooms, state.frequency, state.serviceType);
 
   // ── Step 0 → 1 ──────────────────────────────────────────────────────────────
   function goStep1() {
@@ -220,7 +235,7 @@ function BookPageInner() {
   // ── Messenger: copy details then open m.me ───────────────────────────────────
   async function handleMessenger() {
     if (!state.confirmedBooking || !cleaner?.messengerUsername) return;
-    await navigator.clipboard.writeText(buildSmsBody(state.confirmedBooking));
+    await navigator.clipboard.writeText(buildSmsBody(state.confirmedBooking, state.serviceType));
     update({ messengerCopied: true });
     setTimeout(() => update({ messengerCopied: false }), 5000);
     window.open(`https://m.me/${cleaner.messengerUsername}`, "_blank");
@@ -317,10 +332,11 @@ function BookPageInner() {
           </div>
         )}
 
-        {/* ── Step 0: House Size ── */}
+        {/* ── Step 0: House Size + Service Type ── */}
         {state.step === 0 && (
           <div className="space-y-6">
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-6">
+              {/* Bedrooms */}
               <div>
                 <p className="text-sm font-bold text-slate-700 mb-3">Bedrooms</p>
                 <div className="flex gap-2">
@@ -335,6 +351,7 @@ function BookPageInner() {
                   ))}
                 </div>
               </div>
+              {/* Bathrooms */}
               <div>
                 <p className="text-sm font-bold text-slate-700 mb-3">Bathrooms</p>
                 <div className="flex gap-2">
@@ -349,12 +366,39 @@ function BookPageInner() {
                   ))}
                 </div>
               </div>
-              {price !== null && (
-                <div className="pt-2 border-t border-slate-100 text-center">
-                  <p className="text-xs text-slate-400">Estimated price</p>
-                  <p className="text-3xl font-extrabold text-sky-600 mt-1">${price.toFixed(2)}</p>
+              {/* Service Type */}
+              <div className="pt-2 border-t border-slate-100">
+                <p className="text-sm font-bold text-slate-700 mb-3">Service Type</p>
+                <div className="space-y-2">
+                  {SERVICE_OPTIONS.map((opt) => {
+                    const svcPrice = calcPrice(cleaner, state.bedrooms, state.bathrooms, null, opt.value);
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => update({ serviceType: opt.value })}
+                        className={`w-full text-left border-2 rounded-xl px-4 py-3 transition-colors ${
+                          state.serviceType === opt.value
+                            ? "border-sky-500 bg-sky-50"
+                            : "border-slate-200 bg-white hover:border-sky-300"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <p className="font-bold text-slate-800 text-sm">{opt.label}</p>
+                            <p className="text-xs text-slate-400 mt-0.5">{opt.description}</p>
+                          </div>
+                          {svcPrice !== null && (
+                            <p className="text-lg font-extrabold text-sky-600 shrink-0">
+                              ${svcPrice.toFixed(2)}
+                            </p>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
-              )}
+              </div>
             </div>
             <button
               onClick={goStep1}
@@ -371,7 +415,7 @@ function BookPageInner() {
           <div className="space-y-6">
             <div className="space-y-3">
               {FREQ_OPTIONS.map((opt) => {
-                const optPrice = calcPrice(cleaner, state.bedrooms, state.bathrooms, opt.value);
+                const optPrice = calcPrice(cleaner, state.bedrooms, state.bathrooms, opt.value, state.serviceType);
                 const disc = discountLabel(cleaner, opt.value);
                 return (
                   <button
@@ -581,6 +625,7 @@ function BookPageInner() {
               <div className="bg-slate-50 rounded-xl border border-slate-100 px-5 py-4 text-sm space-y-1.5">
                 <div className="flex justify-between text-slate-500">
                   <span>
+                    {SERVICE_LABELS[state.serviceType]} ·{" "}
                     {state.bedrooms === 5 ? "5+" : state.bedrooms} bed ·{" "}
                     {state.bathrooms === 5 ? "5+" : state.bathrooms} bath
                   </span>
@@ -631,6 +676,7 @@ function BookPageInner() {
             {/* Summary card */}
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 divide-y divide-slate-100">
               {[
+                ["Service", SERVICE_LABELS[state.serviceType]],
                 [
                   "Home",
                   `${state.confirmedBooking.bedrooms === 5 ? "5+" : state.confirmedBooking.bedrooms} bed · ${
@@ -668,7 +714,7 @@ function BookPageInner() {
               {/* SMS */}
               {cleaner.phone ? (
                 <a
-                  href={`sms:${cleaner.phone}?body=${encodeURIComponent(buildSmsBody(state.confirmedBooking))}`}
+                  href={`sms:${cleaner.phone}?body=${encodeURIComponent(buildSmsBody(state.confirmedBooking, state.serviceType))}`}
                   className="w-full font-bold py-4 rounded-2xl transition-colors text-base bg-sky-500 hover:bg-sky-600 text-white flex items-center justify-center gap-2"
                 >
                   Send via Text Message (SMS)
