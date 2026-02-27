@@ -96,13 +96,14 @@ function computeNextDays(cleaner: Cleaner, count = 30): DayCard[] {
   for (let i = 0; i < count; i++) {
     const d = new Date(today);
     d.setDate(today.getDate() + i);
-    const avail = cleaner.availability[JS_TO_DAY[d.getDay()]];
+    const avail   = cleaner.availability[JS_TO_DAY[d.getDay()]];
+    const dateStr = [
+      d.getFullYear(),
+      String(d.getMonth() + 1).padStart(2, "0"),
+      String(d.getDate()).padStart(2, "0"),
+    ].join("-");
     cards.push({
-      dateStr:   [
-        d.getFullYear(),
-        String(d.getMonth() + 1).padStart(2, "0"),
-        String(d.getDate()).padStart(2, "0"),
-      ].join("-"),
+      dateStr,
       dayName:   d.toLocaleDateString("en-US", { weekday: "short" }),
       dayNum:    d.getDate(),
       monthName: d.toLocaleDateString("en-US", { month: "short" }),
