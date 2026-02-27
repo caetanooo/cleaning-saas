@@ -337,7 +337,7 @@ export default function CleanerSetupPage() {
           </div>
         </section>
 
-        {/* ── Pricing Formula ── */}
+        {/* ── Pricing ── */}
         <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100">
             <h2 className="font-bold text-slate-800 text-lg">Pricing</h2>
@@ -345,78 +345,92 @@ export default function CleanerSetupPage() {
               We&apos;ll calculate your full pricing table automatically based on these rates.
             </p>
           </div>
-          <div className="px-6 py-5 space-y-4">
-            {/* 3 formula fields */}
-            {([
-              { field: "base"             as const, label: "Base Price (1 bed / 1 bath)",  prefix: "$",  placeholder: "90"  },
-              { field: "extraPerBedroom"  as const, label: "Additional Bedroom",            prefix: "+$", placeholder: "20"  },
-              { field: "extraPerBathroom" as const, label: "Additional Bathroom",           prefix: "+$", placeholder: "15"  },
-            ]).map(({ field, label, prefix, placeholder }) => (
-              <div key={field} className="flex items-center gap-4">
-                <label className="flex-1 text-sm font-semibold text-slate-700">{label}</label>
-                <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400 w-[120px] shrink-0">
-                  <span className="px-2.5 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-2 select-none">{prefix}</span>
-                  <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    placeholder={placeholder}
-                    value={cleaner.pricingFormula[field] ?? ""}
-                    onChange={(e) => updateFormula(field, e.target.value)}
-                    className="flex-1 px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none"
-                  />
-                </div>
-              </div>
-            ))}
+          <div className="px-6 py-5 space-y-6">
 
-            {/* Live preview */}
-            <div className="mt-2 bg-slate-50 rounded-xl border border-slate-100 px-4 py-3">
-              <p className="text-xs font-semibold text-slate-500 mb-2">Preview (Regular Cleaning)</p>
-              <div className="space-y-1">
-                {previewRows.map(({ beds, baths }) => (
-                  <div key={`${beds}-${baths}`} className="flex justify-between text-xs text-slate-600">
-                    <span>{beds} bed{beds > 1 ? "s" : ""} · {baths} bath{baths > 1 ? "s" : ""}</span>
-                    <span className="font-semibold text-slate-800">
-                      ${calcBase(cleaner.pricingFormula, beds, baths).toFixed(0)}
-                    </span>
+            {/* Base formula */}
+            <div className="space-y-3">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Base Formula</p>
+              {([
+                { field: "base"             as const, label: "Base Price (1 bed / 1 bath)",  prefix: "$",  placeholder: "90"  },
+                { field: "extraPerBedroom"  as const, label: "Additional Bedroom",            prefix: "+$", placeholder: "20"  },
+                { field: "extraPerBathroom" as const, label: "Additional Bathroom",           prefix: "+$", placeholder: "15"  },
+              ]).map(({ field, label, prefix, placeholder }) => (
+                <div key={field} className="flex items-center gap-4">
+                  <label className="flex-1 text-sm font-semibold text-slate-700">{label}</label>
+                  <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400 w-[120px] shrink-0">
+                    <span className="px-2.5 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-2 select-none">{prefix}</span>
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      placeholder={placeholder}
+                      value={cleaner.pricingFormula[field] ?? ""}
+                      onChange={(e) => updateFormula(field, e.target.value)}
+                      className="flex-1 px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none"
+                    />
                   </div>
-                ))}
+                </div>
+              ))}
+            </div>
+
+            {/* Service add-ons */}
+            <div className="space-y-3 pt-1 border-t border-slate-100">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wide pt-2">Service Add-ons</p>
+              {([
+                { field: "deep" as const, label: "Deep Cleaning",      color: "text-sky-600"    },
+                { field: "move" as const, label: "Move-in / Move-out", color: "text-violet-600" },
+              ]).map(({ field, label, color }) => (
+                <div key={field} className="flex items-center gap-4">
+                  <label className={`flex-1 text-sm font-semibold ${color}`}>{label}</label>
+                  <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400 w-[120px] shrink-0">
+                    <span className="px-2.5 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-2 select-none">+$</span>
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={cleaner.serviceAddons?.[field] ?? ""}
+                      onChange={(e) => updateAddon(field, e.target.value)}
+                      className="flex-1 px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Live comparative preview */}
+            <div className="pt-1 border-t border-slate-100">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wide pt-2 mb-3">
+                Price Preview
+              </p>
+              <div className="rounded-xl border border-slate-100 overflow-hidden text-xs">
+                {/* Header */}
+                <div className="grid grid-cols-4 bg-slate-50 border-b border-slate-100">
+                  <div className="px-3 py-2 font-bold text-slate-500">House</div>
+                  <div className="px-3 py-2 font-bold text-slate-600 text-center">Regular</div>
+                  <div className="px-3 py-2 font-bold text-sky-600 text-center">Deep</div>
+                  <div className="px-3 py-2 font-bold text-violet-600 text-center">Move-in/out</div>
+                </div>
+                {/* Rows */}
+                {previewRows.map(({ beds, baths }, i) => {
+                  const base = calcBase(cleaner.pricingFormula, beds, baths);
+                  const deep = base + (cleaner.serviceAddons?.deep ?? 0);
+                  const move = base + (cleaner.serviceAddons?.move ?? 0);
+                  return (
+                    <div
+                      key={`${beds}-${baths}`}
+                      className={`grid grid-cols-4 ${i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}`}
+                    >
+                      <div className="px-3 py-2.5 text-slate-500">
+                        {beds} bed{beds > 1 ? "s" : ""} · {baths} bath{baths > 1 ? "s" : ""}
+                      </div>
+                      <div className="px-3 py-2.5 font-semibold text-slate-800 text-center">${base.toFixed(0)}</div>
+                      <div className="px-3 py-2.5 font-semibold text-sky-600 text-center">${deep.toFixed(0)}</div>
+                      <div className="px-3 py-2.5 font-semibold text-violet-600 text-center">${move.toFixed(0)}</div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          </div>
-        </section>
-
-        {/* ── Service Add-ons ── */}
-        <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100">
-            <h2 className="font-bold text-slate-800 text-lg">Service Add-ons</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Extra charge added on top of the regular price for upgrade services.
-            </p>
-          </div>
-          <div className="px-6 py-5 space-y-4">
-            {([
-              { field: "deep" as const, label: "Deep Cleaning",       description: "Includes inside oven, baseboards, blinds, and windows." },
-              { field: "move" as const, label: "Move-in / Move-out",  description: "Deep cleaning + inside appliances, cabinets, and closets." },
-            ]).map(({ field, label, description }) => (
-              <div key={field} className="flex items-center gap-4">
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-slate-700">{label}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">{description}</p>
-                </div>
-                <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400 w-[120px] shrink-0">
-                  <span className="px-2.5 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-2 select-none">+$</span>
-                  <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={cleaner.serviceAddons?.[field] ?? ""}
-                    onChange={(e) => updateAddon(field, e.target.value)}
-                    className="flex-1 px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none"
-                  />
-                </div>
-              </div>
-            ))}
           </div>
         </section>
 
