@@ -286,7 +286,7 @@ export default function CleanerSetupPage() {
           <div className="px-6 py-4 border-b border-slate-100">
             <h2 className="font-bold text-slate-800 text-lg">Weekly Schedule</h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Morning = 9:00am–1:00pm &nbsp;|&nbsp; Afternoon = 1:30pm–6:00pm
+              Morning starts at 9:00 AM &nbsp;|&nbsp; Afternoon starts at 2:00 PM
             </p>
           </div>
           <div className="divide-y divide-slate-50">

@@ -16,9 +16,9 @@ const FREQ_OPTIONS: { value: FrequencyType; label: string; description: string }
   { value: "monthly",   label: "Monthly",   description: "Once a month" },
 ];
 
-const BLOCK_INFO: Record<TimeBlock, { label: string; hours: string }> = {
-  morning:   { label: "Morning",   hours: "9:00am – 1:00pm" },
-  afternoon: { label: "Afternoon", hours: "1:30pm – 6:00pm" },
+const BLOCK_INFO: Record<TimeBlock, { label: string; start: string }> = {
+  morning:   { label: "Morning",   start: "9:00 AM" },
+  afternoon: { label: "Afternoon", start: "2:00 PM" },
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -71,7 +71,8 @@ function buildSmsBody(booking: Booking): string {
   const baths = booking.bathrooms === 5 ? "5+" : booking.bathrooms;
   return [
     `Name: ${booking.customerName}`,
-    `Date: ${formatDate(booking.date)} · ${block.label} (${block.hours})`,
+    `Date: ${formatDate(booking.date)}`,
+    `Preferred Time: ${block.label} starting at ${block.start}`,
     `Address: ${booking.customerAddress}`,
     `Type of Cleaning: ${beds} bed · ${baths} bath — ${freqMap[booking.frequency]}`,
     `Notes: Pets: ${booking.hasPets ? "Yes" : "No"}`,
@@ -475,7 +476,7 @@ function BookPageInner() {
                           {info.label}
                         </p>
                         <p className={`text-xs mt-1 ${avail ? "text-slate-500" : "text-slate-300"}`}>
-                          {info.hours}
+                          Starts at {info.start}
                         </p>
                         {!avail && (
                           <p className="text-xs mt-2 text-slate-300 italic">Unavailable</p>
@@ -643,7 +644,7 @@ function BookPageInner() {
                 ["Date", formatDate(state.confirmedBooking.date)],
                 [
                   "Time",
-                  `${BLOCK_INFO[state.confirmedBooking.timeBlock].label} (${BLOCK_INFO[state.confirmedBooking.timeBlock].hours})`,
+                  `${BLOCK_INFO[state.confirmedBooking.timeBlock].label} (Starts at ${BLOCK_INFO[state.confirmedBooking.timeBlock].start})`,
                 ],
                 ["Address", state.confirmedBooking.customerAddress],
                 ["Phone", state.confirmedBooking.customerPhone],
