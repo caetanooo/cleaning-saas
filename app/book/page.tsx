@@ -106,7 +106,7 @@ function computeNextDays(cleaner: Cleaner, count = 14): DayCard[] {
       dayName:   d.toLocaleDateString("en-US", { weekday: "short" }),
       dayNum:    d.getDate(),
       monthName: d.toLocaleDateString("en-US", { month: "short" }),
-      isOff:     !avail.morning && !avail.afternoon,
+      isOff:     (!avail.morning && !avail.afternoon) || (cleaner.daysOff ?? []).includes(dateStr),
       isToday:   i === 0,
     });
   }

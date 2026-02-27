@@ -32,6 +32,7 @@ export default function CleanerSetupPage() {
   const [apiError,    setApiError]    = useState("");
   // Raw string drafts so inputs can be empty while the user is editing
   const [draftPrices, setDraftPrices] = useState<Record<string, string>>({});
+  const [newDayOff,   setNewDayOff]   = useState("");
 
   // ── Auth guard → fetch profile ────────────────────────────────────────────
   useEffect(() => {
@@ -116,6 +117,25 @@ export default function CleanerSetupPage() {
     });
   }
 
+  function addDayOff() {
+    if (!cleaner || !newDayOff) return;
+    if ((cleaner.daysOff ?? []).includes(newDayOff)) return;
+    setCleaner({ ...cleaner, daysOff: [...(cleaner.daysOff ?? []), newDayOff].sort() });
+    setNewDayOff("");
+  }
+
+  function removeDayOff(date: string) {
+    if (!cleaner) return;
+    setCleaner({ ...cleaner, daysOff: (cleaner.daysOff ?? []).filter((d) => d !== date) });
+  }
+
+  function formatDayOff(dateStr: string): string {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString("en-US", {
+      weekday: "long", month: "long", day: "numeric",
+    });
+  }
+
   function updateDiscount(field: "weekly" | "biweekly" | "monthly", value: string) {
     if (!cleaner) return;
     const num = parseFloat(value);
@@ -145,6 +165,7 @@ export default function CleanerSetupPage() {
           pricingFormula:     cleaner.pricingFormula,
           frequencyDiscounts: cleaner.frequencyDiscounts,
           serviceAddons:      cleaner.serviceAddons,
+          daysOff:            cleaner.daysOff ?? [],
         }),
       });
       if (!res.ok) throw new Error("Save failed");
@@ -338,6 +359,53 @@ export default function CleanerSetupPage() {
                 </div>
               );
             })}
+          </div>
+        </section>
+
+        {/* ── Specific Days Off ── */}
+        <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100">
+            <h2 className="font-bold text-slate-800 text-lg">Specific Days Off</h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Block individual dates without changing your weekly routine.
+            </p>
+          </div>
+          <div className="px-6 py-5 space-y-4">
+            <div className="flex gap-3">
+              <input
+                type="date"
+                value={newDayOff}
+                min={new Date().toISOString().slice(0, 10)}
+                onChange={(e) => setNewDayOff(e.target.value)}
+                className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-400 bg-white"
+              />
+              <button
+                type="button"
+                disabled={!newDayOff}
+                onClick={addDayOff}
+                className="px-5 py-2.5 bg-sky-500 hover:bg-sky-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-colors shrink-0"
+              >
+                Add
+              </button>
+            </div>
+            {(cleaner.daysOff ?? []).length === 0 ? (
+              <p className="text-xs text-slate-400 italic">No specific days off added yet.</p>
+            ) : (
+              <ul className="space-y-1.5">
+                {(cleaner.daysOff ?? []).map((d) => (
+                  <li key={d} className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-2.5">
+                    <span className="text-sm text-slate-700 font-medium">{formatDayOff(d)}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeDayOff(d)}
+                      className="text-slate-400 hover:text-red-500 transition-colors text-sm font-semibold ml-4 shrink-0"
+                    >
+                      Remove
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </section>
 

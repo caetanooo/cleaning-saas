@@ -29,6 +29,8 @@ const DEFAULT_ADDONS: Cleaner["serviceAddons"] = {
   move: 80,
 };
 
+const DEFAULT_DAYS_OFF: Cleaner["daysOff"] = [];
+
 function rowToCleaner(row: Record<string, unknown>): Cleaner {
   return {
     id:                 row.id    as string,
@@ -37,6 +39,7 @@ function rowToCleaner(row: Record<string, unknown>): Cleaner {
     phone:              (row.phone              as string) || "",
     messengerUsername:  (row.messenger_username as string) || "",
     availability:       (row.availability        as Cleaner["availability"])        || DEFAULT_AVAILABILITY,
+    daysOff:            (row.days_off            as Cleaner["daysOff"])             || DEFAULT_DAYS_OFF,
     pricingFormula:     (row.pricing_formula     as Cleaner["pricingFormula"])      || DEFAULT_FORMULA,
     frequencyDiscounts: (row.frequency_discounts as Cleaner["frequencyDiscounts"])  || DEFAULT_DISCOUNTS,
     serviceAddons:      (row.service_addons      as Cleaner["serviceAddons"])       || DEFAULT_ADDONS,
@@ -106,6 +109,7 @@ export async function PUT(
   if (body.pricingFormula      !== undefined) patch.pricing_formula      = body.pricingFormula;
   if (body.frequencyDiscounts  !== undefined) patch.frequency_discounts  = body.frequencyDiscounts;
   if (body.serviceAddons       !== undefined) patch.service_addons       = body.serviceAddons;
+  if (body.daysOff             !== undefined) patch.days_off             = body.daysOff;
 
   const { data, error } = await supabase
     .from("cleaners")
