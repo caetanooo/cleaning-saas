@@ -16,12 +16,8 @@ const DAYS: { key: DayOfWeek; label: string }[] = [
   { key: "sunday",    label: "Sunday" },
 ];
 
-const BEDS       = [1, 2, 3, 4, 5];
-const BATHS      = [1, 2, 3, 4, 5];
-const BED_LABELS = ["1 Bedroom", "2 Bedrooms", "3 Bedrooms", "4 Bedrooms", "5+ Bedrooms"];
-
-function bathLabel(n: number) {
-  return n === 1 ? "1 bath" : `${n} baths`;
+function calcBase(formula: Cleaner["pricingFormula"], beds: number, baths: number): number {
+  return formula.base + (beds - 1) * formula.extraPerBedroom + (baths - 1) * formula.extraPerBathroom;
 }
 
 export default function CleanerSetupPage() {
@@ -98,12 +94,12 @@ export default function CleanerSetupPage() {
     });
   }
 
-  function updatePrice(beds: number, baths: number, value: string) {
+  function updateFormula(field: keyof Cleaner["pricingFormula"], value: string) {
     if (!cleaner) return;
     const num = parseFloat(value);
     setCleaner({
       ...cleaner,
-      pricingTable: { ...cleaner.pricingTable, [`${beds}-${baths}`]: isNaN(num) ? 0 : num },
+      pricingFormula: { ...cleaner.pricingFormula, [field]: isNaN(num) ? 0 : num },
     });
   }
 
@@ -142,7 +138,7 @@ export default function CleanerSetupPage() {
           phone:              cleaner.phone,
           messengerUsername:  cleaner.messengerUsername,
           availability:       cleaner.availability,
-          pricingTable:       cleaner.pricingTable,
+          pricingFormula:     cleaner.pricingFormula,
           frequencyDiscounts: cleaner.frequencyDiscounts,
           serviceAddons:      cleaner.serviceAddons,
         }),
@@ -209,6 +205,15 @@ export default function CleanerSetupPage() {
       </div>
     );
   }
+
+  // Live preview rows
+  const previewRows = [
+    { beds: 1, baths: 1 },
+    { beds: 2, baths: 1 },
+    { beds: 2, baths: 2 },
+    { beds: 3, baths: 2 },
+    { beds: 4, baths: 3 },
+  ];
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -312,9 +317,7 @@ export default function CleanerSetupPage() {
                       onChange={() => toggleBlock(key, "morning")}
                       className="w-4 h-4 accent-sky-500 cursor-pointer"
                     />
-                    <span className={`text-sm ${day.morning ? "text-slate-700" : "text-slate-400"}`}>
-                      Morning
-                    </span>
+                    <span className={`text-sm ${day.morning ? "text-slate-700" : "text-slate-400"}`}>Morning</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer select-none">
                     <input
@@ -323,9 +326,7 @@ export default function CleanerSetupPage() {
                       onChange={() => toggleBlock(key, "afternoon")}
                       className="w-4 h-4 accent-sky-500 cursor-pointer"
                     />
-                    <span className={`text-sm ${day.afternoon ? "text-slate-700" : "text-slate-400"}`}>
-                      Afternoon
-                    </span>
+                    <span className={`text-sm ${day.afternoon ? "text-slate-700" : "text-slate-400"}`}>Afternoon</span>
                   </label>
                   {!day.morning && !day.afternoon && (
                     <span className="text-xs text-slate-400 italic ml-auto">Day off</span>
@@ -336,42 +337,52 @@ export default function CleanerSetupPage() {
           </div>
         </section>
 
-        {/* ── Pricing List ── */}
+        {/* ── Pricing Formula ── */}
         <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100">
-            <h2 className="font-bold text-slate-800 text-lg">Regular Cleaning Prices</h2>
+            <h2 className="font-bold text-slate-800 text-lg">Pricing</h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Set your flat rate for each house size. Deep Cleaning and Move-in/out add-ons are configured below.
+              We&apos;ll calculate your full pricing table automatically based on these rates.
             </p>
           </div>
-          <div className="px-6 py-5 space-y-6">
-            {BEDS.map((beds, bi) => (
-              <div key={beds}>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">
-                  {BED_LABELS[bi]}
-                </p>
-                <div className="space-y-2">
-                  {BATHS.map((baths) => (
-                    <div key={baths} className="flex items-center justify-between gap-4">
-                      <span className="text-sm text-slate-600 w-32 shrink-0">
-                        {bathLabel(baths)}
-                      </span>
-                      <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400 max-w-[120px] w-full">
-                        <span className="px-2.5 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-2 select-none">$</span>
-                        <input
-                          type="number"
-                          min={0}
-                          step={1}
-                          value={cleaner.pricingTable[`${beds}-${baths}`] ?? ""}
-                          onChange={(e) => updatePrice(beds, baths, e.target.value)}
-                          className="flex-1 px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none"
-                        />
-                      </div>
-                    </div>
-                  ))}
+          <div className="px-6 py-5 space-y-4">
+            {/* 3 formula fields */}
+            {([
+              { field: "base"             as const, label: "Base Price (1 bed / 1 bath)",  prefix: "$",  placeholder: "90"  },
+              { field: "extraPerBedroom"  as const, label: "Additional Bedroom",            prefix: "+$", placeholder: "20"  },
+              { field: "extraPerBathroom" as const, label: "Additional Bathroom",           prefix: "+$", placeholder: "15"  },
+            ]).map(({ field, label, prefix, placeholder }) => (
+              <div key={field} className="flex items-center gap-4">
+                <label className="flex-1 text-sm font-semibold text-slate-700">{label}</label>
+                <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400 w-[120px] shrink-0">
+                  <span className="px-2.5 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-2 select-none">{prefix}</span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    placeholder={placeholder}
+                    value={cleaner.pricingFormula[field] ?? ""}
+                    onChange={(e) => updateFormula(field, e.target.value)}
+                    className="flex-1 px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none"
+                  />
                 </div>
               </div>
             ))}
+
+            {/* Live preview */}
+            <div className="mt-2 bg-slate-50 rounded-xl border border-slate-100 px-4 py-3">
+              <p className="text-xs font-semibold text-slate-500 mb-2">Preview (Regular Cleaning)</p>
+              <div className="space-y-1">
+                {previewRows.map(({ beds, baths }) => (
+                  <div key={`${beds}-${baths}`} className="flex justify-between text-xs text-slate-600">
+                    <span>{beds} bed{beds > 1 ? "s" : ""} · {baths} bath{baths > 1 ? "s" : ""}</span>
+                    <span className="font-semibold text-slate-800">
+                      ${calcBase(cleaner.pricingFormula, beds, baths).toFixed(0)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 
@@ -385,23 +396,15 @@ export default function CleanerSetupPage() {
           </div>
           <div className="px-6 py-5 space-y-4">
             {([
-              {
-                field: "deep" as const,
-                label: "Deep Cleaning",
-                description: "Includes inside oven, baseboards, blinds, and windows.",
-              },
-              {
-                field: "move" as const,
-                label: "Move-in / Move-out",
-                description: "Deep cleaning + inside appliances, cabinets, and closets.",
-              },
+              { field: "deep" as const, label: "Deep Cleaning",       description: "Includes inside oven, baseboards, blinds, and windows." },
+              { field: "move" as const, label: "Move-in / Move-out",  description: "Deep cleaning + inside appliances, cabinets, and closets." },
             ]).map(({ field, label, description }) => (
               <div key={field} className="flex items-center gap-4">
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-slate-700">{label}</p>
                   <p className="text-xs text-slate-400 mt-0.5">{description}</p>
                 </div>
-                <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400 w-[110px] shrink-0">
+                <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400 w-[120px] shrink-0">
                   <span className="px-2.5 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-2 select-none">+$</span>
                   <input
                     type="number"

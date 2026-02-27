@@ -37,8 +37,12 @@ export interface ServiceAddons {
   move: number;  // extra $ for move-in/out
 }
 
-/** key = "{beds}-{baths}", value = flat price in USD */
-export type PricingTable = Record<string, number>;
+/** Formula-based pricing: price = base + (beds-1)*extraPerBedroom + (baths-1)*extraPerBathroom */
+export interface PricingFormula {
+  base: number;
+  extraPerBedroom: number;
+  extraPerBathroom: number;
+}
 
 export interface Cleaner {
   id: string;
@@ -47,7 +51,7 @@ export interface Cleaner {
   phone?: string;
   messengerUsername?: string;
   availability: Record<DayOfWeek, DayAvailability>;
-  pricingTable: PricingTable;
+  pricingFormula: PricingFormula;
   frequencyDiscounts: FrequencyDiscounts;
   serviceAddons: ServiceAddons;
 }

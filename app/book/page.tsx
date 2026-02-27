@@ -43,12 +43,12 @@ function calcPrice(
   service: CleaningServiceType = "regular",
 ): number | null {
   if (!cleaner || beds === null || baths === null) return null;
-  const base = cleaner.pricingTable[`${beds}-${baths}`];
-  if (base === undefined) return null;
+  const { base, extraPerBedroom, extraPerBathroom } = cleaner.pricingFormula;
+  const baseTotal = base + (beds - 1) * extraPerBedroom + (baths - 1) * extraPerBathroom;
   const addon = service === "deep" ? (cleaner.serviceAddons?.deep ?? 0)
               : service === "move" ? (cleaner.serviceAddons?.move ?? 0)
               : 0;
-  const total = base + addon;
+  const total = baseTotal + addon;
   if (!freq || freq === "one_time") return total;
   const { frequencyDiscounts: fd } = cleaner;
   const pct =

@@ -14,12 +14,10 @@ const DEFAULT_AVAILABILITY: Cleaner["availability"] = {
   sunday:    { morning: false, afternoon: false },
 };
 
-const DEFAULT_PRICING: Cleaner["pricingTable"] = {
-  "1-1": 80,  "1-2": 95,  "1-3": 110, "1-4": 130, "1-5": 150,
-  "2-1": 95,  "2-2": 115, "2-3": 135, "2-4": 155, "2-5": 175,
-  "3-1": 115, "3-2": 140, "3-3": 160, "3-4": 185, "3-5": 210,
-  "4-1": 135, "4-2": 165, "4-3": 190, "4-4": 220, "4-5": 250,
-  "5-1": 160, "5-2": 195, "5-3": 225, "5-4": 260, "5-5": 295,
+const DEFAULT_FORMULA: Cleaner["pricingFormula"] = {
+  base: 90,
+  extraPerBedroom: 20,
+  extraPerBathroom: 15,
 };
 
 const DEFAULT_DISCOUNTS: Cleaner["frequencyDiscounts"] = {
@@ -39,7 +37,7 @@ function rowToCleaner(row: Record<string, unknown>): Cleaner {
     phone:              (row.phone              as string) || "",
     messengerUsername:  (row.messenger_username as string) || "",
     availability:       (row.availability        as Cleaner["availability"])        || DEFAULT_AVAILABILITY,
-    pricingTable:       (row.pricing_table       as Cleaner["pricingTable"])        || DEFAULT_PRICING,
+    pricingFormula:     (row.pricing_formula     as Cleaner["pricingFormula"])      || DEFAULT_FORMULA,
     frequencyDiscounts: (row.frequency_discounts as Cleaner["frequencyDiscounts"])  || DEFAULT_DISCOUNTS,
     serviceAddons:      (row.service_addons      as Cleaner["serviceAddons"])       || DEFAULT_ADDONS,
   };
@@ -105,7 +103,7 @@ export async function PUT(
   if (body.phone               !== undefined) patch.phone                = body.phone;
   if (body.messengerUsername   !== undefined) patch.messenger_username   = body.messengerUsername;
   if (body.availability        !== undefined) patch.availability         = body.availability;
-  if (body.pricingTable        !== undefined) patch.pricing_table        = body.pricingTable;
+  if (body.pricingFormula      !== undefined) patch.pricing_formula      = body.pricingFormula;
   if (body.frequencyDiscounts  !== undefined) patch.frequency_discounts  = body.frequencyDiscounts;
   if (body.serviceAddons       !== undefined) patch.service_addons       = body.serviceAddons;
 
