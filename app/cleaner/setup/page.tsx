@@ -22,14 +22,16 @@ function calcBase(formula: Cleaner["pricingFormula"], beds: number, baths: numbe
 
 export default function CleanerSetupPage() {
   const router = useRouter();
-  const [cleanerId, setCleanerId] = useState<string | null>(null);
-  const [token,     setToken]     = useState<string | null>(null);
-  const [cleaner,   setCleaner]   = useState<Cleaner | null>(null);
-  const [loading,   setLoading]   = useState(true);
-  const [saving,    setSaving]    = useState(false);
-  const [toast,     setToast]     = useState("");
-  const [copied,    setCopied]    = useState(false);
-  const [apiError,  setApiError]  = useState("");
+  const [cleanerId,   setCleanerId]   = useState<string | null>(null);
+  const [token,       setToken]       = useState<string | null>(null);
+  const [cleaner,     setCleaner]     = useState<Cleaner | null>(null);
+  const [loading,     setLoading]     = useState(true);
+  const [saving,      setSaving]      = useState(false);
+  const [toast,       setToast]       = useState("");
+  const [copied,      setCopied]      = useState(false);
+  const [apiError,    setApiError]    = useState("");
+  // Raw string drafts so inputs can be empty while the user is editing
+  const [draftPrices, setDraftPrices] = useState<Record<string, string>>({});
 
   // ── Auth guard → fetch profile ────────────────────────────────────────────
   useEffect(() => {
@@ -96,6 +98,7 @@ export default function CleanerSetupPage() {
 
   function updateFormula(field: keyof Cleaner["pricingFormula"], value: string) {
     if (!cleaner) return;
+    setDraftPrices((d) => ({ ...d, [`f_${field}`]: value }));
     const num = parseFloat(value);
     setCleaner({
       ...cleaner,
@@ -105,6 +108,7 @@ export default function CleanerSetupPage() {
 
   function updateAddon(field: "deep" | "move", value: string) {
     if (!cleaner) return;
+    setDraftPrices((d) => ({ ...d, [`a_${field}`]: value }));
     const num = parseFloat(value);
     setCleaner({
       ...cleaner,
@@ -360,12 +364,12 @@ export default function CleanerSetupPage() {
                   <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400 w-[120px] shrink-0">
                     <span className="px-2.5 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-2 select-none">{prefix}</span>
                     <input
-                      type="number"
-                      min={0}
-                      step={1}
+                      type="text"
+                      inputMode="decimal"
                       placeholder={placeholder}
-                      value={cleaner.pricingFormula[field] ?? ""}
+                      value={draftPrices[`f_${field}`] ?? String(cleaner.pricingFormula[field])}
                       onChange={(e) => updateFormula(field, e.target.value)}
+                      onFocus={(e) => e.target.select()}
                       className="flex-1 px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none"
                     />
                   </div>
@@ -385,11 +389,12 @@ export default function CleanerSetupPage() {
                   <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400 w-[120px] shrink-0">
                     <span className="px-2.5 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-2 select-none">+$</span>
                     <input
-                      type="number"
-                      min={0}
-                      step={1}
-                      value={cleaner.serviceAddons?.[field] ?? ""}
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="0"
+                      value={draftPrices[`a_${field}`] ?? String(cleaner.serviceAddons?.[field] ?? 0)}
                       onChange={(e) => updateAddon(field, e.target.value)}
+                      onFocus={(e) => e.target.select()}
                       className="flex-1 px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none"
                     />
                   </div>
