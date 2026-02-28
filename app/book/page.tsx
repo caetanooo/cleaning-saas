@@ -97,11 +97,7 @@ function computeNextDays(cleaner: Cleaner, count = 30): DayCard[] {
     const d = new Date(today);
     d.setDate(today.getDate() + i);
     const avail   = cleaner.availability[JS_TO_DAY[d.getDay()]];
-    const dateStr = [
-      d.getFullYear(),
-      String(d.getMonth() + 1).padStart(2, "0"),
-      String(d.getDate()).padStart(2, "0"),
-    ].join("-");
+    const dateStr = d.toISOString().split("T")[0];
     cards.push({
       dateStr,
       dayName:   d.toLocaleDateString("en-US", { weekday: "short" }),
@@ -196,8 +192,11 @@ function BookPageInner() {
 
   useEffect(() => {
     fetch(`/api/cleaners/${cleanerId}`)
-      .then((r) => r.json())
-      .then((data: Cleaner) => { setCleaner(data); setCleanerLoading(false); })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data: Cleaner | null) => {
+        if (data?.id) setCleaner(data);
+        setCleanerLoading(false);
+      })
       .catch(() => setCleanerLoading(false));
   }, [cleanerId]);
 
@@ -308,18 +307,12 @@ function BookPageInner() {
 
   // ── Render ───────────────────────────────────────────────────────────────────
 
-  if (cleanerLoading) {
+  if (cleanerLoading || !cleaner) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <p className="text-slate-500 animate-pulse">Loading…</p>
-      </div>
-    );
-  }
-
-  if (!cleaner) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <p className="text-red-500">Could not load cleaner information.</p>
+        <p className="text-slate-500 animate-pulse">
+          {cleanerLoading ? "Loading…" : "Could not load cleaner. Check the booking link."}
+        </p>
       </div>
     );
   }
