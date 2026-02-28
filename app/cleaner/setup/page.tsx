@@ -7,13 +7,13 @@ import { createBrowserClient } from "@/lib/supabase";
 import type { Cleaner, DayOfWeek } from "@/types";
 
 const DAYS: { key: DayOfWeek; label: string }[] = [
-  { key: "monday",    label: "Monday" },
-  { key: "tuesday",   label: "Tuesday" },
-  { key: "wednesday", label: "Wednesday" },
-  { key: "thursday",  label: "Thursday" },
-  { key: "friday",    label: "Friday" },
-  { key: "saturday",  label: "Saturday" },
-  { key: "sunday",    label: "Sunday" },
+  { key: "monday",    label: "Segunda-feira" },
+  { key: "tuesday",   label: "Terça-feira"   },
+  { key: "wednesday", label: "Quarta-feira"  },
+  { key: "thursday",  label: "Quinta-feira"  },
+  { key: "friday",    label: "Sexta-feira"   },
+  { key: "saturday",  label: "Sábado"        },
+  { key: "sunday",    label: "Domingo"       },
 ];
 
 function calcBase(formula: Cleaner["pricingFormula"], beds: number, baths: number): number {
@@ -22,17 +22,17 @@ function calcBase(formula: Cleaner["pricingFormula"], beds: number, baths: numbe
 
 export default function CleanerSetupPage() {
   const router = useRouter();
-  const [cleanerId,   setCleanerId]   = useState<string | null>(null);
-  const [token,       setToken]       = useState<string | null>(null);
-  const [cleaner,     setCleaner]     = useState<Cleaner | null>(null);
-  const [loading,     setLoading]     = useState(true);
-  const [saving,      setSaving]      = useState(false);
-  const [toast,       setToast]       = useState("");
-  const [copied,      setCopied]      = useState(false);
-  const [apiError,    setApiError]    = useState("");
-  // Raw string drafts so inputs can be empty while the user is editing
-  const [draftPrices, setDraftPrices] = useState<Record<string, string>>({});
-  const [newBlockedDate,   setNewDayOff]   = useState("");
+  const [cleanerId,       setCleanerId]       = useState<string | null>(null);
+  const [token,           setToken]           = useState<string | null>(null);
+  const [cleaner,         setCleaner]         = useState<Cleaner | null>(null);
+  const [loading,         setLoading]         = useState(true);
+  const [saving,          setSaving]          = useState(false);
+  const [toast,           setToast]           = useState("");
+  const [copied,          setCopied]          = useState(false);
+  const [apiError,        setApiError]        = useState("");
+  // Valores brutos (string) para os inputs de preço, permite campo vazio durante edição
+  const [draftPrices,     setDraftPrices]     = useState<Record<string, string>>({});
+  const [newBlockedDate,  setNewBlockedDate]  = useState("");
 
   // ── Auth guard → fetch profile ────────────────────────────────────────────
   useEffect(() => {
@@ -40,7 +40,7 @@ export default function CleanerSetupPage() {
 
     const timeout = setTimeout(() => {
       if (!cancelled) {
-        setApiError("Loading timed out. Please refresh the page.");
+        setApiError("Tempo de carregamento esgotado. Por favor, recarregue a página.");
         setLoading(false);
       }
     }, 10_000);
@@ -68,7 +68,7 @@ export default function CleanerSetupPage() {
         if (data?.id) {
           setCleaner(data);
         } else {
-          setApiError(data?.error ?? "Could not load profile. Check Supabase tables.");
+          setApiError(data?.error ?? "Não foi possível carregar o perfil. Verifique as tabelas no Supabase.");
         }
       } catch (err) {
         if (!cancelled) setApiError(String(err));
@@ -121,7 +121,7 @@ export default function CleanerSetupPage() {
     if (!cleaner || !newBlockedDate) return;
     if ((cleaner.blockedDates ?? []).includes(newBlockedDate)) return;
     setCleaner({ ...cleaner, blockedDates: [...(cleaner.blockedDates ?? []), newBlockedDate].sort() });
-    setNewDayOff("");
+    setNewBlockedDate("");
   }
 
   function removeBlockedDate(date: string) {
@@ -131,8 +131,8 @@ export default function CleanerSetupPage() {
 
   function formatBlockedDate(dateStr: string): string {
     const [y, m, d] = dateStr.split("-").map(Number);
-    return new Date(y, m - 1, d).toLocaleDateString("en-US", {
-      weekday: "long", month: "long", day: "numeric",
+    return new Date(y, m - 1, d).toLocaleDateString("pt-BR", {
+      weekday: "long", day: "numeric", month: "long",
     });
   }
 
@@ -165,13 +165,13 @@ export default function CleanerSetupPage() {
           pricingFormula:     cleaner.pricingFormula,
           frequencyDiscounts: cleaner.frequencyDiscounts,
           serviceAddons:      cleaner.serviceAddons,
-          blockedDates:            cleaner.blockedDates ?? [],
+          blockedDates:       cleaner.blockedDates ?? [],
         }),
       });
       if (!res.ok) throw new Error("Save failed");
-      showToast("Saved successfully!");
+      showToast("Configurações salvas com sucesso!");
     } catch {
-      showToast("Error saving. Please try again.");
+      showToast("Erro ao salvar. Tente novamente.");
     } finally {
       setSaving(false);
     }
@@ -202,7 +202,7 @@ export default function CleanerSetupPage() {
   if (loading || !cleanerId) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <p className="text-slate-500 animate-pulse">Loading…</p>
+        <p className="text-slate-500 animate-pulse">Carregando…</p>
       </div>
     );
   }
@@ -211,27 +211,27 @@ export default function CleanerSetupPage() {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
         <div className="bg-white rounded-2xl border border-red-100 shadow-sm p-8 max-w-lg w-full space-y-4">
-          <p className="font-bold text-slate-800 text-lg">Could not load your profile</p>
+          <p className="font-bold text-slate-800 text-lg">Não foi possível carregar seu perfil</p>
           {apiError && (
             <pre className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs text-red-700 overflow-auto whitespace-pre-wrap break-all">
               {apiError}
             </pre>
           )}
           <p className="text-sm text-slate-500">
-            Make sure the <strong>cleaners</strong> table has been created in your Supabase project.
+            Certifique-se de que a tabela <strong>cleaners</strong> foi criada no seu projeto Supabase.
           </p>
           <button
             onClick={() => window.location.reload()}
             className="w-full bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 rounded-xl text-sm transition-colors"
           >
-            Reload
+            Recarregar
           </button>
         </div>
       </div>
     );
   }
 
-  // Live preview rows
+  // Linhas da prévia de preços
   const previewRows = [
     { beds: 1, baths: 1 },
     { beds: 2, baths: 1 },
@@ -255,7 +255,7 @@ export default function CleanerSetupPage() {
               onClick={handleLogout}
               className="text-sm text-slate-500 hover:text-red-500 font-medium transition-colors"
             >
-              Log out
+              Sair
             </button>
           </div>
         </div>
@@ -270,24 +270,24 @@ export default function CleanerSetupPage() {
 
       <main className="max-w-3xl mx-auto px-6 py-12 space-y-10">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900">Availability & Pricing</h1>
+          <h1 className="text-3xl font-extrabold text-slate-900">Disponibilidade & Preços</h1>
           <p className="text-slate-500 mt-1 text-sm">
-            Hi, {cleaner.name}. Configure your schedule and rates below.
+            Olá, {cleaner.name}. Configure sua agenda e valores abaixo.
           </p>
         </div>
 
-        {/* ── Contact Channels ── */}
+        {/* ── Canais de Contato ── */}
         <section className="bg-white rounded-2xl shadow-sm border border-sky-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-sky-100 bg-sky-50">
-            <h2 className="font-bold text-slate-800 text-lg">Contact Channels</h2>
+            <h2 className="font-bold text-slate-800 text-lg">Canais de Contato</h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Clients will use these to send you their booking details. Fill in at least one.
+              Os clientes usarão estes canais para enviar os detalhes do agendamento. Preencha pelo menos um.
             </p>
           </div>
           <div className="px-6 py-5 space-y-5">
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1">
-                Phone Number (SMS / WhatsApp)
+                Telefone (SMS / WhatsApp)
               </label>
               <input
                 type="tel"
@@ -299,11 +299,11 @@ export default function CleanerSetupPage() {
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1">
-                Facebook Messenger Username{" "}
-                <span className="text-slate-400 font-normal">(optional)</span>
+                Usuário do Facebook Messenger{" "}
+                <span className="text-slate-400 font-normal">(opcional)</span>
               </label>
               <p className="text-xs text-slate-400 mb-2">
-                Found at facebook.com/your.username. Example: <span className="font-mono">janedoe.cleaner</span>
+                Encontrado em facebook.com/seu.usuario. Exemplo: <span className="font-mono">maria.faxina</span>
               </p>
               <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-sky-400">
                 <span className="px-3 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-3 select-none">
@@ -311,7 +311,7 @@ export default function CleanerSetupPage() {
                 </span>
                 <input
                   type="text"
-                  placeholder="janedoe.cleaner"
+                  placeholder="maria.faxina"
                   value={cleaner.messengerUsername ?? ""}
                   onChange={(e) => setCleaner({ ...cleaner, messengerUsername: e.target.value })}
                   className="flex-1 px-3 py-3 text-sm text-slate-800 bg-white focus:outline-none"
@@ -321,12 +321,12 @@ export default function CleanerSetupPage() {
           </div>
         </section>
 
-        {/* ── Weekly Schedule ── */}
+        {/* ── Rotina Semanal ── */}
         <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100">
-            <h2 className="font-bold text-slate-800 text-lg">Weekly Schedule</h2>
+            <h2 className="font-bold text-slate-800 text-lg">Rotina Semanal</h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Morning starts at 9:00 AM &nbsp;|&nbsp; Afternoon starts at 2:00 PM
+              Esta é sua agenda padrão. &nbsp;Manhã a partir das 9h &nbsp;|&nbsp; Tarde a partir das 14h
             </p>
           </div>
           <div className="divide-y divide-slate-50">
@@ -334,7 +334,7 @@ export default function CleanerSetupPage() {
               const day = cleaner.availability[key];
               return (
                 <div key={key} className="px-6 py-4 flex items-center gap-6">
-                  <span className="w-28 text-sm font-semibold text-slate-700">{label}</span>
+                  <span className="w-36 text-sm font-semibold text-slate-700">{label}</span>
                   <label className="flex items-center gap-2 cursor-pointer select-none">
                     <input
                       type="checkbox"
@@ -342,7 +342,7 @@ export default function CleanerSetupPage() {
                       onChange={() => toggleBlock(key, "morning")}
                       className="w-4 h-4 accent-sky-500 cursor-pointer"
                     />
-                    <span className={`text-sm ${day.morning ? "text-slate-700" : "text-slate-400"}`}>Morning</span>
+                    <span className={`text-sm ${day.morning ? "text-slate-700" : "text-slate-400"}`}>Manhã</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer select-none">
                     <input
@@ -351,10 +351,10 @@ export default function CleanerSetupPage() {
                       onChange={() => toggleBlock(key, "afternoon")}
                       className="w-4 h-4 accent-sky-500 cursor-pointer"
                     />
-                    <span className={`text-sm ${day.afternoon ? "text-slate-700" : "text-slate-400"}`}>Afternoon</span>
+                    <span className={`text-sm ${day.afternoon ? "text-slate-700" : "text-slate-400"}`}>Tarde</span>
                   </label>
                   {!day.morning && !day.afternoon && (
-                    <span className="text-xs text-slate-400 italic ml-auto">Day off</span>
+                    <span className="text-xs text-slate-400 italic ml-auto">Folga</span>
                   )}
                 </div>
               );
@@ -362,12 +362,12 @@ export default function CleanerSetupPage() {
           </div>
         </section>
 
-        {/* ── Specific Days Off ── */}
+        {/* ── Folgas Específicas ── */}
         <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100">
-            <h2 className="font-bold text-slate-800 text-lg">Specific Days Off</h2>
+            <h2 className="font-bold text-slate-800 text-lg">Folgas Específicas</h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Block individual dates without changing your weekly routine.
+              Bloqueie datas pontuais sem alterar sua rotina semanal. Ex: consulta médica, feriado, viagem.
             </p>
           </div>
           <div className="px-6 py-5 space-y-4">
@@ -376,7 +376,7 @@ export default function CleanerSetupPage() {
                 type="date"
                 value={newBlockedDate}
                 min={new Date().toISOString().slice(0, 10)}
-                onChange={(e) => setNewDayOff(e.target.value)}
+                onChange={(e) => setNewBlockedDate(e.target.value)}
                 className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-400 bg-white"
               />
               <button
@@ -385,22 +385,22 @@ export default function CleanerSetupPage() {
                 onClick={addBlockedDate}
                 className="px-5 py-2.5 bg-sky-500 hover:bg-sky-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-colors shrink-0"
               >
-                Add
+                Adicionar
               </button>
             </div>
             {(cleaner.blockedDates ?? []).length === 0 ? (
-              <p className="text-xs text-slate-400 italic">No specific days off added yet.</p>
+              <p className="text-xs text-slate-400 italic">Nenhuma folga específica adicionada ainda.</p>
             ) : (
               <ul className="space-y-1.5">
                 {(cleaner.blockedDates ?? []).map((d) => (
                   <li key={d} className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-2.5">
-                    <span className="text-sm text-slate-700 font-medium">{formatBlockedDate(d)}</span>
+                    <span className="text-sm text-slate-700 font-medium capitalize">{formatBlockedDate(d)}</span>
                     <button
                       type="button"
                       onClick={() => removeBlockedDate(d)}
                       className="text-slate-400 hover:text-red-500 transition-colors text-sm font-semibold ml-4 shrink-0"
                     >
-                      Remove
+                      Remover
                     </button>
                   </li>
                 ))}
@@ -409,23 +409,28 @@ export default function CleanerSetupPage() {
           </div>
         </section>
 
-        {/* ── Pricing ── */}
+        {/* ── Precificação ── */}
         <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100">
-            <h2 className="font-bold text-slate-800 text-lg">Pricing</h2>
+            <h2 className="font-bold text-slate-800 text-lg">Precificação</h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              We&apos;ll calculate your full pricing table automatically based on these rates.
+              Definindo os valores abaixo, calculamos automaticamente o preço para qualquer tamanho de casa.
             </p>
           </div>
           <div className="px-6 py-5 space-y-6">
 
-            {/* Base formula */}
+            {/* Fórmula base */}
             <div className="space-y-3">
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Base Formula</p>
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Fórmula Base</p>
+                <p className="text-xs text-slate-400 mt-1">
+                  Preço = Preço Base + (Quartos − 1) × Quarto Adicional + (Banheiros − 1) × Banheiro Adicional
+                </p>
+              </div>
               {([
-                { field: "base"             as const, label: "Base Price (1 bed / 1 bath)",  prefix: "$",  placeholder: "90"  },
-                { field: "extraPerBedroom"  as const, label: "Additional Bedroom",            prefix: "+$", placeholder: "20"  },
-                { field: "extraPerBathroom" as const, label: "Additional Bathroom",           prefix: "+$", placeholder: "15"  },
+                { field: "base"             as const, label: "Preço Base (1 quarto / 1 banheiro)", prefix: "$",  placeholder: "90"  },
+                { field: "extraPerBedroom"  as const, label: "Quarto Adicional",                    prefix: "+$", placeholder: "20"  },
+                { field: "extraPerBathroom" as const, label: "Banheiro Adicional",                  prefix: "+$", placeholder: "15"  },
               ]).map(({ field, label, prefix, placeholder }) => (
                 <div key={field} className="flex items-center gap-4">
                   <label className="flex-1 text-sm font-semibold text-slate-700">{label}</label>
@@ -445,12 +450,17 @@ export default function CleanerSetupPage() {
               ))}
             </div>
 
-            {/* Service add-ons */}
+            {/* Adicionais de Serviço */}
             <div className="space-y-3 pt-1 border-t border-slate-100">
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wide pt-2">Service Add-ons</p>
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide pt-2">Adicionais de Serviço</p>
+                <p className="text-xs text-slate-400 mt-1">
+                  Valor extra cobrado além do preço base para serviços mais completos.
+                </p>
+              </div>
               {([
-                { field: "deep" as const, label: "Deep Cleaning",      color: "text-sky-600"    },
-                { field: "move" as const, label: "Move-in / Move-out", color: "text-violet-600" },
+                { field: "deep" as const, label: "Limpeza Profunda",        color: "text-sky-600"    },
+                { field: "move" as const, label: "Entrada/Saída de Imóvel", color: "text-violet-600" },
               ]).map(({ field, label, color }) => (
                 <div key={field} className="flex items-center gap-4">
                   <label className={`flex-1 text-sm font-semibold ${color}`}>{label}</label>
@@ -470,20 +480,20 @@ export default function CleanerSetupPage() {
               ))}
             </div>
 
-            {/* Live comparative preview */}
+            {/* Prévia comparativa ao vivo */}
             <div className="pt-1 border-t border-slate-100">
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wide pt-2 mb-3">
-                Price Preview
+                Prévia de Preços
               </p>
               <div className="rounded-xl border border-slate-100 overflow-hidden text-xs">
-                {/* Header */}
+                {/* Cabeçalho */}
                 <div className="grid grid-cols-4 bg-slate-50 border-b border-slate-100">
-                  <div className="px-3 py-2 font-bold text-slate-500">House</div>
+                  <div className="px-3 py-2 font-bold text-slate-500">Casa</div>
                   <div className="px-3 py-2 font-bold text-slate-600 text-center">Regular</div>
-                  <div className="px-3 py-2 font-bold text-sky-600 text-center">Deep</div>
-                  <div className="px-3 py-2 font-bold text-violet-600 text-center">Move-in/out</div>
+                  <div className="px-3 py-2 font-bold text-sky-600 text-center">Profunda</div>
+                  <div className="px-3 py-2 font-bold text-violet-600 text-center">Mudança</div>
                 </div>
-                {/* Rows */}
+                {/* Linhas */}
                 {previewRows.map(({ beds, baths }, i) => {
                   const base = calcBase(cleaner.pricingFormula, beds, baths);
                   const deep = base + (cleaner.serviceAddons?.deep ?? 0);
@@ -494,7 +504,7 @@ export default function CleanerSetupPage() {
                       className={`grid grid-cols-4 ${i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}`}
                     >
                       <div className="px-3 py-2.5 text-slate-500">
-                        {beds} bed{beds > 1 ? "s" : ""} · {baths} bath{baths > 1 ? "s" : ""}
+                        {beds} {beds > 1 ? "qtos" : "qto"} · {baths} {baths > 1 ? "bnhs" : "bnh"}
                       </div>
                       <div className="px-3 py-2.5 font-semibold text-slate-800 text-center">${base.toFixed(0)}</div>
                       <div className="px-3 py-2.5 font-semibold text-sky-600 text-center">${deep.toFixed(0)}</div>
@@ -507,18 +517,20 @@ export default function CleanerSetupPage() {
           </div>
         </section>
 
-        {/* ── Frequency Discounts ── */}
+        {/* ── Descontos por Frequência ── */}
         <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100">
-            <h2 className="font-bold text-slate-800 text-lg">Frequency Discounts</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Percentage off for repeat bookings.</p>
+            <h2 className="font-bold text-slate-800 text-lg">Descontos por Frequência</h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Desconto em % oferecido para clientes com agendamentos recorrentes.
+            </p>
           </div>
           <div className="px-6 py-5 grid grid-cols-3 gap-6">
             {(
               [
-                { field: "weekly",   label: "Weekly" },
-                { field: "biweekly", label: "Bi-weekly" },
-                { field: "monthly",  label: "Monthly" },
+                { field: "weekly",   label: "Semanal"   },
+                { field: "biweekly", label: "Quinzenal" },
+                { field: "monthly",  label: "Mensal"    },
               ] as const
             ).map(({ field, label }) => (
               <div key={field}>
@@ -540,11 +552,11 @@ export default function CleanerSetupPage() {
           </div>
         </section>
 
-        {/* ── Booking Link ── */}
+        {/* ── Link de Agendamento ── */}
         <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100">
-            <h2 className="font-bold text-slate-800 text-lg">Your Booking Link</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Share this link with your customers.</p>
+            <h2 className="font-bold text-slate-800 text-lg">Seu Link de Agendamento</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Compartilhe este link com seus clientes.</p>
           </div>
           <div className="px-6 py-5 flex items-center gap-3">
             <input
@@ -559,18 +571,18 @@ export default function CleanerSetupPage() {
                 copied ? "bg-green-500 text-white" : "bg-sky-500 hover:bg-sky-600 text-white"
               }`}
             >
-              {copied ? "Copied!" : "Copy"}
+              {copied ? "Copiado!" : "Copiar"}
             </button>
           </div>
         </section>
 
-        {/* Save */}
+        {/* Salvar */}
         <button
           onClick={handleSave}
           disabled={saving}
           className="w-full bg-sky-500 hover:bg-sky-600 disabled:opacity-60 text-white font-bold py-4 rounded-2xl transition-colors text-lg"
         >
-          {saving ? "Saving…" : "Save Changes"}
+          {saving ? "Salvando…" : "Salvar Configurações"}
         </button>
       </main>
     </div>
