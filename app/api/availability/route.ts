@@ -20,20 +20,26 @@ export async function GET(request: Request) {
 
   const supabase = createServiceClient();
 
-  // Fetch cleaner availability
+  // Fetch cleaner — use * so missing optional columns (e.g. blocked_dates)
+  // don't cause a PostgREST column-not-found error
   const { data: cleanerRow, error: cleanerError } = await supabase
     .from("cleaners")
-    .select("availability, blocked_dates")
+    .select("*")
     .eq("id", cleanerId)
     .single();
   if (cleanerError || !cleanerRow) {
+    console.error("[availability] cleaner fetch failed:", cleanerError?.message, "id:", cleanerId);
     return NextResponse.json({ error: "Cleaner not found" }, { status: 404 });
   }
 
   const dayName  = DAY_NAMES[new Date(date + "T00:00:00").getDay()];
-  const dayAvail = (cleanerRow.availability as Cleaner["availability"])[dayName];
-  const blockedDates  = (cleanerRow.blocked_dates as string[]) ?? [];
-  const isBlocked = blockedDates.includes(date);
+  const dayAvail = (cleanerRow.availability as Cleaner["availability"])?.[dayName];
+  if (!dayAvail) {
+    console.error("[availability] dayAvail missing for", dayName, "availability:", cleanerRow.availability);
+    return NextResponse.json({ morning: false, afternoon: false });
+  }
+  const blockedDates = (cleanerRow.blocked_dates as string[]) ?? [];
+  const isBlocked    = blockedDates.includes(date);
 
   // Fetch existing bookings for this date
   const { data: bookings } = await supabase

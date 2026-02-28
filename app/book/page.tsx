@@ -191,13 +191,19 @@ function BookPageInner() {
   }
 
   useEffect(() => {
+    console.log("[book] fetching cleaner:", cleanerId);
     fetch(`/api/cleaners/${cleanerId}`)
-      .then((r) => r.ok ? r.json() : null)
+      .then((r) => r.ok ? r.json() : r.json().then((e: unknown) => { console.error("[book] cleaner fetch error:", e); return null; }))
       .then((data: Cleaner | null) => {
-        if (data?.id) setCleaner(data);
+        if (data?.id) {
+          console.log("[book] cleaner loaded:", data.id, data.name);
+          setCleaner(data);
+        } else if (data) {
+          console.error("[book] cleaner response missing id:", data);
+        }
         setCleanerLoading(false);
       })
-      .catch(() => setCleanerLoading(false));
+      .catch((err) => { console.error("[book] cleaner fetch exception:", err); setCleanerLoading(false); });
   }, [cleanerId]);
 
   const price    = calcPrice(cleaner, state.bedrooms, state.bathrooms, state.frequency, state.serviceType);
@@ -218,13 +224,19 @@ function BookPageInner() {
   // ── Step 2: date change ──────────────────────────────────────────────────────
   async function handleDateChange(date: string) {
     if (!date) return;
+    console.log("[book] checking availability — cleanerId:", cleanerId, "date:", date);
     update({ date, timeBlock: null, blockAvail: null, blockLoading: true, blockError: "" });
     try {
-      const res = await fetch(`/api/availability?cleanerId=${cleanerId}&date=${date}`);
+      const res  = await fetch(`/api/availability?cleanerId=${cleanerId}&date=${date}`);
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Failed to check availability");
+      if (!res.ok) {
+        console.error("[book] availability error:", data);
+        throw new Error(data.error ?? "Failed to check availability");
+      }
+      console.log("[book] availability result:", data);
       update({ blockAvail: data as BlockAvailability, blockLoading: false });
     } catch (err) {
+      console.error("[book] handleDateChange exception:", err);
       update({ blockLoading: false, blockError: (err as Error).message });
     }
   }

@@ -168,9 +168,14 @@ export default function CleanerSetupPage() {
           blockedDates:       cleaner.blockedDates ?? [],
         }),
       });
-      if (!res.ok) throw new Error("Save failed");
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        console.error("[handleSave] PUT failed:", res.status, errBody);
+        throw new Error(errBody?.error ?? "Save failed");
+      }
       showToast("Configurações salvas com sucesso!");
-    } catch {
+    } catch (err) {
+      console.error("[handleSave] exception:", err);
       showToast("Erro ao salvar. Tente novamente.");
     } finally {
       setSaving(false);
