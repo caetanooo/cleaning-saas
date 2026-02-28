@@ -428,7 +428,7 @@ export default function CleanerSetupPage() {
                 </p>
               </div>
               {([
-                { field: "base"             as const, label: "Preço Base (1 quarto / 1 banheiro)", prefix: "$",  placeholder: "90"  },
+                { field: "base"             as const, label: "Preço Base (1 Bed / 1 Bath)",        prefix: "$",  placeholder: "90"  },
                 { field: "extraPerBedroom"  as const, label: "Quarto Adicional",                    prefix: "+$", placeholder: "20"  },
                 { field: "extraPerBathroom" as const, label: "Banheiro Adicional",                  prefix: "+$", placeholder: "15"  },
               ]).map(({ field, label, prefix, placeholder }) => (
@@ -459,8 +459,8 @@ export default function CleanerSetupPage() {
                 </p>
               </div>
               {([
-                { field: "deep" as const, label: "Limpeza Profunda",        color: "text-sky-600"    },
-                { field: "move" as const, label: "Entrada/Saída de Imóvel", color: "text-violet-600" },
+                { field: "deep" as const, label: "Deep Cleaning",      color: "text-sky-600"    },
+                { field: "move" as const, label: "Move-in / Move-out", color: "text-violet-600" },
               ]).map(({ field, label, color }) => (
                 <div key={field} className="flex items-center gap-4">
                   <label className={`flex-1 text-sm font-semibold ${color}`}>{label}</label>
@@ -483,15 +483,15 @@ export default function CleanerSetupPage() {
             {/* Prévia comparativa ao vivo */}
             <div className="pt-1 border-t border-slate-100">
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wide pt-2 mb-3">
-                Prévia de Preços
+                Pré-visualização (Regular Cleaning)
               </p>
               <div className="rounded-xl border border-slate-100 overflow-hidden text-xs">
                 {/* Cabeçalho */}
                 <div className="grid grid-cols-4 bg-slate-50 border-b border-slate-100">
                   <div className="px-3 py-2 font-bold text-slate-500">Casa</div>
                   <div className="px-3 py-2 font-bold text-slate-600 text-center">Regular</div>
-                  <div className="px-3 py-2 font-bold text-sky-600 text-center">Profunda</div>
-                  <div className="px-3 py-2 font-bold text-violet-600 text-center">Mudança</div>
+                  <div className="px-3 py-2 font-bold text-sky-600 text-center">Deep</div>
+                  <div className="px-3 py-2 font-bold text-violet-600 text-center">Move-in/out</div>
                 </div>
                 {/* Linhas */}
                 {previewRows.map(({ beds, baths }, i) => {
