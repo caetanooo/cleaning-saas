@@ -66,6 +66,7 @@ export interface Booking {
   hasPets: boolean;
   bedrooms: number;
   bathrooms: number;
+  serviceType?: CleaningServiceType;  // stored only if service_type column exists in DB
   frequency: FrequencyType;
   date: string;        // "YYYY-MM-DD"
   timeBlock: TimeBlock;

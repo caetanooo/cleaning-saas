@@ -1,6 +1,28 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
-import type { Booking, FrequencyType, TimeBlock, CleaningServiceType, PricingFormula, FrequencyDiscounts, ServiceAddons } from "@/types";
+import type { Booking, BookingStatus, FrequencyType, TimeBlock, CleaningServiceType, PricingFormula, FrequencyDiscounts, ServiceAddons } from "@/types";
+
+function rowToBooking(row: Record<string, unknown>): Booking {
+  return {
+    id:              row.id              as string,
+    cleanerId:       row.cleaner_id     as string,
+    customerName:    row.customer_name  as string,
+    customerPhone:   row.customer_phone as string,
+    customerAddress: row.customer_address as string,
+    hasPets:         row.has_pets       as boolean,
+    bedrooms:        row.bedrooms       as number,
+    bathrooms:       row.bathrooms      as number,
+    serviceType:     (row.service_type  as CleaningServiceType) || undefined,
+    frequency:       row.frequency      as FrequencyType,
+    date:            row.date           as string,
+    timeBlock:       row.time_block     as TimeBlock,
+    startTime:       row.start_time     as string,
+    endTime:         row.end_time       as string,
+    totalPrice:      Number(row.total_price),
+    status:          row.status         as BookingStatus,
+    createdAt:       row.created_at     as string,
+  };
+}
 
 const BLOCK_TIMES: Record<TimeBlock, { startTime: string; endTime: string }> = {
   morning:   { startTime: "09:00", endTime: "13:00" },
@@ -19,7 +41,7 @@ export async function GET(request: Request) {
     .eq("cleaner_id", cleanerId)
     .order("date", { ascending: true });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data ?? []);
+  return NextResponse.json((data ?? []).map(rowToBooking));
 }
 
 export async function POST(request: Request) {

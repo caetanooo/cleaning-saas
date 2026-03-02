@@ -255,7 +255,10 @@ export default function CleanerSetupPage() {
             <span className="text-xl font-extrabold text-slate-800">CleanClick</span>
           </Link>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-slate-500 hidden sm:block">{cleaner.name}</span>
+            <Link href="/cleaner/agenda" className="text-sm text-slate-500 hover:text-sky-600 font-medium transition-colors">
+              Agenda
+            </Link>
+            <span className="text-sm text-slate-400 hidden sm:block">{cleaner.name}</span>
             <button
               onClick={handleLogout}
               className="text-sm text-slate-500 hover:text-red-500 font-medium transition-colors"
