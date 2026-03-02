@@ -245,6 +245,8 @@ function BookPageInner() {
       update({ selectedDates: state.selectedDates.filter((d) => d.dateStr !== dateStr) });
       return;
     }
+    // Limit reached → ignore new selections
+    if (state.selectedDates.length >= required) return;
     // This is the active date → cancel
     if (state.activeDate === dateStr) {
       update({ activeDate: null, activeDateAvail: null });
