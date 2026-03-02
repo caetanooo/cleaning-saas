@@ -9,11 +9,18 @@ import type { Cleaner, Booking, FrequencyType, TimeBlock, BlockAvailability, Cle
 
 const STEPS = ["House Size", "Frequency", "Date & Time", "Your Details"];
 
+const REQUIRED_DATES: Record<FrequencyType, number> = {
+  one_time:  1,
+  weekly:    4,
+  biweekly:  2,
+  monthly:   1,
+};
+
 const FREQ_OPTIONS: { value: FrequencyType; label: string; description: string }[] = [
   { value: "one_time",  label: "One-Time",  description: "Single visit, no commitment" },
-  { value: "weekly",    label: "Weekly",    description: "Every week, same day" },
-  { value: "biweekly",  label: "Bi-Weekly", description: "Every two weeks" },
-  { value: "monthly",   label: "Monthly",   description: "Once a month" },
+  { value: "weekly",    label: "Weekly",    description: "4 dates — once a week" },
+  { value: "biweekly",  label: "Bi-Weekly", description: "2 dates — every two weeks" },
+  { value: "monthly",   label: "Monthly",   description: "1 date — once a month" },
 ];
 
 const SERVICE_OPTIONS: { value: CleaningServiceType; label: string; description: string }[] = [
@@ -78,6 +85,13 @@ function formatDate(dateStr: string): string {
   });
 }
 
+function formatDateShort(dateStr: string): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString("en-US", {
+    weekday: "short", month: "short", day: "numeric",
+  });
+}
+
 // ─── Week-view day list ───────────────────────────────────────────────────────
 
 interface DayCard {
@@ -110,25 +124,27 @@ function computeNextDays(cleaner: Cleaner, count = 30): DayCard[] {
   return cards;
 }
 
-// ─── SMS body: only what the client filled in ─────────────────────────────────
+// ─── SMS body: list all booking dates ─────────────────────────────────────────
 
-function buildSmsBody(booking: Booking, serviceType: CleaningServiceType): string {
+function buildSmsBody(bookings: Booking[], serviceType: CleaningServiceType): string {
   const freqMap: Record<FrequencyType, string> = {
     one_time: "One-Time",
     weekly:   "Weekly",
     biweekly: "Bi-Weekly",
     monthly:  "Monthly",
   };
-  const block = BLOCK_INFO[booking.timeBlock];
-  const beds  = booking.bedrooms  === 5 ? "5+" : booking.bedrooms;
-  const baths = booking.bathrooms === 5 ? "5+" : booking.bathrooms;
+  const first = bookings[0];
+  const beds  = first.bedrooms  === 5 ? "5+" : String(first.bedrooms);
+  const baths = first.bathrooms === 5 ? "5+" : String(first.bathrooms);
+  const dateLines = bookings
+    .map(b => `  ${formatDate(b.date)} · ${BLOCK_INFO[b.timeBlock].label} (${BLOCK_INFO[b.timeBlock].start})`)
+    .join("\n");
   return [
-    `Name: ${booking.customerName}`,
-    `Date: ${formatDate(booking.date)}`,
-    `Preferred Time: ${block.label} starting at ${block.start}`,
-    `Address: ${booking.customerAddress}`,
-    `Service: ${SERVICE_LABELS[serviceType]} — ${beds} bed · ${baths} bath — ${freqMap[booking.frequency]}`,
-    `Notes: Pets: ${booking.hasPets ? "Yes" : "No"}`,
+    `Name: ${first.customerName}`,
+    `Dates:\n${dateLines}`,
+    `Address: ${first.customerAddress}`,
+    `Service: ${SERVICE_LABELS[serviceType]} — ${beds} bed · ${baths} bath — ${freqMap[first.frequency]}`,
+    `Notes: Pets: ${first.hasPets ? "Yes" : "No"}`,
   ].join("\n");
 }
 
@@ -140,10 +156,10 @@ interface WizardState {
   bathrooms: number | null;
   serviceType: CleaningServiceType;
   frequency: FrequencyType | null;
-  date: string;
-  timeBlock: TimeBlock | null;
-  blockAvail: BlockAvailability | null;
-  blockLoading: boolean;
+  selectedDates: Array<{ dateStr: string; timeBlock: TimeBlock }>;
+  activeDate: string | null;
+  activeDateAvail: BlockAvailability | null;
+  activeDateLoading: boolean;
   blockError: string;
   customerName: string;
   customerPhone: string;
@@ -151,7 +167,7 @@ interface WizardState {
   hasPets: boolean;
   submitting: boolean;
   submitError: string;
-  confirmedBooking: Booking | null;
+  confirmedBookings: Booking[];
   messengerCopied: boolean;
 }
 
@@ -161,10 +177,10 @@ const INITIAL: WizardState = {
   bathrooms: null,
   serviceType: "regular",
   frequency: null,
-  date: "",
-  timeBlock: null,
-  blockAvail: null,
-  blockLoading: false,
+  selectedDates: [],
+  activeDate: null,
+  activeDateAvail: null,
+  activeDateLoading: false,
   blockError: "",
   customerName: "",
   customerPhone: "",
@@ -172,7 +188,7 @@ const INITIAL: WizardState = {
   hasPets: false,
   submitting: false,
   submitError: "",
-  confirmedBooking: null,
+  confirmedBookings: [],
   messengerCopied: false,
 };
 
@@ -208,6 +224,7 @@ function BookPageInner() {
 
   const price    = calcPrice(cleaner, state.bedrooms, state.bathrooms, state.frequency, state.serviceType);
   const nextDays = cleaner ? computeNextDays(cleaner) : [];
+  const required = state.frequency ? REQUIRED_DATES[state.frequency] : 1;
 
   // ── Step 0 → 1 ──────────────────────────────────────────────────────────────
   function goStep1() {
@@ -218,72 +235,95 @@ function BookPageInner() {
   // ── Step 1 → 2 ──────────────────────────────────────────────────────────────
   function goStep2() {
     if (!state.frequency) return;
-    update({ step: 2, date: "", timeBlock: null, blockAvail: null, blockError: "" });
+    update({ step: 2, selectedDates: [], activeDate: null, activeDateAvail: null, blockError: "" });
   }
 
-  // ── Step 2: date change ──────────────────────────────────────────────────────
-  async function handleDateChange(date: string) {
-    if (!date) return;
-    console.log("[book] checking availability — cleanerId:", cleanerId, "date:", date);
-    update({ date, timeBlock: null, blockAvail: null, blockLoading: true, blockError: "" });
+  // ── Step 2: date click ───────────────────────────────────────────────────────
+  async function handleDateClick(dateStr: string) {
+    // Already confirmed → deselect
+    if (state.selectedDates.some((d) => d.dateStr === dateStr)) {
+      update({ selectedDates: state.selectedDates.filter((d) => d.dateStr !== dateStr) });
+      return;
+    }
+    // This is the active date → cancel
+    if (state.activeDate === dateStr) {
+      update({ activeDate: null, activeDateAvail: null });
+      return;
+    }
+    // Otherwise → fetch availability
+    console.log("[book] checking availability — cleanerId:", cleanerId, "date:", dateStr);
+    update({ activeDate: dateStr, activeDateAvail: null, activeDateLoading: true, blockError: "" });
     try {
-      const res  = await fetch(`/api/availability?cleanerId=${cleanerId}&date=${date}`);
+      const res  = await fetch(`/api/availability?cleanerId=${cleanerId}&date=${dateStr}`);
       const data = await res.json();
       if (!res.ok) {
         console.error("[book] availability error:", data);
         throw new Error(data.error ?? "Failed to check availability");
       }
       console.log("[book] availability result:", data);
-      update({ blockAvail: data as BlockAvailability, blockLoading: false });
+      update({ activeDateAvail: data as BlockAvailability, activeDateLoading: false });
     } catch (err) {
-      console.error("[book] handleDateChange exception:", err);
-      update({ blockLoading: false, blockError: (err as Error).message });
+      console.error("[book] handleDateClick exception:", err);
+      update({ activeDateLoading: false, blockError: (err as Error).message });
     }
+  }
+
+  // ── Step 2: time block select ────────────────────────────────────────────────
+  function handleBlockSelect(block: TimeBlock) {
+    if (!state.activeDate) return;
+    update({
+      selectedDates: [...state.selectedDates, { dateStr: state.activeDate, timeBlock: block }],
+      activeDate: null,
+      activeDateAvail: null,
+    });
   }
 
   // ── Step 2 → 3 ──────────────────────────────────────────────────────────────
   function goStep3() {
-    if (!state.timeBlock) return;
+    if (state.selectedDates.length < required) return;
     update({ step: 3, submitError: "" });
   }
 
   // ── Submit ───────────────────────────────────────────────────────────────────
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!state.frequency || !state.timeBlock || state.bedrooms === null || state.bathrooms === null) return;
+    if (!state.frequency || state.selectedDates.length === 0 || state.bedrooms === null || state.bathrooms === null) return;
     update({ submitting: true, submitError: "" });
+    const selectedDates = state.selectedDates;
     try {
-      const res = await fetch("/api/bookings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          cleanerId,
-          customerName:    state.customerName.trim(),
-          customerPhone:   state.customerPhone.trim(),
-          customerAddress: state.customerAddress.trim(),
-          hasPets:         state.hasPets,
-          bedrooms:        state.bedrooms,
-          bathrooms:       state.bathrooms,
-          serviceType:     state.serviceType,
-          frequency:       state.frequency,
-          date:            state.date,
-          timeBlock:       state.timeBlock,
-        }),
-      });
-      const data = await res.json();
-      if (res.status === 409) {
-        update({
-          submitting: false,
-          step: 2,
-          timeBlock: null,
-          blockAvail: null,
-          blockError: "That slot was just taken. Please pick another time.",
+      const results: Booking[] = [];
+      for (const { dateStr, timeBlock } of selectedDates) {
+        const res = await fetch("/api/bookings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cleanerId,
+            customerName:    state.customerName.trim(),
+            customerPhone:   state.customerPhone.trim(),
+            customerAddress: state.customerAddress.trim(),
+            hasPets:         state.hasPets,
+            bedrooms:        state.bedrooms,
+            bathrooms:       state.bathrooms,
+            serviceType:     state.serviceType,
+            frequency:       state.frequency,
+            date:            dateStr,
+            timeBlock,
+          }),
         });
-        handleDateChange(state.date);
-        return;
+        if (res.status === 409) {
+          update({
+            submitting: false,
+            step: 2,
+            selectedDates: selectedDates.filter((d) => d.dateStr !== dateStr),
+            blockError: `${formatDate(dateStr)} was just taken. Pick another date.`,
+          });
+          return;
+        }
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Booking failed");
+        results.push(data as Booking);
       }
-      if (!res.ok) throw new Error(data.error ?? "Booking failed");
-      update({ submitting: false, step: 4, confirmedBooking: data as Booking });
+      update({ submitting: false, step: 4, confirmedBookings: results });
     } catch (err) {
       update({ submitting: false, submitError: (err as Error).message });
     }
@@ -291,8 +331,8 @@ function BookPageInner() {
 
   // ── Messenger: copy details then open m.me ───────────────────────────────────
   async function handleMessenger() {
-    if (!state.confirmedBooking || !cleaner?.messengerUsername) return;
-    await navigator.clipboard.writeText(buildSmsBody(state.confirmedBooking, state.serviceType));
+    if (!state.confirmedBookings.length || !cleaner?.messengerUsername) return;
+    await navigator.clipboard.writeText(buildSmsBody(state.confirmedBookings, state.serviceType));
     update({ messengerCopied: true });
     setTimeout(() => update({ messengerCopied: false }), 5000);
     window.open(`https://m.me/${cleaner.messengerUsername}`, "_blank");
@@ -537,71 +577,84 @@ function BookPageInner() {
                 {state.blockError}
               </div>
             )}
+
+            {/* Counter */}
+            <p className="text-center text-sm font-semibold text-sky-600">
+              Dates selected: {state.selectedDates.length} of {required}
+            </p>
+
             <div>
               <p className="text-sm font-semibold text-slate-700 mb-3">Select a Date</p>
               <div className="flex gap-2 overflow-x-auto pb-2">
                 {nextDays.map((d) => {
-                  const isSelected = state.date === d.dateStr;
+                  const isConfirmed = state.selectedDates.some((s) => s.dateStr === d.dateStr);
+                  const isActive    = state.activeDate === d.dateStr;
                   return (
                     <button
                       key={d.dateStr}
                       type="button"
                       disabled={d.isOff}
-                      onClick={() => !d.isOff && handleDateChange(d.dateStr)}
-                      className={`flex flex-col items-center rounded-xl border-2 py-3 px-2.5 min-w-[56px] shrink-0 transition-colors ${
+                      onClick={() => !d.isOff && handleDateClick(d.dateStr)}
+                      className={`relative flex flex-col items-center rounded-xl border-2 py-3 px-2.5 min-w-[56px] shrink-0 transition-colors ${
                         d.isOff
                           ? "border-slate-100 bg-slate-50 cursor-not-allowed"
-                          : isSelected
+                          : isConfirmed
                           ? "border-sky-500 bg-sky-500"
+                          : isActive
+                          ? "border-sky-500 bg-white ring-2 ring-sky-200"
                           : "border-slate-200 bg-white hover:border-sky-300"
                       }`}
                     >
                       <span className={`text-[10px] font-semibold leading-none mb-1 ${
-                        d.isOff ? "text-slate-300" : isSelected ? "text-sky-100" : "text-slate-400"
+                        d.isOff ? "text-slate-300" : isConfirmed ? "text-sky-100" : isActive ? "text-sky-600" : "text-slate-400"
                       }`}>
                         {d.isToday ? "Today" : d.dayName}
                       </span>
                       <span className={`text-lg font-extrabold leading-tight ${
-                        d.isOff ? "text-slate-300" : isSelected ? "text-white" : "text-slate-800"
+                        d.isOff ? "text-slate-300" : isConfirmed ? "text-white" : isActive ? "text-sky-600" : "text-slate-800"
                       }`}>
-                        {d.dayNum}
+                        {state.activeDateLoading && isActive ? (
+                          <span className="animate-pulse">…</span>
+                        ) : (
+                          d.dayNum
+                        )}
                       </span>
                       <span className={`text-[10px] leading-none mt-1 ${
-                        d.isOff ? "text-slate-300" : isSelected ? "text-sky-100" : "text-slate-400"
+                        d.isOff ? "text-slate-300" : isConfirmed ? "text-sky-100" : isActive ? "text-sky-600" : "text-slate-400"
                       }`}>
                         {d.monthName}
                       </span>
+                      {isConfirmed && (
+                        <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-white rounded-full flex items-center justify-center text-sky-500 text-[10px] font-bold border border-sky-200">
+                          ✓
+                        </span>
+                      )}
                     </button>
                   );
                 })}
               </div>
             </div>
 
-            {state.blockLoading && (
-              <p className="text-center text-slate-500 text-sm py-4 animate-pulse">
-                Checking availability…
-              </p>
-            )}
-
-            {!state.blockLoading && state.blockAvail && (
+            {/* Inline time-block picker for active date */}
+            {state.activeDate && !state.activeDateLoading && state.activeDateAvail && (
               <div>
-                <p className="text-sm font-semibold text-slate-700 mb-3">Select a Time Block</p>
+                <p className="text-sm font-semibold text-slate-700 mb-3">
+                  Pick a time for {formatDateShort(state.activeDate)}
+                </p>
                 <div className="grid grid-cols-2 gap-4">
                   {(["morning", "afternoon"] as TimeBlock[]).map((block) => {
-                    const avail = state.blockAvail![block];
+                    const avail = state.activeDateAvail![block];
                     const info  = BLOCK_INFO[block];
                     return (
                       <button
                         key={block}
                         type="button"
                         disabled={!avail}
-                        onClick={() => avail && update({ timeBlock: block })}
+                        onClick={() => avail && handleBlockSelect(block)}
                         className={`border-2 rounded-2xl px-4 py-5 text-center transition-colors ${
                           !avail
                             ? "border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed"
-                            : state.timeBlock === block
-                            ? "border-sky-500 bg-sky-50"
-                            : "border-slate-200 bg-white hover:border-sky-300"
+                            : "border-slate-200 bg-white hover:border-sky-500 hover:bg-sky-50"
                         }`}
                       >
                         <p className={`font-bold text-base ${avail ? "text-slate-800" : "text-slate-300"}`}>
@@ -620,8 +673,8 @@ function BookPageInner() {
               </div>
             )}
 
-            {!state.blockLoading && state.blockAvail &&
-              !state.blockAvail.morning && !state.blockAvail.afternoon && (
+            {state.activeDate && !state.activeDateLoading && state.activeDateAvail &&
+              !state.activeDateAvail.morning && !state.activeDateAvail.afternoon && (
               <p className="text-center text-slate-400 text-sm py-2">
                 No availability on this date. Please try another day.
               </p>
@@ -636,7 +689,7 @@ function BookPageInner() {
               </button>
               <button
                 onClick={goStep3}
-                disabled={!state.timeBlock}
+                disabled={state.selectedDates.length < required}
                 className="flex-1 bg-sky-500 hover:bg-sky-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-colors"
               >
                 Continue →
@@ -710,22 +763,41 @@ function BookPageInner() {
 
             {/* Price summary */}
             {price !== null && (
-              <div className="bg-slate-50 rounded-xl border border-slate-100 px-5 py-4 text-sm space-y-1.5">
+              <div className="bg-slate-50 rounded-xl border border-slate-100 px-5 py-4 text-sm space-y-2">
                 <div className="flex justify-between text-slate-500">
                   <span>
                     {SERVICE_LABELS[state.serviceType]} ·{" "}
                     {state.bedrooms === 5 ? "5+" : state.bedrooms} bed ·{" "}
                     {state.bathrooms === 5 ? "5+" : state.bathrooms} bath
                   </span>
-                  <span className="capitalize">{state.frequency?.replace("_", "-")}</span>
+                  <span>
+                    {FREQ_OPTIONS.find((f) => f.value === state.frequency)?.label ?? ""}
+                    {state.frequency && discountLabel(cleaner, state.frequency) && (
+                      <span className="ml-1 text-green-600">
+                        ({discountLabel(cleaner, state.frequency)})
+                      </span>
+                    )}
+                  </span>
+                </div>
+                {/* Selected dates list */}
+                <div className="space-y-0.5 py-1">
+                  {state.selectedDates.map(({ dateStr, timeBlock }) => (
+                    <p key={dateStr} className="text-slate-600 text-xs">
+                      {formatDateShort(dateStr)} · {BLOCK_INFO[timeBlock].label}
+                    </p>
+                  ))}
+                </div>
+                <div className="flex justify-between pt-1 border-t border-slate-200">
+                  <span className="text-slate-500">Per visit</span>
+                  <span className="font-bold text-slate-700">${price.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="font-semibold text-slate-700">
-                    {state.date && BLOCK_INFO[state.timeBlock!]
-                      ? `${formatDate(state.date)} · ${BLOCK_INFO[state.timeBlock!].label}`
-                      : ""}
+                    Total ({required} visit{required > 1 ? "s" : ""})
                   </span>
-                  <span className="font-extrabold text-sky-600 text-base">${price.toFixed(2)}</span>
+                  <span className="font-extrabold text-sky-600 text-base">
+                    ${(price * required).toFixed(2)}
+                  </span>
                 </div>
               </div>
             )}
@@ -750,15 +822,19 @@ function BookPageInner() {
         )}
 
         {/* ── Step 4: Confirmed ── */}
-        {state.step === 4 && state.confirmedBooking && (
+        {state.step === 4 && state.confirmedBookings.length > 0 && (
           <div className="space-y-5">
             {/* Success header */}
             <div className="bg-green-50 border border-green-200 rounded-2xl px-6 py-5 text-center">
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">
                 ✓
               </div>
-              <p className="font-extrabold text-green-800 text-lg">Booking Confirmed!</p>
-              <p className="text-xs text-green-600 mt-1">ID: {state.confirmedBooking.id}</p>
+              <p className="font-extrabold text-green-800 text-lg">
+                {state.confirmedBookings.length === 1
+                  ? "Booking Confirmed!"
+                  : `${state.confirmedBookings.length} Bookings Confirmed!`}
+              </p>
+              <p className="text-xs text-green-600 mt-1">ID: {state.confirmedBookings[0].id}</p>
             </div>
 
             {/* Summary card */}
@@ -767,32 +843,49 @@ function BookPageInner() {
                 ["Service", SERVICE_LABELS[state.serviceType]],
                 [
                   "Home",
-                  `${state.confirmedBooking.bedrooms === 5 ? "5+" : state.confirmedBooking.bedrooms} bed · ${
-                    state.confirmedBooking.bathrooms === 5 ? "5+" : state.confirmedBooking.bathrooms
+                  `${state.confirmedBookings[0].bedrooms === 5 ? "5+" : state.confirmedBookings[0].bedrooms} bed · ${
+                    state.confirmedBookings[0].bathrooms === 5 ? "5+" : state.confirmedBookings[0].bathrooms
                   } bath`,
                 ],
                 [
                   "Frequency",
-                  FREQ_OPTIONS.find((f) => f.value === state.confirmedBooking!.frequency)?.label ?? "",
+                  FREQ_OPTIONS.find((f) => f.value === state.confirmedBookings[0].frequency)?.label ?? "",
                 ],
-                ["Date", formatDate(state.confirmedBooking.date)],
-                [
-                  "Time",
-                  `${BLOCK_INFO[state.confirmedBooking.timeBlock].label} (Starts at ${BLOCK_INFO[state.confirmedBooking.timeBlock].start})`,
-                ],
-                ["Address", state.confirmedBooking.customerAddress],
-                ["Phone", state.confirmedBooking.customerPhone],
-                ["Pets", state.confirmedBooking.hasPets ? "Yes" : "No"],
+                ["Address", state.confirmedBookings[0].customerAddress],
+                ["Phone", state.confirmedBookings[0].customerPhone],
+                ["Pets", state.confirmedBookings[0].hasPets ? "Yes" : "No"],
               ].map(([label, value]) => (
                 <div key={label} className="flex justify-between py-2.5 text-sm">
                   <span className="text-slate-500">{label}</span>
                   <span className="font-semibold text-slate-800 text-right max-w-[60%]">{value}</span>
                 </div>
               ))}
+
+              {/* Dates section */}
+              <div className="py-2.5 text-sm">
+                <span className="text-slate-500 block mb-2">Dates</span>
+                {state.confirmedBookings.map((b) => (
+                  <div key={b.id} className="flex justify-between items-baseline py-0.5">
+                    <span className="text-slate-700">
+                      {formatDateShort(b.date)} · {BLOCK_INFO[b.timeBlock].label}
+                    </span>
+                    <span className="text-slate-400 text-xs">({BLOCK_INFO[b.timeBlock].start})</span>
+                  </div>
+                ))}
+              </div>
+
               <div className="flex justify-between py-2.5 text-sm">
-                <span className="text-slate-500">Total</span>
+                <span className="text-slate-500">Per visit</span>
+                <span className="font-bold text-slate-700">
+                  ${state.confirmedBookings[0].totalPrice.toFixed(2)}
+                </span>
+              </div>
+              <div className="flex justify-between py-2.5 text-sm">
+                <span className="font-semibold text-slate-700">
+                  Total ({state.confirmedBookings.length} visit{state.confirmedBookings.length > 1 ? "s" : ""})
+                </span>
                 <span className="font-extrabold text-sky-600 text-base">
-                  ${state.confirmedBooking.totalPrice.toFixed(2)}
+                  ${(state.confirmedBookings[0].totalPrice * state.confirmedBookings.length).toFixed(2)}
                 </span>
               </div>
             </div>
@@ -802,7 +895,7 @@ function BookPageInner() {
               {/* SMS */}
               {cleaner.phone ? (
                 <a
-                  href={`sms:${cleaner.phone}?body=${encodeURIComponent(buildSmsBody(state.confirmedBooking, state.serviceType))}`}
+                  href={`sms:${cleaner.phone}?body=${encodeURIComponent(buildSmsBody(state.confirmedBookings, state.serviceType))}`}
                   className="w-full font-bold py-4 rounded-2xl transition-colors text-base bg-sky-500 hover:bg-sky-600 text-white flex items-center justify-center gap-2"
                 >
                   Send via Text Message (SMS)
