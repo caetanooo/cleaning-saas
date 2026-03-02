@@ -119,6 +119,7 @@ export async function POST(request: Request) {
       has_pets:         body.hasPets,
       bedrooms:         body.bedrooms,
       bathrooms:        body.bathrooms,
+      service_type:     body.serviceType ?? "regular",
       frequency:        body.frequency,
       date:             body.date,
       time_block:       body.timeBlock,
