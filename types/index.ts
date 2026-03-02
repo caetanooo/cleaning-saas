@@ -63,7 +63,9 @@ export interface Booking {
   customerName: string;
   customerPhone: string;
   customerAddress: string;
-  hasPets: boolean;
+  hasPets:     boolean;
+  hasChildren: boolean;
+  hasCarpet:   boolean;
   bedrooms: number;
   bathrooms: number;
   serviceType?: CleaningServiceType;  // stored only if service_type column exists in DB

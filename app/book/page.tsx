@@ -144,7 +144,7 @@ function buildSmsBody(bookings: Booking[], serviceType: CleaningServiceType): st
     `Dates:\n${dateLines}`,
     `Address: ${first.customerAddress}`,
     `Service: ${SERVICE_LABELS[serviceType]} — ${beds} bed · ${baths} bath — ${freqMap[first.frequency]}`,
-    `Notes: Pets: ${first.hasPets ? "Yes" : "No"}`,
+    `Notes: Pets: ${first.hasPets ? "Yes" : "No"} | Children: ${first.hasChildren ? "Yes" : "No"} | Carpet: ${first.hasCarpet ? "Yes" : "No"}`,
   ].join("\n");
 }
 
@@ -164,7 +164,9 @@ interface WizardState {
   customerName: string;
   customerPhone: string;
   customerAddress: string;
-  hasPets: boolean;
+  hasPets:     boolean;
+  hasChildren: boolean;
+  hasCarpet:   boolean;
   submitting: boolean;
   submitError: string;
   confirmedBookings: Booking[];
@@ -185,7 +187,9 @@ const INITIAL: WizardState = {
   customerName: "",
   customerPhone: "",
   customerAddress: "",
-  hasPets: false,
+  hasPets:     false,
+  hasChildren: false,
+  hasCarpet:   false,
   submitting: false,
   submitError: "",
   confirmedBookings: [],
@@ -304,6 +308,8 @@ function BookPageInner() {
             customerPhone:   state.customerPhone.trim(),
             customerAddress: state.customerAddress.trim(),
             hasPets:         state.hasPets,
+            hasChildren:     state.hasChildren,
+            hasCarpet:       state.hasCarpet,
             bedrooms:        state.bedrooms,
             bathrooms:       state.bathrooms,
             serviceType:     state.serviceType,
@@ -746,20 +752,64 @@ function BookPageInner() {
             </div>
 
             <div>
-              <p className="block text-sm font-semibold text-slate-700 mb-2">Do you have pets?</p>
-              <div className="flex gap-4">
-                {[{ label: "Yes", value: true }, { label: "No", value: false }].map(({ label, value }) => (
-                  <label key={label} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="hasPets"
-                      checked={state.hasPets === value}
-                      onChange={() => update({ hasPets: value })}
-                      className="accent-sky-500"
-                    />
-                    <span className="text-sm text-slate-700">{label}</span>
-                  </label>
-                ))}
+              <p className="block text-sm font-semibold text-slate-700 mb-2">Household Profile</p>
+              <div className="grid grid-cols-3 gap-3">
+                {/* Pets */}
+                <button
+                  type="button"
+                  onClick={() => update({ hasPets: !state.hasPets })}
+                  className={`flex flex-col items-center py-4 rounded-xl border-2 transition-all ${
+                    state.hasPets
+                      ? "border-sky-500 bg-sky-50 text-sky-600"
+                      : "border-slate-200 bg-white text-slate-300 hover:border-sky-200"
+                  }`}
+                >
+                  <svg className="w-7 h-7 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="4.5" cy="9.5" r="2" />
+                    <circle cx="9"   cy="4.5" r="2" />
+                    <circle cx="15"  cy="4.5" r="2" />
+                    <circle cx="19.5" cy="9.5" r="2" />
+                    <path d="M12 12c-3 0-6 2-6 5.5 0 2 1.5 2.5 3 2.5h6c1.5 0 3-.5 3-2.5 0-3.5-3-5.5-6-5.5z" />
+                  </svg>
+                  <span className="text-xs font-semibold">Pets</span>
+                </button>
+
+                {/* Children */}
+                <button
+                  type="button"
+                  onClick={() => update({ hasChildren: !state.hasChildren })}
+                  className={`flex flex-col items-center py-4 rounded-xl border-2 transition-all ${
+                    state.hasChildren
+                      ? "border-sky-500 bg-sky-50 text-sky-600"
+                      : "border-slate-200 bg-white text-slate-300 hover:border-sky-200"
+                  }`}
+                >
+                  <svg className="w-7 h-7 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="6" r="3" />
+                    <path d="M9 20v-5H7l2-5h6l2 5h-2v5" />
+                  </svg>
+                  <span className="text-xs font-semibold">Children</span>
+                </button>
+
+                {/* Carpet */}
+                <button
+                  type="button"
+                  onClick={() => update({ hasCarpet: !state.hasCarpet })}
+                  className={`flex flex-col items-center py-4 rounded-xl border-2 transition-all ${
+                    state.hasCarpet
+                      ? "border-sky-500 bg-sky-50 text-sky-600"
+                      : "border-slate-200 bg-white text-slate-300 hover:border-sky-200"
+                  }`}
+                >
+                  <svg className="w-7 h-7 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="6" width="18" height="12" rx="1" />
+                    <line x1="3"  y1="10" x2="21" y2="10" />
+                    <line x1="3"  y1="14" x2="21" y2="14" />
+                    <line x1="8"  y1="6"  x2="8"  y2="18" />
+                    <line x1="16" y1="6"  x2="16" y2="18" />
+                  </svg>
+                  <span className="text-xs font-semibold">Carpet</span>
+                </button>
               </div>
             </div>
 
@@ -788,6 +838,12 @@ function BookPageInner() {
                       {formatDateShort(dateStr)} · {BLOCK_INFO[timeBlock].label}
                     </p>
                   ))}
+                  {(state.hasPets || state.hasChildren || state.hasCarpet) && (
+                    <p className="text-xs text-slate-400">
+                      {[state.hasPets && "Pets", state.hasChildren && "Children", state.hasCarpet && "Carpet"]
+                        .filter(Boolean).join(" · ")}
+                    </p>
+                  )}
                 </div>
                 <div className="flex justify-between pt-1 border-t border-slate-200">
                   <span className="text-slate-500">Per visit</span>
@@ -855,7 +911,9 @@ function BookPageInner() {
                 ],
                 ["Address", state.confirmedBookings[0].customerAddress],
                 ["Phone", state.confirmedBookings[0].customerPhone],
-                ["Pets", state.confirmedBookings[0].hasPets ? "Yes" : "No"],
+                ["Pets",     state.confirmedBookings[0].hasPets     ? "Yes" : "No"],
+                ["Children", state.confirmedBookings[0].hasChildren ? "Yes" : "No"],
+                ["Carpet",   state.confirmedBookings[0].hasCarpet   ? "Yes" : "No"],
               ].map(([label, value]) => (
                 <div key={label} className="flex justify-between py-2.5 text-sm">
                   <span className="text-slate-500">{label}</span>

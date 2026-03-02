@@ -9,7 +9,9 @@ function rowToBooking(row: Record<string, unknown>): Booking {
     customerName:    row.customer_name  as string,
     customerPhone:   row.customer_phone as string,
     customerAddress: row.customer_address as string,
-    hasPets:         row.has_pets       as boolean,
+    hasPets:         row.has_pets        as boolean,
+    hasChildren:     (row.has_children  as boolean) ?? false,
+    hasCarpet:       (row.has_carpet    as boolean) ?? false,
     bedrooms:        row.bedrooms       as number,
     bathrooms:       row.bathrooms      as number,
     serviceType:     (row.service_type  as CleaningServiceType) || undefined,
@@ -50,7 +52,9 @@ export async function POST(request: Request) {
     customerName: string;
     customerPhone: string;
     customerAddress: string;
-    hasPets: boolean;
+    hasPets:     boolean;
+    hasChildren: boolean;
+    hasCarpet:   boolean;
     bedrooms: number;
     bathrooms: number;
     serviceType?: CleaningServiceType;
@@ -117,6 +121,8 @@ export async function POST(request: Request) {
       customer_phone:   body.customerPhone,
       customer_address: body.customerAddress,
       has_pets:         body.hasPets,
+      has_children:     body.hasChildren ?? false,
+      has_carpet:       body.hasCarpet   ?? false,
       bedrooms:         body.bedrooms,
       bathrooms:        body.bathrooms,
       service_type:     body.serviceType ?? "regular",
@@ -142,6 +148,8 @@ export async function POST(request: Request) {
     customerPhone:   row.customer_phone,
     customerAddress: row.customer_address,
     hasPets:         row.has_pets,
+    hasChildren:     row.has_children ?? false,
+    hasCarpet:       row.has_carpet   ?? false,
     bedrooms:        row.bedrooms,
     bathrooms:       row.bathrooms,
     frequency:       row.frequency,

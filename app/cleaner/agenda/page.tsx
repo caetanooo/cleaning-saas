@@ -489,7 +489,9 @@ export default function CleanerAgendaPage() {
                           ["Tipo de serviço", b.serviceType ? SERVICE_LABELS[b.serviceType] : "Regular"],
                           ["Frequência",      FREQ_LABELS[b.frequency] ?? b.frequency],
                           ["Casa",            `${b.bedrooms} qto${b.bedrooms > 1 ? "s" : ""} · ${b.bathrooms} bnh${b.bathrooms > 1 ? "s" : ""}`],
-                          ["Pets",            b.hasPets ? "Sim" : "Não"],
+                          ["Pets",      b.hasPets                    ? "Sim" : "Não"],
+                          ["Crianças",  (b.hasChildren ?? false)    ? "Sim" : "Não"],
+                          ["Carpete",   (b.hasCarpet   ?? false)    ? "Sim" : "Não"],
                           ["Valor",           `$${b.totalPrice.toFixed(2)}`],
                         ].map(([label, value]) => (
                           <div key={label} className="flex justify-between gap-4">
