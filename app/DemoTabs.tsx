@@ -2,308 +2,578 @@
 
 import { useState } from "react";
 
-type Tab = "painel" | "cliente" | "precos";
+type Tab = "agenda" | "link" | "precos";
 
-// ─── Tab: Seu Painel ──────────────────────────────────────────────────────────
+// ─── Agenda Tab data ──────────────────────────────────────────────────────────
 
-function PainelTab() {
+const AGENDA_DAYS = [
+  {
+    day: "Segunda-feira",
+    date: "3 mar",
+    morning: { name: "Maria Silva",   service: "Regular Cleaning" },
+    afternoon: null,
+  },
+  {
+    day: "Terça-feira",
+    date: "4 mar",
+    morning: { name: "Sarah Johnson", service: "Regular Cleaning" },
+    afternoon: { name: "John Williams", service: "Deep Cleaning" },
+  },
+  {
+    day: "Quarta-feira",
+    date: "5 mar",
+    morning: null,
+    afternoon: null,
+  },
+  {
+    day: "Quinta-feira",
+    date: "6 mar",
+    morning: { name: "Emily Clark",   service: "Regular Cleaning" },
+    afternoon: null,
+  },
+  {
+    day: "Sexta-feira",
+    date: "7 mar",
+    morning: null,
+    afternoon: { name: "David Lee",   service: "Regular Cleaning" },
+  },
+  {
+    day: "Sábado",
+    date: "8 mar",
+    morning: { name: "Lisa Park",     service: "Deep Cleaning" },
+    afternoon: "folga" as const,
+  },
+];
+
+// ─── Booking Tab data ─────────────────────────────────────────────────────────
+
+const STEPS = ["House Size", "Frequency", "Date & Time", "Your Details"];
+
+const SERVICE_OPTS = [
+  {
+    label: "Regular Cleaning",
+    desc: "Thorough cleaning of all rooms.",
+    price: "145.00",
+    addon: null,
+    active: true,
+  },
+  {
+    label: "Deep Cleaning",
+    desc: "Includes inside oven, baseboards, blinds, and windows.",
+    price: "195.00",
+    addon: 50,
+    active: false,
+  },
+  {
+    label: "Move-in / Move-out",
+    desc: "Deep cleaning + inside appliances, cabinets, and closets.",
+    price: "225.00",
+    addon: 80,
+    active: false,
+  },
+];
+
+const FREQ_OPTS = [
+  { label: "One-Time",  desc: "Single visit, no commitment",  price: "145.00", badge: "",         active: false },
+  { label: "Weekly",    desc: "4 dates — once a week",         price: "123.25", badge: "Save 15%", active: false },
+  { label: "Bi-Weekly", desc: "2 dates — every two weeks",     price: "130.50", badge: "Save 10%", active: true  },
+  { label: "Monthly",   desc: "1 date — once a month",         price: "137.75", badge: "Save 5%",  active: false },
+];
+
+// ─── Pricing Tab helpers ──────────────────────────────────────────────────────
+
+const PREVIEW_ROWS = [
+  { beds: 1, baths: 1 },
+  { beds: 2, baths: 1 },
+  { beds: 2, baths: 2 },
+  { beds: 3, baths: 2 },
+  { beds: 4, baths: 3 },
+];
+
+function calcBase(base: number, eb: number, ebath: number, beds: number, baths: number) {
+  return base + (beds - 1) * eb + (baths - 1) * ebath;
+}
+
+// ─── Tab: Sua Agenda ──────────────────────────────────────────────────────────
+
+function AgendaTab() {
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="font-extrabold text-slate-800 text-base">Agenda de Hoje</h3>
-          <p className="text-xs text-slate-400">Terça-feira, 4 de março</p>
+    <div className="space-y-3">
+      {/* Card header */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <h3 className="font-bold text-slate-800">Minha Agenda</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Semana de 3 a 8 de março · 2026</p>
+          </div>
+          <span className="bg-teal-100 text-teal-700 text-xs font-bold px-3 py-1.5 rounded-full">
+            5 faxinas
+          </span>
         </div>
-        <span className="bg-teal-100 text-teal-700 text-xs font-bold px-3 py-1.5 rounded-full">
-          2 faxinas
-        </span>
-      </div>
 
-      {/* Booking 1 */}
-      <div className="border border-slate-100 rounded-2xl p-4 sm:p-5 bg-slate-50 hover:shadow-sm transition-shadow">
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex items-center gap-2.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-teal-400 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold text-slate-800 text-sm">Sarah Johnson</p>
-              <p className="text-xs text-slate-500">Regular Cleaning · Weekly</p>
+        {/* Column headers */}
+        <div className="grid grid-cols-[1fr_1fr_1fr] border-b border-slate-50 bg-slate-50">
+          <div className="px-4 py-2.5 text-xs font-bold text-slate-500">Dia</div>
+          <div className="px-4 py-2.5 text-xs font-bold text-sky-600 border-l border-slate-100">
+            Manhã · 9h–13h
+          </div>
+          <div className="px-4 py-2.5 text-xs font-bold text-violet-600 border-l border-slate-100">
+            Tarde · 13h30–18h
+          </div>
+        </div>
+
+        {/* Day rows */}
+        {AGENDA_DAYS.map((row, i) => (
+          <div
+            key={row.day}
+            className={`grid grid-cols-[1fr_1fr_1fr] border-t border-slate-50 ${
+              i % 2 === 1 ? "bg-slate-50/40" : "bg-white"
+            }`}
+          >
+            {/* Day */}
+            <div className="px-4 py-3.5">
+              <p className="text-sm font-bold text-slate-700 leading-tight">{row.day}</p>
+              <p className="text-xs text-slate-400">{row.date}</p>
+            </div>
+
+            {/* Morning */}
+            <div className="px-4 py-3.5 border-l border-slate-100">
+              {row.morning ? (
+                <div className="flex items-start gap-2">
+                  <span className="w-2 h-2 rounded-full bg-sky-500 shrink-0 mt-1" />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800 leading-tight">{row.morning.name}</p>
+                    <p className="text-xs text-slate-400">{row.morning.service}</p>
+                  </div>
+                </div>
+              ) : (
+                <span className="text-xs font-medium text-teal-500">Disponível</span>
+              )}
+            </div>
+
+            {/* Afternoon */}
+            <div className="px-4 py-3.5 border-l border-slate-100">
+              {row.afternoon === "folga" ? (
+                <span className="text-xs text-slate-400 italic">Folga</span>
+              ) : row.afternoon ? (
+                <div className="flex items-start gap-2">
+                  <span className="w-2 h-2 rounded-full bg-violet-500 shrink-0 mt-1" />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800 leading-tight">{row.afternoon.name}</p>
+                    <p className="text-xs text-slate-400">{row.afternoon.service}</p>
+                  </div>
+                </div>
+              ) : (
+                <span className="text-xs font-medium text-teal-500">Disponível</span>
+              )}
             </div>
           </div>
-          <span className="text-xs font-bold text-slate-700 bg-white border border-slate-200 px-2.5 py-1 rounded-xl shrink-0">
-            10:00 AM
-          </span>
-        </div>
-        <p className="text-xs text-slate-400 pl-5 mb-3">📍 123 Oak Street, Austin TX</p>
-        <div className="flex items-center gap-3 pl-5 flex-wrap">
-          <span className="text-xs bg-white border border-slate-200 text-slate-600 px-2.5 py-1 rounded-lg">
-            3 bed · 2 bath
-          </span>
-          <span className="text-sm font-extrabold text-sky-600">$120</span>
-        </div>
-      </div>
+        ))}
 
-      {/* Booking 2 */}
-      <div className="border border-slate-100 rounded-2xl p-4 sm:p-5 bg-slate-50 hover:shadow-sm transition-shadow">
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex items-center gap-2.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-sky-400 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold text-slate-800 text-sm">John Williams</p>
-              <p className="text-xs text-slate-500">Deep Cleaning · One-time</p>
-            </div>
-          </div>
-          <span className="text-xs font-bold text-slate-700 bg-white border border-slate-200 px-2.5 py-1 rounded-xl shrink-0">
-            2:00 PM
+        {/* Legend */}
+        <div className="px-5 py-3 border-t border-slate-100 flex flex-wrap gap-4 text-xs text-slate-500">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-sky-500 inline-block" />
+            Manhã agendada
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-violet-500 inline-block" />
+            Tarde agendada
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-teal-400 inline-block" />
+            Disponível
           </span>
         </div>
-        <p className="text-xs text-slate-400 pl-5 mb-3">📍 456 Maple Ave, Austin TX</p>
-        <div className="flex items-center gap-3 pl-5 flex-wrap">
-          <span className="text-xs bg-white border border-slate-200 text-slate-600 px-2.5 py-1 rounded-lg">
-            4 bed · 3 bath
-          </span>
-          <span className="text-sm font-extrabold text-sky-600">$220</span>
-        </div>
-      </div>
-
-      {/* Daily total */}
-      <div className="bg-sky-50 border border-sky-100 rounded-2xl px-5 py-4 flex items-center justify-between">
-        <p className="text-sm font-semibold text-sky-800">Total do dia</p>
-        <p className="text-xl font-extrabold text-sky-600">$340 ✨</p>
       </div>
     </div>
   );
 }
 
-// ─── Tab: O que o Cliente vê ──────────────────────────────────────────────────
+// ─── Tab: Seu Link Profissional ───────────────────────────────────────────────
 
-function ClienteTab() {
+function LinkTab() {
+  const [step, setStep] = useState(0);
+
   return (
-    <div className="max-w-sm mx-auto space-y-5">
-      {/* Header */}
-      <div className="text-center">
-        <p className="font-extrabold text-slate-800 text-base">Ana&apos;s Cleaning ✨</p>
-        <p className="text-xs text-sky-500 font-semibold mt-0.5">Book your cleaning</p>
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+      {/* Wizard header — exact from WizardClient.tsx */}
+      <div className="px-6 pt-8 pb-4 text-center border-b border-slate-50">
+        <h3 className="text-2xl font-extrabold text-slate-900 mb-1">Book Your Cleaning</h3>
+        <p className="text-slate-500 text-sm">With Ana Santos · Ready in under 60 seconds.</p>
       </div>
 
-      {/* Step dots */}
-      <div className="flex justify-center gap-2">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className={`w-2 h-2 rounded-full ${i === 1 ? "bg-sky-500" : "bg-slate-200"}`} />
+      {/* Step indicator — exact CSS from WizardClient.tsx */}
+      <div className="flex items-center gap-0 px-6 pt-6 pb-2">
+        {STEPS.map((label, i) => (
+          <div key={i} className="flex items-center flex-1 last:flex-none">
+            <div className="flex flex-col items-center">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
+                  i < step
+                    ? "bg-sky-500 text-white"
+                    : i === step
+                    ? "bg-sky-500 text-white ring-4 ring-sky-100"
+                    : "bg-slate-200 text-slate-400"
+                }`}
+              >
+                {i < step ? "✓" : i + 1}
+              </div>
+              <span className={`text-xs mt-1 font-medium hidden sm:block ${i === step ? "text-sky-600" : "text-slate-400"}`}>
+                {label}
+              </span>
+            </div>
+            {i < STEPS.length - 1 && (
+              <div className={`flex-1 h-0.5 mb-5 mx-1 ${i < step ? "bg-sky-500" : "bg-slate-200"}`} />
+            )}
+          </div>
         ))}
       </div>
 
-      {/* Bedrooms */}
-      <div>
-        <p className="text-xs font-bold text-slate-500 uppercase mb-2">Bedrooms</p>
-        <div className="flex gap-2">
-          {[1, 2, 3, 4].map((n) => (
-            <div
-              key={n}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-bold text-center ${
-                n === 2
-                  ? "bg-sky-500 text-white shadow-md shadow-sky-200"
-                  : "bg-slate-100 text-slate-500"
-              }`}
-            >
-              {n}
+      {/* Step 0: House Size + Service Type — exact from WizardClient.tsx */}
+      {step === 0 && (
+        <div className="px-6 pb-6 pt-4 space-y-6">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-6">
+            {/* Bedrooms */}
+            <div>
+              <p className="text-sm font-bold text-slate-700 mb-3">Bedrooms</p>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <div
+                    key={n}
+                    className={`flex-1 py-3 rounded-xl border-2 text-sm font-bold text-center ${
+                      n === 3
+                        ? "border-sky-500 bg-sky-50 text-sky-600"
+                        : "border-slate-200 text-slate-600"
+                    }`}
+                  >
+                    {n === 5 ? "5+" : n}
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Bathrooms */}
-      <div>
-        <p className="text-xs font-bold text-slate-500 uppercase mb-2">Bathrooms</p>
-        <div className="flex gap-2">
-          {[1, 2, 3].map((n) => (
-            <div
-              key={n}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-bold text-center ${
-                n === 2
-                  ? "bg-sky-500 text-white shadow-md shadow-sky-200"
-                  : "bg-slate-100 text-slate-500"
-              }`}
-            >
-              {n}
+            {/* Bathrooms */}
+            <div>
+              <p className="text-sm font-bold text-slate-700 mb-3">Bathrooms</p>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <div
+                    key={n}
+                    className={`flex-1 py-3 rounded-xl border-2 text-sm font-bold text-center ${
+                      n === 2
+                        ? "border-sky-500 bg-sky-50 text-sky-600"
+                        : "border-slate-200 text-slate-600"
+                    }`}
+                  >
+                    {n === 5 ? "5+" : n}
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Frequency */}
-      <div>
-        <p className="text-xs font-bold text-slate-500 uppercase mb-2">Frequency</p>
-        <div className="grid grid-cols-2 gap-2">
-          {[
-            { label: "One-time",  discount: "" },
-            { label: "Monthly",   discount: "5% off" },
-            { label: "Bi-weekly", discount: "10% off", active: true },
-            { label: "Weekly",    discount: "15% off" },
-          ].map(({ label, discount, active }) => (
-            <div
-              key={label}
-              className={`py-2.5 px-3 rounded-xl text-sm font-semibold ${
-                active
-                  ? "bg-sky-500 text-white shadow-md shadow-sky-200"
-                  : "bg-slate-100 text-slate-600"
-              }`}
-            >
-              <span className="block font-bold">{label}</span>
-              {discount && (
-                <span className={`text-xs ${active ? "text-sky-100" : "text-teal-500"}`}>
-                  {discount}
-                </span>
-              )}
+            {/* Service Type — exact from WizardClient.tsx */}
+            <div className="pt-2 border-t border-slate-100">
+              <p className="text-sm font-bold text-slate-700 mb-3">Service Type</p>
+              <div className="space-y-2">
+                {SERVICE_OPTS.map((opt) => (
+                  <div
+                    key={opt.label}
+                    className={`w-full text-left border-2 rounded-xl px-4 py-3 ${
+                      opt.active ? "border-sky-500 bg-sky-50" : "border-slate-200 bg-white"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-slate-800 text-sm">{opt.label}</p>
+                          {opt.addon && (
+                            <span className="text-xs font-semibold text-sky-600 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded-full">
+                              +${opt.addon}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-400 mt-0.5">{opt.desc}</p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-lg font-extrabold text-sky-600">${opt.price}</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">per session</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
 
-      {/* Price summary */}
-      <div className="bg-sky-50 border border-sky-100 rounded-2xl px-5 py-4 flex items-center justify-between">
-        <div>
-          <p className="text-xs text-slate-500">Price per session</p>
-          <p className="text-2xl font-extrabold text-sky-600">$108</p>
+          <button
+            onClick={() => setStep(1)}
+            className="w-full bg-sky-500 hover:bg-sky-600 text-white font-bold py-4 rounded-2xl transition-colors text-lg"
+          >
+            Continue →
+          </button>
         </div>
-        <span className="bg-teal-100 text-teal-700 text-xs font-bold px-2.5 py-1.5 rounded-full text-right">
-          10% bi-weekly<br />discount ✓
-        </span>
-      </div>
+      )}
+
+      {/* Step 1: Frequency — exact from WizardClient.tsx */}
+      {step === 1 && (
+        <div className="px-6 pb-6 pt-4 space-y-6">
+          <div className="space-y-3">
+            {FREQ_OPTS.map((opt) => (
+              <div
+                key={opt.label}
+                className={`w-full text-left border-2 rounded-2xl px-5 py-4 ${
+                  opt.active ? "border-sky-500 bg-sky-50" : "border-slate-200 bg-white"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-bold text-slate-800">{opt.label}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{opt.desc}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xl font-extrabold text-sky-600">${opt.price}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">per session</p>
+                    {opt.badge && (
+                      <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                        {opt.badge}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setStep(0)}
+              className="flex-1 border-2 border-slate-200 text-slate-600 font-semibold py-3 rounded-xl hover:border-slate-300 transition-colors"
+            >
+              ← Back
+            </button>
+            <button className="flex-1 bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 rounded-xl transition-colors">
+              Continue →
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// ─── Tab: Configuração de Preços ──────────────────────────────────────────────
+// ─── Tab: Seus Preços ─────────────────────────────────────────────────────────
 
 function PrecosTab() {
+  const [base,      setBase]      = useState("90");
+  const [extraBed,  setExtraBed]  = useState("20");
+  const [extraBath, setExtraBath] = useState("15");
+  const [deep,      setDeep]      = useState("50");
+  const [move,      setMove]      = useState("80");
+
+  const bNum    = parseFloat(base)      || 0;
+  const ebNum   = parseFloat(extraBed)  || 0;
+  const ebatNum = parseFloat(extraBath) || 0;
+  const dNum    = parseFloat(deep)      || 0;
+  const mNum    = parseFloat(move)      || 0;
+
   return (
-    <div className="max-w-sm mx-auto space-y-5">
-      {/* Base price */}
-      <div>
-        <p className="text-xs font-bold text-slate-500 uppercase mb-2">Preço Base</p>
-        <div className="flex items-center border-2 border-sky-400 rounded-xl overflow-hidden bg-white">
-          <span className="bg-sky-50 text-sky-600 font-extrabold px-4 py-3 text-base border-r border-sky-200">
-            $
-          </span>
-          <span className="px-4 py-3 font-extrabold text-slate-800 text-xl flex-1">150</span>
-          <span className="text-xs text-slate-400 pr-4">por sessão</span>
+    <div className="space-y-4">
+      {/* Precificação — exact from setup/page.tsx */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100">
+          <h3 className="font-bold text-slate-800 text-lg">Precificação</h3>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Defina seus valores — o sistema calcula automaticamente para qualquer tamanho de casa.
+          </p>
         </div>
-        <p className="text-xs text-slate-400 mt-1.5">Para 1 quarto / 1 banheiro</p>
-      </div>
 
-      {/* Extras per room */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-          <p className="text-[11px] font-bold text-slate-400 uppercase mb-1.5">Quarto extra</p>
-          <p className="text-xl font-extrabold text-slate-800">+$20</p>
-        </div>
-        <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-          <p className="text-[11px] font-bold text-slate-400 uppercase mb-1.5">Banheiro extra</p>
-          <p className="text-xl font-extrabold text-slate-800">+$15</p>
-        </div>
-      </div>
-
-      {/* Service addons */}
-      <div>
-        <p className="text-xs font-bold text-slate-500 uppercase mb-2">Adicionais por serviço</p>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between bg-violet-50 border border-violet-100 rounded-xl px-4 py-3">
-            <div className="flex items-center gap-2">
-              <span>🧹</span>
-              <span className="text-sm font-semibold text-slate-700">Deep Cleaning</span>
+        <div className="px-6 py-5 space-y-6">
+          {/* Fórmula Base */}
+          <div className="space-y-3">
+            <div>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Fórmula Base</p>
+              <p className="text-xs text-slate-400 mt-1">
+                Preço = Preço Base + (Quartos − 1) × Quarto Adicional + (Banheiros − 1) × Banheiro Adicional
+              </p>
             </div>
-            <span className="text-sm font-extrabold text-violet-600">+$50</span>
+
+            {[
+              { label: "Preço Base (1 quarto / 1 banheiro)", prefix: "$",  val: base,      set: setBase      },
+              { label: "Quarto adicional",                    prefix: "+$", val: extraBed,  set: setExtraBed  },
+              { label: "Banheiro adicional",                  prefix: "+$", val: extraBath, set: setExtraBath },
+            ].map(({ label, prefix, val, set }) => (
+              <div key={label} className="flex items-center gap-4">
+                <label className="flex-1 text-sm font-semibold text-slate-700 leading-snug">{label}</label>
+                <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400 w-[120px] shrink-0">
+                  <span className="px-2.5 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-2 select-none">
+                    {prefix}
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={val}
+                    onChange={(e) => set(e.target.value)}
+                    onFocus={(e) => e.target.select()}
+                    className="flex-1 px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none"
+                  />
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="flex items-center justify-between bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
-            <div className="flex items-center gap-2">
-              <span>📦</span>
-              <span className="text-sm font-semibold text-slate-700">Move-in / Move-out</span>
+
+          {/* Adicionais de Serviço */}
+          <div className="space-y-3 pt-1 border-t border-slate-100">
+            <div>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wide pt-2">
+                Adicionais por Tipo de Limpeza
+              </p>
+              <p className="text-xs text-slate-400 mt-1">
+                Cobrado além do preço base. Deep Cleaning inclui forno, geladeira e persianas.
+              </p>
             </div>
-            <span className="text-sm font-extrabold text-amber-600">+$80</span>
+            {[
+              { label: "Deep Cleaning",      sub: "Forno, geladeira, persianas, rodapés",  color: "text-sky-600",    val: deep, set: setDeep },
+              { label: "Move-in / Move-out", sub: "Deep + armários e eletrodomésticos",    color: "text-violet-600", val: move, set: setMove },
+            ].map(({ label, sub, color, val, set }) => (
+              <div key={label} className="flex items-center gap-4">
+                <div className="flex-1">
+                  <label className={`text-sm font-semibold ${color}`}>{label}</label>
+                  <p className="text-xs text-slate-400 mt-0.5">{sub}</p>
+                </div>
+                <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400 w-[120px] shrink-0">
+                  <span className="px-2.5 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-2 select-none">+$</span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={val}
+                    onChange={(e) => set(e.target.value)}
+                    onFocus={(e) => e.target.select()}
+                    className="flex-1 px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Live preview table — exact from setup/page.tsx */}
+          <div className="pt-1 border-t border-slate-100">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wide pt-2 mb-3">
+              Pré-visualização ao vivo
+            </p>
+            <div className="rounded-xl border border-slate-100 overflow-hidden text-xs">
+              <div className="grid grid-cols-4 bg-slate-50 border-b border-slate-100">
+                <div className="px-3 py-2 font-bold text-slate-500">Casa</div>
+                <div className="px-3 py-2 font-bold text-slate-600 text-center">Regular</div>
+                <div className="px-3 py-2 font-bold text-sky-600 text-center">Deep</div>
+                <div className="px-3 py-2 font-bold text-violet-600 text-center">Move-in/out</div>
+              </div>
+              {PREVIEW_ROWS.map(({ beds, baths }, i) => {
+                const reg = calcBase(bNum, ebNum, ebatNum, beds, baths);
+                const dp  = reg + dNum;
+                const mv  = reg + mNum;
+                return (
+                  <div
+                    key={`${beds}-${baths}`}
+                    className={`grid grid-cols-4 ${i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}`}
+                  >
+                    <div className="px-3 py-2.5 text-slate-500">
+                      {beds} {beds > 1 ? "qtos" : "qto"} · {baths} {baths > 1 ? "bnhs" : "bnh"}
+                    </div>
+                    <div className="px-3 py-2.5 font-semibold text-slate-800 text-center">${reg.toFixed(0)}</div>
+                    <div className="px-3 py-2.5 font-semibold text-sky-600 text-center">${dp.toFixed(0)}</div>
+                    <div className="px-3 py-2.5 font-semibold text-violet-600 text-center">${mv.toFixed(0)}</div>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="text-[10px] text-slate-400 mt-2">
+              ✓ Edite os valores acima e a tabela atualiza em tempo real
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Live example calculation */}
-      <div className="bg-sky-50 border border-sky-200 rounded-2xl p-4">
-        <p className="text-xs font-bold text-sky-700 uppercase mb-3">✨ Exemplo ao vivo</p>
-        <div className="space-y-1.5 text-xs text-slate-600 mb-3">
+      {/* Descontos por Frequência — exact from setup/page.tsx */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100">
+          <h3 className="font-bold text-slate-800 text-lg">Descontos por Frequência</h3>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Clientes recorrentes recebem desconto automático no preço final.
+          </p>
+        </div>
+        <div className="px-6 py-5 grid grid-cols-3 gap-6">
           {[
-            ["Base (1 bed / 1 bath)",    "$150"],
-            ["+ 2 quartos extras",        "+$40"],
-            ["+ 1 banheiro extra",        "+$15"],
-            ["Deep Cleaning",             "+$50"],
-          ].map(([label, val]) => (
-            <div key={label} className="flex justify-between">
-              <span>{label}</span>
-              <span className="font-semibold">{val}</span>
+            { label: "Semanal",   value: "15" },
+            { label: "Quinzenal", value: "10" },
+            { label: "Mensal",    value: "5"  },
+          ].map(({ label, value }) => (
+            <div key={label}>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">{label}</label>
+              <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400">
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  defaultValue={value}
+                  className="flex-1 px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none"
+                />
+                <span className="px-3 text-slate-400 text-sm bg-slate-50 border-l border-slate-200 py-2">%</span>
+              </div>
             </div>
           ))}
-          <div className="flex justify-between text-teal-600">
-            <span>Desconto quinzenal (10%)</span>
-            <span className="font-semibold">−$25.50</span>
-          </div>
-          <div className="border-t border-sky-200 pt-2 flex justify-between">
-            <span className="font-bold text-sky-800">Casa 3/2 · Deep · Bi-weekly</span>
-            <span className="font-extrabold text-sky-700 text-sm">$229.50</span>
-          </div>
         </div>
-        <p className="text-[10px] text-sky-600 font-medium">
-          ✓ O sistema calcula isso automaticamente para cada cliente
-        </p>
       </div>
     </div>
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Main ─────────────────────────────────────────────────────────────────────
 
-const TABS: { id: Tab; emoji: string; label: string }[] = [
-  { id: "painel",  emoji: "📅", label: "Seu Painel" },
-  { id: "cliente", emoji: "👤", label: "O que o Cliente vê" },
-  { id: "precos",  emoji: "💰", label: "Configuração de Preços" },
+const TABS: { id: Tab; label: string; flag: string }[] = [
+  { id: "agenda", label: "Sua Agenda",             flag: "🇧🇷" },
+  { id: "link",   label: "Seu Link Profissional",  flag: "🇺🇸" },
+  { id: "precos", label: "Seus Preços",             flag: "🇧🇷" },
 ];
 
 export default function DemoTabs() {
-  const [active, setActive] = useState<Tab>("painel");
+  const [active, setActive] = useState<Tab>("agenda");
 
   return (
     <section className="py-20 px-6 bg-slate-50">
       <div className="max-w-3xl mx-auto">
 
-        {/* Section header */}
         <div className="text-center mb-10">
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4">
             Veja o sistema em ação
           </h2>
           <p className="text-slate-500 text-lg">
-            Isso é o que você e seus clientes vão ver — de verdade.
+            Isso é exatamente o que você e seus clientes vão ver.
           </p>
         </div>
 
-        {/* Tab buttons — grid so each takes equal 1/3 width on all screen sizes */}
+        {/* Tab buttons — grid-cols-3 so each is exactly 1/3 on all screens */}
         <div className="grid grid-cols-3 gap-2 mb-6">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActive(tab.id)}
-              className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+              className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all leading-tight text-center ${
                 active === tab.id
                   ? "bg-sky-500 text-white shadow-lg shadow-sky-200"
                   : "bg-white text-slate-600 border border-slate-200 hover:border-sky-300 hover:text-sky-600"
               }`}
             >
-              <span className="text-lg leading-none">{tab.emoji}</span>
-              <span className="leading-tight text-center">{tab.label}</span>
+              <span className="text-base leading-none">{tab.flag}</span>
+              <span>{tab.label}</span>
             </button>
           ))}
         </div>
 
-        {/* Content panel */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 sm:p-8 min-h-[320px]">
-          {active === "painel"  && <PainelTab />}
-          {active === "cliente" && <ClienteTab />}
-          {active === "precos"  && <PrecosTab />}
+        {/* Content */}
+        <div>
+          {active === "agenda" && <AgendaTab />}
+          {active === "link"   && <LinkTab />}
+          {active === "precos" && <PrecosTab />}
         </div>
 
       </div>
