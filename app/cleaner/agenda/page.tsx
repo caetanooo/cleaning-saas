@@ -105,10 +105,13 @@ export default function CleanerAgendaPage() {
 
         if (cleanerData?.id) {
           const profile = cleanerData as Cleaner;
+          const isOwner = session.user.email === "pedro.caetano.3anos@gmail.com";
           if (
-            profile.subscriptionStatus === "past_due" ||
-            profile.subscriptionStatus === "canceled" ||
-            profile.subscriptionStatus === "inactive"
+            !isOwner && (
+              profile.subscriptionStatus === "past_due" ||
+              profile.subscriptionStatus === "canceled" ||
+              profile.subscriptionStatus === "inactive"
+            )
           ) {
             router.replace("/cleaner/subscription");
             return;

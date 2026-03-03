@@ -68,10 +68,13 @@ export default function CleanerSetupPage() {
         if (cancelled) return;
 
         if (data?.id) {
+          const isOwner = session.user.email === "pedro.caetano.3anos@gmail.com";
           if (
-            data.subscriptionStatus === "past_due" ||
-            data.subscriptionStatus === "canceled" ||
-            data.subscriptionStatus === "inactive"
+            !isOwner && (
+              data.subscriptionStatus === "past_due" ||
+              data.subscriptionStatus === "canceled" ||
+              data.subscriptionStatus === "inactive"
+            )
           ) {
             router.replace("/cleaner/subscription");
             return;
