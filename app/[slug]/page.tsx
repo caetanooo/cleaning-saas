@@ -211,7 +211,7 @@ function BookPageInner() {
   }
 
   useEffect(() => {
-    fetch(`/api/cleaners/slug/${slug}`)
+    fetch(`/api/cleaners/slug/${slug}`, { cache: "no-store" })
       .then((r) => r.ok ? r.json() : r.json().then((e: unknown) => { console.error("[book] cleaner fetch error:", e); return null; }))
       .then((data: Cleaner | null) => {
         if (data?.id) {

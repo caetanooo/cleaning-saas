@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { rowToCleaner } from "../../_shared";
 
+export const dynamic = "force-dynamic";
+
 // ── GET /api/cleaners/slug/[slug] ─────────────────────────────────────────────
 
 export async function GET(
