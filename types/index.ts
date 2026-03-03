@@ -55,6 +55,8 @@ export interface Cleaner {
   pricingFormula: PricingFormula;
   frequencyDiscounts: FrequencyDiscounts;
   serviceAddons: ServiceAddons;
+  slug?: string;
+  subscriptionStatus?: string;   // 'active' | 'trialing' | 'inactive' | ...
 }
 
 export interface Booking {

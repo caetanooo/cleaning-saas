@@ -1,50 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import type { Cleaner } from "@/types";
-
-// ── Defaults used when JSONB columns are NULL in the DB ───────────────────────
-
-const DEFAULT_AVAILABILITY: Cleaner["availability"] = {
-  monday:    { morning: true,  afternoon: true  },
-  tuesday:   { morning: true,  afternoon: true  },
-  wednesday: { morning: true,  afternoon: true  },
-  thursday:  { morning: true,  afternoon: true  },
-  friday:    { morning: true,  afternoon: true  },
-  saturday:  { morning: true,  afternoon: false },
-  sunday:    { morning: false, afternoon: false },
-};
-
-const DEFAULT_FORMULA: Cleaner["pricingFormula"] = {
-  base: 90,
-  extraPerBedroom: 20,
-  extraPerBathroom: 15,
-};
-
-const DEFAULT_DISCOUNTS: Cleaner["frequencyDiscounts"] = {
-  weekly: 15, biweekly: 10, monthly: 5,
-};
-
-const DEFAULT_ADDONS: Cleaner["serviceAddons"] = {
-  deep: 50,
-  move: 80,
-};
-
-const DEFAULT_BLOCKED_DATES: Cleaner["blockedDates"] = [];
-
-function rowToCleaner(row: Record<string, unknown>): Cleaner {
-  return {
-    id:                 row.id    as string,
-    name:               (row.name  as string) || "New Cleaner",
-    email:              (row.email as string) || "",
-    phone:              (row.phone              as string) || "",
-    messengerUsername:  (row.messenger_username as string) || "",
-    availability:       (row.availability        as Cleaner["availability"])        || DEFAULT_AVAILABILITY,
-    blockedDates:            (row.blocked_dates            as Cleaner["blockedDates"])             || DEFAULT_BLOCKED_DATES,
-    pricingFormula:     (row.pricing_formula     as Cleaner["pricingFormula"])      || DEFAULT_FORMULA,
-    frequencyDiscounts: (row.frequency_discounts as Cleaner["frequencyDiscounts"])  || DEFAULT_DISCOUNTS,
-    serviceAddons:      (row.service_addons      as Cleaner["serviceAddons"])       || DEFAULT_ADDONS,
-  };
-}
+import { rowToCleaner } from "../_shared";
 
 // ── GET /api/cleaners/[id] ────────────────────────────────────────────────────
 
@@ -55,13 +12,14 @@ export async function GET(
   const { id } = await params;
   const supabase = createServiceClient();
 
-  let { data, error } = await supabase
+  const result = await supabase
     .from("cleaners")
     .select("*")
     .eq("id", id)
     .single();
+  let data = result.data;
 
-  if (!data || error) {
+  if (!data || result.error) {
     const { data: authUser } = await supabase.auth.admin.getUserById(id);
     const name  = authUser?.user?.user_metadata?.name  || "New Cleaner";
     const email = authUser?.user?.email || "";
@@ -109,7 +67,8 @@ export async function PUT(
   if (body.pricingFormula      !== undefined) patch.pricing_formula      = body.pricingFormula;
   if (body.frequencyDiscounts  !== undefined) patch.frequency_discounts  = body.frequencyDiscounts;
   if (body.serviceAddons       !== undefined) patch.service_addons       = body.serviceAddons;
-  if (body.blockedDates             !== undefined) patch.blocked_dates             = body.blockedDates;
+  if (body.blockedDates        !== undefined) patch.blocked_dates        = body.blockedDates;
+  if (body.slug                !== undefined) patch.slug                 = body.slug ?? null;
 
   const { data, error } = await supabase
     .from("cleaners")

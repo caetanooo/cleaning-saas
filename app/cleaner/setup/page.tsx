@@ -33,6 +33,8 @@ export default function CleanerSetupPage() {
   // Valores brutos (string) para os inputs de preço, permite campo vazio durante edição
   const [draftPrices,     setDraftPrices]     = useState<Record<string, string>>({});
   const [newBlockedDate,  setNewBlockedDate]  = useState("");
+  const [slug,            setSlug]            = useState("");
+  const [slugSaving,      setSlugSaving]      = useState(false);
 
   // ── Auth guard → fetch profile ────────────────────────────────────────────
   useEffect(() => {
@@ -67,6 +69,7 @@ export default function CleanerSetupPage() {
 
         if (data?.id) {
           setCleaner(data);
+          setSlug(data.slug ?? "");
         } else {
           setApiError(data?.error ?? "Não foi possível carregar o perfil. Verifique as tabelas no Supabase.");
         }
@@ -182,6 +185,31 @@ export default function CleanerSetupPage() {
     }
   }
 
+  async function saveSlug() {
+    if (!cleanerId || !token) return;
+    setSlugSaving(true);
+    try {
+      const res = await fetch(`/api/cleaners/${cleanerId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({ slug: slug || null }),
+      });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody?.error ?? "Save failed");
+      }
+      showToast("Slug salvo com sucesso!");
+    } catch (err) {
+      showToast("Erro ao salvar slug. Tente novamente.");
+      console.error("[saveSlug]", err);
+    } finally {
+      setSlugSaving(false);
+    }
+  }
+
   async function handleLogout() {
     await createBrowserClient().auth.signOut();
     router.replace("/cleaner/login");
@@ -192,14 +220,10 @@ export default function CleanerSetupPage() {
     setTimeout(() => setToast(""), 3000);
   }
 
-  const bookingLink =
-    typeof window !== "undefined" && cleanerId
-      ? `${window.location.origin}/book?cleanerId=${cleanerId}`
-      : "";
-
   async function copyLink() {
-    if (!bookingLink) return;
-    await navigator.clipboard.writeText(bookingLink);
+    if (!slug) return;
+    const link = `${window.location.origin}/${slug}`;
+    await navigator.clipboard.writeText(link);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   }
@@ -564,23 +588,45 @@ export default function CleanerSetupPage() {
         <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100">
             <h2 className="font-bold text-slate-800 text-lg">Seu Link de Agendamento</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Compartilhe este link com seus clientes.</p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Escolha um endereço personalizado para compartilhar com seus clientes.
+            </p>
           </div>
-          <div className="px-6 py-5 flex items-center gap-3">
-            <input
-              readOnly
-              value={bookingLink}
-              className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-600 bg-slate-50 focus:outline-none"
-            />
-            <button
-              type="button"
-              onClick={copyLink}
-              className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
-                copied ? "bg-green-500 text-white" : "bg-sky-500 hover:bg-sky-600 text-white"
-              }`}
-            >
-              {copied ? "Copiado!" : "Copiar"}
-            </button>
+          <div className="px-6 py-5 space-y-4">
+            <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-sky-400">
+              <span className="px-3 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-3 select-none whitespace-nowrap">
+                {typeof window !== "undefined" ? window.location.origin : ""}/
+              </span>
+              <input
+                type="text"
+                placeholder="maria-santos"
+                value={slug}
+                onChange={(e) =>
+                  setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
+                }
+                className="flex-1 px-3 py-3 text-sm text-slate-800 bg-white focus:outline-none"
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={saveSlug}
+                disabled={slugSaving}
+                className="flex-1 bg-sky-500 hover:bg-sky-600 disabled:opacity-60 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
+              >
+                {slugSaving ? "Salvando…" : "Salvar Slug"}
+              </button>
+              <button
+                type="button"
+                onClick={copyLink}
+                disabled={!slug}
+                className={`flex-1 font-semibold py-2.5 rounded-xl text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                  copied ? "bg-green-500 text-white" : "border-2 border-slate-200 text-slate-600 hover:border-sky-300"
+                }`}
+              >
+                {copied ? "Copiado!" : "Copiar Link"}
+              </button>
+            </div>
           </div>
         </section>
 

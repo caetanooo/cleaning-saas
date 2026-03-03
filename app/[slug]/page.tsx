@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import type { Cleaner, Booking, FrequencyType, TimeBlock, BlockAvailability, CleaningServiceType, DayOfWeek } from "@/types";
 
@@ -196,11 +196,11 @@ const INITIAL: WizardState = {
   messengerCopied: false,
 };
 
-// ─── Inner page (needs useSearchParams) ───────────────────────────────────────
+// ─── Inner page (uses useParams) ──────────────────────────────────────────────
 
 function BookPageInner() {
-  const searchParams = useSearchParams();
-  const cleanerId = searchParams.get("cleanerId") ?? "cleaner-1";
+  const params = useParams();
+  const slug = params.slug as string;
 
   const [cleaner, setCleaner]               = useState<Cleaner | null>(null);
   const [cleanerLoading, setCleanerLoading] = useState(true);
@@ -211,24 +211,26 @@ function BookPageInner() {
   }
 
   useEffect(() => {
-    console.log("[book] fetching cleaner:", cleanerId);
-    fetch(`/api/cleaners/${cleanerId}`)
+    fetch(`/api/cleaners/slug/${slug}`)
       .then((r) => r.ok ? r.json() : r.json().then((e: unknown) => { console.error("[book] cleaner fetch error:", e); return null; }))
       .then((data: Cleaner | null) => {
         if (data?.id) {
-          console.log("[book] cleaner loaded:", data.id, data.name);
           setCleaner(data);
-        } else if (data) {
-          console.error("[book] cleaner response missing id:", data);
         }
         setCleanerLoading(false);
       })
       .catch((err) => { console.error("[book] cleaner fetch exception:", err); setCleanerLoading(false); });
-  }, [cleanerId]);
+  }, [slug]);
 
+  const cleanerId = cleaner?.id ?? "";
   const price    = calcPrice(cleaner, state.bedrooms, state.bathrooms, state.frequency, state.serviceType);
   const nextDays = cleaner ? computeNextDays(cleaner) : [];
   const required = state.frequency ? REQUIRED_DATES[state.frequency] : 1;
+
+  // ── Subscription gate ────────────────────────────────────────────────────────
+  const isInactive = cleaner &&
+    cleaner.subscriptionStatus !== "active" &&
+    cleaner.subscriptionStatus !== "trialing";
 
   // ── Step 0 → 1 ──────────────────────────────────────────────────────────────
   function goStep1() {
@@ -257,19 +259,15 @@ function BookPageInner() {
       return;
     }
     // Otherwise → fetch availability
-    console.log("[book] checking availability — cleanerId:", cleanerId, "date:", dateStr);
     update({ activeDate: dateStr, activeDateAvail: null, activeDateLoading: true, blockError: "" });
     try {
       const res  = await fetch(`/api/availability?cleanerId=${cleanerId}&date=${dateStr}`);
       const data = await res.json();
       if (!res.ok) {
-        console.error("[book] availability error:", data);
         throw new Error(data.error ?? "Failed to check availability");
       }
-      console.log("[book] availability result:", data);
       update({ activeDateAvail: data as BlockAvailability, activeDateLoading: false });
     } catch (err) {
-      console.error("[book] handleDateClick exception:", err);
       update({ activeDateLoading: false, blockError: (err as Error).message });
     }
   }
@@ -348,8 +346,8 @@ function BookPageInner() {
 
   // ── Size selection button ────────────────────────────────────────────────────
   function SizeBtn({
-    value, selected, label, onClick,
-  }: { value: number; selected: boolean; label: string; onClick: () => void }) {
+    selected, label, onClick,
+  }: { selected: boolean; label: string; onClick: () => void }) {
     return (
       <button
         type="button"
@@ -367,12 +365,32 @@ function BookPageInner() {
 
   // ── Render ───────────────────────────────────────────────────────────────────
 
-  if (cleanerLoading || !cleaner) {
+  if (cleanerLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <p className="text-slate-500 animate-pulse">
-          {cleanerLoading ? "Loading…" : "Could not load cleaner. Check the booking link."}
-        </p>
+        <p className="text-slate-500 animate-pulse">Loading…</p>
+      </div>
+    );
+  }
+
+  if (!cleaner) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <p className="text-slate-500">Could not load cleaner. Check the booking link.</p>
+      </div>
+    );
+  }
+
+  if (isInactive) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-6">
+        <div className="max-w-sm text-center space-y-3">
+          <p className="text-2xl">🔒</p>
+          <p className="font-bold text-slate-800">Link Unavailable</p>
+          <p className="text-sm text-slate-500">
+            This booking link is currently inactive. Please contact the professional.
+          </p>
+        </div>
       </div>
     );
   }
@@ -442,7 +460,6 @@ function BookPageInner() {
                   {[1, 2, 3, 4, 5].map((n) => (
                     <SizeBtn
                       key={n}
-                      value={n}
                       label={n === 5 ? "5+" : String(n)}
                       selected={state.bedrooms === n}
                       onClick={() => update({ bedrooms: n })}
@@ -1001,9 +1018,9 @@ function BookPageInner() {
   );
 }
 
-// ─── Page export wrapped in Suspense for useSearchParams ──────────────────────
+// ─── Page export wrapped in Suspense ──────────────────────────────────────────
 
-export default function BookPage() {
+export default function SlugBookPage() {
   return (
     <Suspense
       fallback={
