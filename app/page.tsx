@@ -1,5 +1,6 @@
 import Link from "next/link";
 import DemoTabs from "./DemoTabs";
+import StripePricingTable from "./StripePricingTable";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -32,13 +33,6 @@ function IconLink() {
   );
 }
 
-function IconCheck() {
-  return (
-    <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
 
 function IconStar() {
   return (
@@ -303,16 +297,6 @@ const TESTIMONIALS = [
   },
 ];
 
-const PLAN_INCLUDES = [
-  "Link de agendamento com seu nome (ex: cleanclick.app/seu-nome)",
-  "Cálculo automático de preços por tamanho e tipo de limpeza",
-  "Agenda semanal com controle de turnos e folgas",
-  "Proteção contra double-booking (nunca mais horário duplicado)",
-  "Funciona no celular, tablet e computador",
-  "Compartilhamento via WhatsApp, SMS, Messenger e Instagram",
-  "Suporte em português via WhatsApp e e-mail",
-  "Cancele quando quiser — sem multa, sem burocracia",
-];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -580,65 +564,16 @@ export default function LandingPage() {
 
       {/* ── Preços ── */}
       <section className="py-20 px-6 bg-slate-50" id="precos">
-        <div className="max-w-md mx-auto">
-          <div className="text-center mb-10">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4">
-              Menos de $0,70 por dia
+              Escolha o seu plano
             </h2>
-            <p className="text-slate-500">
-              Para nunca mais perder um cliente por falta de resposta.
+            <p className="text-slate-500 text-lg">
+              Comece grátis. Cancele quando quiser — sem contratos.
             </p>
           </div>
-
-          <div className="bg-white rounded-3xl border-2 border-sky-500 shadow-xl shadow-sky-100 overflow-hidden">
-            <div className="bg-sky-500 text-white text-sm font-bold text-center py-2.5 tracking-wide uppercase">
-              ✨ Teste grátis por 7 dias — sem cobrança agora
-            </div>
-
-            <div className="p-8">
-              <h3 className="text-xl font-extrabold text-slate-900 mb-1">
-                Plano Profissional
-              </h3>
-              <div className="flex items-end gap-1 mb-1">
-                <span className="text-5xl font-extrabold text-sky-500">$19,99</span>
-                <span className="text-slate-400 mb-1.5">/mês</span>
-              </div>
-              <p className="text-sm text-teal-600 font-semibold mb-6">
-                ✓ Comece grátis. Só paga depois dos 7 dias.
-              </p>
-
-              <ul className="space-y-3 mb-8">
-                {PLAN_INCLUDES.map((item) => (
-                  <li key={item} className="flex items-start gap-3 text-sm text-slate-700">
-                    <span className="text-teal-500 mt-0.5"><IconCheck /></span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-
-              <Link
-                href="/cleaner/signup"
-                className="block w-full bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white font-bold text-center py-4 rounded-2xl transition-colors text-lg shadow-lg shadow-sky-200"
-              >
-                Começar teste grátis agora →
-              </Link>
-
-              <div className="mt-6 pt-5 border-t border-slate-100 space-y-2.5">
-                {[
-                  { icon: "🔒", label: "Pagamento Seguro", detail: "Processado pelo Stripe — nunca armazenamos seus dados" },
-                  { icon: "🛠️", label: "Suporte em Português", detail: "Via WhatsApp ou e-mail, sempre que precisar" },
-                  { icon: "📄", label: "Sem Contratos", detail: "Cancele a qualquer momento com um único clique" },
-                ].map(({ icon, label, detail }) => (
-                  <div key={label} className="flex items-start gap-3">
-                    <span className="text-base leading-none mt-0.5">{icon}</span>
-                    <p className="text-xs text-slate-500">
-                      <strong className="text-slate-700">{label}:</strong> {detail}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          <StripePricingTable />
         </div>
       </section>
 
