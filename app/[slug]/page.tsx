@@ -474,7 +474,6 @@ function BookPageInner() {
                   {[1, 2, 3, 4, 5].map((n) => (
                     <SizeBtn
                       key={n}
-                      value={n}
                       label={n === 5 ? "5+" : String(n)}
                       selected={state.bathrooms === n}
                       onClick={() => update({ bathrooms: n })}
