@@ -169,7 +169,7 @@ export default function LandingPage() {
             Para profissionais de limpeza nos EUA
           </span>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 leading-tight mb-6">
-            Sua Empresa de Limpeza{" "}
+            Sua Agenda de Faxinas{" "}
             <span className="text-sky-500">no Piloto Automático</span>
           </h1>
           <p className="text-lg sm:text-xl text-slate-500 leading-relaxed mb-10 max-w-2xl mx-auto">
@@ -201,7 +201,7 @@ export default function LandingPage() {
       <section className="bg-slate-900 py-5 px-6">
         <div className="max-w-4xl mx-auto flex flex-wrap justify-center gap-x-10 gap-y-3 text-sm">
           {[
-            ["500+", "profissionais ativas"],
+            ["100+", "profissionais simplificaram sua rotina"],
             ["4.9★", "avaliação média"],
             ["24/7", "agendamentos automáticos"],
             ["0h", "de negociação por mensagem"],
@@ -350,10 +350,13 @@ export default function LandingPage() {
               <h3 className="text-xl font-extrabold text-slate-900 mb-1">
                 Automação Profissional
               </h3>
-              <div className="flex items-end gap-1 mb-6">
-                <span className="text-5xl font-extrabold text-sky-500">$29</span>
+              <div className="flex items-end gap-1 mb-1">
+                <span className="text-5xl font-extrabold text-sky-500">$19,99</span>
                 <span className="text-slate-400 mb-1.5">/mês</span>
               </div>
+              <p className="text-sm text-teal-600 font-semibold mb-6">
+                ✓ Teste grátis por 7 dias — sem cobrança agora
+              </p>
 
               {/* Includes */}
               <ul className="space-y-3 mb-8">
@@ -393,7 +396,7 @@ export default function LandingPage() {
             Pronta para sair do WhatsApp e entrar no piloto automático?
           </h2>
           <p className="text-slate-500 text-lg mb-10">
-            Junte-se a centenas de profissionais que já pararam de perder tempo
+            Junte-se a mais de 100 profissionais que já pararam de perder tempo
             negociando preço por mensagem.
           </p>
           <Link
