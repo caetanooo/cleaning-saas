@@ -449,9 +449,12 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
                             <p className="text-xs text-slate-400 mt-0.5">{opt.description}</p>
                           </div>
                           {svcPrice !== null && (
-                            <p className="text-lg font-extrabold text-sky-600 shrink-0">
-                              ${svcPrice.toFixed(2)}
-                            </p>
+                            <div className="text-right shrink-0">
+                              <p className="text-lg font-extrabold text-sky-600">
+                                ${svcPrice.toFixed(2)}
+                              </p>
+                              <p className="text-[10px] text-slate-400 mt-0.5">per session</p>
+                            </div>
                           )}
                         </div>
                       </button>
@@ -495,9 +498,12 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
                       </div>
                       <div className="text-right">
                         {optPrice !== null && (
-                          <p className="text-xl font-extrabold text-sky-600">
-                            ${optPrice.toFixed(2)}
-                          </p>
+                          <div className="text-right">
+                            <p className="text-xl font-extrabold text-sky-600">
+                              ${optPrice.toFixed(2)}
+                            </p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">per session</p>
+                          </div>
                         )}
                         {disc && (
                           <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
@@ -781,17 +787,9 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
                     </p>
                   )}
                 </div>
-                <div className="flex justify-between pt-1 border-t border-slate-200">
-                  <span className="text-slate-500">Per visit</span>
-                  <span className="font-bold text-slate-700">${price.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-semibold text-slate-700">
-                    Total ({required} visit{required > 1 ? "s" : ""})
-                  </span>
-                  <span className="font-extrabold text-sky-600 text-base">
-                    ${(price * required).toFixed(2)}
-                  </span>
+                <div className="flex justify-between items-baseline pt-1 border-t border-slate-200">
+                  <span className="text-slate-500">Price per cleaning session</span>
+                  <span className="font-extrabold text-sky-600 text-base">${price.toFixed(2)}</span>
                 </div>
               </div>
             )}
@@ -865,18 +863,10 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
                   </div>
                 ))}
               </div>
-              <div className="flex justify-between py-2.5 text-sm">
-                <span className="text-slate-500">Per visit</span>
-                <span className="font-bold text-slate-700">
-                  ${state.confirmedBookings[0].totalPrice.toFixed(2)}
-                </span>
-              </div>
-              <div className="flex justify-between py-2.5 text-sm">
-                <span className="font-semibold text-slate-700">
-                  Total ({state.confirmedBookings.length} visit{state.confirmedBookings.length > 1 ? "s" : ""})
-                </span>
+              <div className="flex justify-between items-baseline py-2.5 text-sm">
+                <span className="text-slate-500">Price per cleaning session</span>
                 <span className="font-extrabold text-sky-600 text-base">
-                  ${(state.confirmedBookings[0].totalPrice * state.confirmedBookings.length).toFixed(2)}
+                  ${state.confirmedBookings[0].totalPrice.toFixed(2)}
                 </span>
               </div>
             </div>
