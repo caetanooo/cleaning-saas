@@ -1,4 +1,5 @@
 import Link from "next/link";
+import DemoTabs from "./DemoTabs";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -506,6 +507,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ── Demo Tabs ── */}
+      <DemoTabs />
 
       {/* ── Channels highlight ── */}
       <section className="py-20 px-6 bg-slate-50">
