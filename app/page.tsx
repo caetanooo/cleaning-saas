@@ -56,32 +56,50 @@ function IconClock() {
   );
 }
 
-
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
-const FEATURES = [
+const PAIN_POINTS = [
+  {
+    emoji: "📱",
+    text: "Fica respondendo mensagem sobre preço no WhatsApp, mesmo no meio de uma faxina",
+  },
+  {
+    emoji: "🧮",
+    text: "Perde minutos calculando quanto cobrar dependendo do tamanho da casa",
+  },
+  {
+    emoji: "😓",
+    text: "Perde cliente porque demorou para responder — e ele contratou outra",
+  },
+  {
+    emoji: "📅",
+    text: "Agenda bagunçada, horário marcado duas vezes, estresse desnecessário",
+  },
+];
+
+const BENEFITS = [
   {
     icon: <IconDollar />,
-    title: "Preço Automático, Sem Negociação",
-    body: "Você define seu preço base uma vez. O sistema calcula automaticamente o valor para cada combinação de quartos, banheiros e tipo de limpeza — Regular, Deep ou Move-in/out. Chega de calcular na mão.",
+    title: "Nunca mais perca cliente por demora",
+    body: "Seu link fica disponível 24h por dia. O cliente manda mensagem às 23h de um sábado, entra no link e agenda na hora — sem você precisar responder.",
     color: "bg-sky-50 text-sky-600",
   },
   {
     icon: <IconCalendar />,
-    title: "Sua Agenda, Seu Controle",
-    body: "Configure os dias e turnos que você trabalha. O sistema só mostra horários disponíveis, evita conflitos com outros agendamentos e bloqueia datas de folga automaticamente.",
+    title: "Preço justo, sempre — sem calcular na mão",
+    body: "Você define uma vez o que cobra. O sistema calcula automaticamente para qualquer tamanho de casa, tipo de limpeza e frequência. Sem erro, sem achismo.",
     color: "bg-teal-50 text-teal-600",
   },
   {
     icon: <IconLink />,
-    title: "Um Link, Infinitos Clientes",
-    body: "Você recebe um link personalizado — como cleanclick.app/maria-santos — que pode mandar pelo WhatsApp, SMS ou Messenger. O cliente agenda sozinho, em qualquer horário, sem precisar de você.",
+    title: "Pareça mais profissional do que nunca",
+    body: "Um link com seu nome — tipo cleanclick.app/maria-santos — passa mais confiança do que qualquer conversa de WhatsApp. Seus clientes vão notar a diferença.",
     color: "bg-violet-50 text-violet-600",
   },
   {
     icon: <IconClock />,
-    title: "Disponível 24 horas por Dia",
-    body: "Enquanto você dorme, o link trabalha. Clientes podem ver preços e agendar às 23h de um sábado. Sem você precisar responder uma única mensagem.",
+    title: "Sua agenda no controle, sem conflito",
+    body: "O sistema só mostra os horários que você definiu como disponíveis. Folga bloqueada, horário ocupado, feriado — tudo respeitado automaticamente.",
     color: "bg-amber-50 text-amber-600",
   },
 ];
@@ -90,17 +108,17 @@ const HOW_IT_WORKS = [
   {
     step: "01",
     title: "Configure em 5 minutos",
-    body: "Coloque seu preço base, seus dias de trabalho e seus turnos preferidos. O sistema já está pronto.",
+    body: "Coloque seu preço base, os dias que você trabalha e seus turnos. Pronto — seu link já está funcionando.",
   },
   {
     step: "02",
-    title: "Compartilhe seu link",
-    body: "Mande o link pelo WhatsApp, SMS ou cole na bio do Instagram. Parece profissional desde o primeiro clique.",
+    title: "Mande o link para seus clientes",
+    body: "Cole no WhatsApp, no SMS ou na bio do Instagram. O cliente abre, vê o preço e agenda — sem precisar de você.",
   },
   {
     step: "03",
-    title: "Receba agendamentos",
-    body: "O cliente vê os preços, escolhe a data e confirma. Você recebe as informações prontas, sem ida e volta de mensagens.",
+    title: "Apareça só para trabalhar",
+    body: "Você recebe as informações do agendamento prontas: nome, endereço, data e serviço. Sem negociação. Sem idas e vindas.",
   },
 ];
 
@@ -108,28 +126,29 @@ const TESTIMONIALS = [
   {
     name: "Maria Fernanda",
     city: "Austin, TX",
-    text: "Antes eu ficava horas no celular negociando preço. Agora mando o link e o cliente já chega com tudo agendado. Profissional demais.",
+    text: "Antes eu ficava horas no celular tentando fechar um cliente. Hoje mando o link e ele chega com tudo preenchido. Parece que tenho uma secretária.",
   },
   {
     name: "Claudia R.",
     city: "Miami, FL",
-    text: "Minha renda aumentou porque parei de perder cliente por demora na resposta. O sistema agenda mesmo quando estou trabalhando.",
+    text: "Perdi muito cliente por demora na resposta. Desde que coloquei o link na bio do Instagram, recebo agendamento mesmo quando estou dentro de uma casa.",
   },
   {
     name: "Patrícia Souza",
     city: "Dallas, TX",
-    text: "Achei que ia ser complicado, mas em 10 minutos já tinha meu link no ar. Meus clientes adoraram a experiência.",
+    text: "Achei que seria complicado, mas em 10 minutos meu link já estava no ar. Os clientes adoraram — disseram que pareceu muito profissional.",
   },
 ];
 
 const PLAN_INCLUDES = [
-  "Link de agendamento personalizado (ex: cleanclick.app/seu-nome)",
+  "Link de agendamento com seu nome (ex: cleanclick.app/seu-nome)",
   "Cálculo automático de preços por tamanho e tipo de limpeza",
   "Agenda semanal com controle de turnos e folgas",
-  "Proteção contra double-booking",
+  "Proteção contra double-booking (nunca mais horário duplicado)",
   "Funciona no celular, tablet e computador",
-  "Compartilhamento via WhatsApp, SMS e Messenger",
-  "Cancele quando quiser — sem multa",
+  "Compartilhamento via WhatsApp, SMS, Messenger e Instagram",
+  "Suporte em português via WhatsApp e e-mail",
+  "Cancele quando quiser — sem multa, sem burocracia",
 ];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -158,23 +177,23 @@ export default function LandingPage() {
       <section className="bg-gradient-to-b from-sky-50 to-white pt-16 pb-20 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <span className="inline-block bg-teal-100 text-teal-700 text-xs font-bold px-3 py-1.5 rounded-full mb-6 tracking-wide uppercase">
-            Para profissionais de limpeza nos EUA
+            Para faxineiras brasileiras nos EUA
           </span>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 leading-tight mb-6">
-            Sua Agenda de Faxinas{" "}
-            <span className="text-sky-500">no Piloto Automático</span>
+            Chega de negociar pelo WhatsApp.{" "}
+            <span className="text-sky-500">Seus clientes agendam sozinhos — e pagam o preço certo.</span>
           </h1>
           <p className="text-lg sm:text-xl text-slate-500 leading-relaxed mb-10 max-w-2xl mx-auto">
-            Pare de negociar orçamentos pelo WhatsApp. Tenha um link profissional
-            que calcula preços e agenda faxinas para você —{" "}
-            <strong className="text-slate-700">24 horas por dia, 7 dias por semana.</strong>
+            Crie um link profissional com seu nome em menos de 5 minutos.
+            O cliente vê o preço, escolhe o horário e confirma —{" "}
+            <strong className="text-slate-700">sem você precisar responder uma única mensagem.</strong>
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/cleaner/signup"
               className="bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white font-bold text-lg px-8 py-4 rounded-2xl transition-colors shadow-lg shadow-sky-200"
             >
-              Começar teste grátis de 7 dias →
+              Quero meu link grátis por 7 dias →
             </Link>
             <Link
               href="/cleaner/login"
@@ -184,7 +203,7 @@ export default function LandingPage() {
             </Link>
           </div>
           <p className="text-sm text-slate-400 mt-5">
-            Sem taxa de adesão · Cancele quando quiser
+            Sem cartão agora · Cancele quando quiser · Configuração em 5 minutos
           </p>
         </div>
       </section>
@@ -193,10 +212,10 @@ export default function LandingPage() {
       <section className="bg-slate-900 py-5 px-6">
         <div className="max-w-4xl mx-auto flex flex-wrap justify-center gap-x-10 gap-y-3 text-sm">
           {[
-            ["100+", "profissionais simplificaram sua rotina"],
+            ["100+", "faxineiras já simplificaram sua rotina"],
             ["4.9★", "avaliação média"],
-            ["24/7", "agendamentos automáticos"],
-            ["0h", "de negociação por mensagem"],
+            ["24/7", "agendamentos sem intervenção"],
+            ["5 min", "para configurar e já estar no ar"],
           ].map(([stat, label]) => (
             <div key={label} className="flex items-center gap-2 text-white">
               <span className="font-extrabold text-sky-400 text-base">{stat}</span>
@@ -206,19 +225,53 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Features ── */}
+      {/* ── Problema ── */}
       <section className="py-20 px-6 bg-white">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4">
+              Você se identifica com isso?
+            </h2>
+            <p className="text-slate-500 text-lg">
+              Se sim, você não está sozinha — e existe uma saída.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {PAIN_POINTS.map(({ emoji, text }) => (
+              <div
+                key={text}
+                className="flex items-start gap-4 bg-red-50 border border-red-100 rounded-2xl px-5 py-4"
+              >
+                <span className="text-2xl shrink-0">{emoji}</span>
+                <p className="text-slate-700 text-sm leading-relaxed">{text}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-10 bg-sky-50 border border-sky-200 rounded-2xl px-6 py-5 text-center">
+            <p className="text-sky-800 font-semibold text-base">
+              Isso é o que acontece quando você está gerenciando um negócio profissional
+              com ferramentas que não foram feitas para isso.
+            </p>
+            <p className="text-sky-600 text-sm mt-2">
+              O CleanClick foi criado exatamente para resolver isso.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Benefícios ── */}
+      <section className="py-20 px-6 bg-slate-50">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4">
-              Configuração Inteligente
+              Mais clientes. Menos estresse. Total controle.
             </h2>
             <p className="text-slate-500 text-lg max-w-xl mx-auto">
-              Você coloca o que costuma cobrar. O sistema faz toda a matemática por você.
+              Tudo que você precisa para crescer sem depender do celular o dia todo.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {FEATURES.map((f) => (
+            {BENEFITS.map((f) => (
               <div
                 key={f.title}
                 className="bg-white rounded-2xl border border-slate-100 shadow-sm p-7 hover:shadow-md transition-shadow"
@@ -234,14 +287,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── How it works ── */}
-      <section className="py-20 px-6 bg-slate-50">
+      {/* ── Como funciona ── */}
+      <section className="py-20 px-6 bg-white">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4">
-              Como funciona
+              Pronta em menos de 10 minutos
             </h2>
-            <p className="text-slate-500 text-lg">Em três passos simples.</p>
+            <p className="text-slate-500 text-lg">Três passos. Sem complicação.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
             {HOW_IT_WORKS.map((item) => (
@@ -254,22 +307,30 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+          <div className="text-center mt-12">
+            <Link
+              href="/cleaner/signup"
+              className="inline-block bg-sky-500 hover:bg-sky-600 text-white font-bold text-lg px-8 py-4 rounded-2xl transition-colors shadow-lg shadow-sky-200"
+            >
+              Criar meu link agora →
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* ── Channels highlight ── */}
-      <section className="py-20 px-6 bg-white">
+      <section className="py-20 px-6 bg-slate-50">
         <div className="max-w-4xl mx-auto">
           <div className="bg-gradient-to-br from-sky-500 to-teal-500 rounded-3xl p-8 sm:p-12 text-white text-center">
             <h2 className="text-2xl sm:text-3xl font-extrabold mb-4">
-              Profissionalismo em qualquer canal
+              Um link que você manda por qualquer canal
             </h2>
             <p className="text-sky-100 text-base sm:text-lg leading-relaxed mb-8 max-w-xl mx-auto">
-              Mande seu link pelo <strong className="text-white">WhatsApp</strong>,{" "}
-              <strong className="text-white">SMS</strong> ou{" "}
-              <strong className="text-white">Messenger</strong>. O cliente abre,
-              vê os preços e agenda sozinho. Sem idas e vindas. Sem você parar no
-              meio de uma faxina para responder mensagem.
+              Mande pelo <strong className="text-white">WhatsApp</strong>,{" "}
+              <strong className="text-white">SMS</strong> ou cole na bio do{" "}
+              <strong className="text-white">Instagram</strong>. O cliente abre no celular,
+              vê o preço exato, escolhe o horário e confirma.{" "}
+              <strong className="text-white">Você não precisa fazer mais nada.</strong>
             </p>
             <div className="flex flex-wrap justify-center gap-4 mb-8">
               {["💬 WhatsApp", "📱 SMS", "📘 Messenger", "📷 Instagram Bio"].map((ch) => (
@@ -285,19 +346,22 @@ export default function LandingPage() {
               href="/cleaner/signup"
               className="inline-block bg-white text-sky-600 font-bold text-base px-8 py-4 rounded-2xl hover:bg-sky-50 transition-colors shadow-lg"
             >
-              Criar meu link agora →
+              Quero meu link personalizado →
             </Link>
           </div>
         </div>
       </section>
 
-      {/* ── Testimonials ── */}
-      <section className="py-20 px-6 bg-slate-50">
+      {/* ── Depoimentos ── */}
+      <section className="py-20 px-6 bg-white">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4">
-              O que dizem as profissionais
+              Quem já usou, não volta atrás
             </h2>
+            <p className="text-slate-500 text-lg">
+              Faxineiras reais que pararam de viver no celular.
+            </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {TESTIMONIALS.map((t) => (
@@ -321,36 +385,35 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Pricing ── */}
-      <section className="py-20 px-6 bg-white" id="precos">
+      {/* ── Preços ── */}
+      <section className="py-20 px-6 bg-slate-50" id="precos">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-10">
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4">
-              Preço simples e justo
+              Menos de $0,70 por dia
             </h2>
-            <p className="text-slate-500">Um plano. Tudo incluso. Sem surpresas.</p>
+            <p className="text-slate-500">
+              Para nunca mais perder um cliente por falta de resposta.
+            </p>
           </div>
 
           <div className="bg-white rounded-3xl border-2 border-sky-500 shadow-xl shadow-sky-100 overflow-hidden">
-            {/* Badge */}
             <div className="bg-sky-500 text-white text-sm font-bold text-center py-2.5 tracking-wide uppercase">
-              7 dias grátis para começar
+              ✨ Teste grátis por 7 dias — sem cobrança agora
             </div>
 
             <div className="p-8">
-              {/* Plan name & price */}
               <h3 className="text-xl font-extrabold text-slate-900 mb-1">
-                Automação Profissional
+                Plano Profissional
               </h3>
               <div className="flex items-end gap-1 mb-1">
                 <span className="text-5xl font-extrabold text-sky-500">$19,99</span>
                 <span className="text-slate-400 mb-1.5">/mês</span>
               </div>
               <p className="text-sm text-teal-600 font-semibold mb-6">
-                ✓ Teste grátis por 7 dias — sem cobrança agora
+                ✓ Comece grátis. Só paga depois dos 7 dias.
               </p>
 
-              {/* Includes */}
               <ul className="space-y-3 mb-8">
                 {PLAN_INCLUDES.map((item) => (
                   <li key={item} className="flex items-start gap-3 text-sm text-slate-700">
@@ -360,20 +423,18 @@ export default function LandingPage() {
                 ))}
               </ul>
 
-              {/* CTA */}
               <Link
                 href="/cleaner/signup"
                 className="block w-full bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white font-bold text-center py-4 rounded-2xl transition-colors text-lg shadow-lg shadow-sky-200"
               >
-                Comece seu teste grátis →
+                Começar teste grátis agora →
               </Link>
 
-              {/* Trust badges */}
               <div className="mt-6 pt-5 border-t border-slate-100 space-y-2.5">
                 {[
-                  { icon: "🔒", label: "Pagamento Seguro", detail: "Processado pelo Stripe" },
-                  { icon: "🛠️", label: "Suporte Prioritário", detail: "Via WhatsApp ou E-mail, sempre que precisar" },
-                  { icon: "📄", label: "Sem Contratos", detail: "Cancele quando quiser com um clique" },
+                  { icon: "🔒", label: "Pagamento Seguro", detail: "Processado pelo Stripe — nunca armazenamos seus dados" },
+                  { icon: "🛠️", label: "Suporte em Português", detail: "Via WhatsApp ou e-mail, sempre que precisar" },
+                  { icon: "📄", label: "Sem Contratos", detail: "Cancele a qualquer momento com um único clique" },
                 ].map(({ icon, label, detail }) => (
                   <div key={label} className="flex items-start gap-3">
                     <span className="text-base leading-none mt-0.5">{icon}</span>
@@ -388,24 +449,25 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Final CTA ── */}
+      {/* ── CTA Final ── */}
       <section className="py-20 px-6 bg-gradient-to-b from-sky-50 to-white">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-5">
-            Pronta para sair do WhatsApp e entrar no piloto automático?
+            Sua concorrente já pode ter um link como esse.
           </h2>
           <p className="text-slate-500 text-lg mb-10">
-            Junte-se a mais de 100 profissionais que já pararam de perder tempo
-            negociando preço por mensagem.
+            Enquanto você ainda está respondendo mensagem,
+            ela pode estar recebendo agendamento automático.
+            Não deixa para depois.
           </p>
           <Link
             href="/cleaner/signup"
             className="inline-block bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white font-bold text-xl px-10 py-5 rounded-2xl transition-colors shadow-xl shadow-sky-200"
           >
-            Começar teste grátis de 7 dias →
+            Criar meu link grátis agora →
           </Link>
           <p className="text-sm text-slate-400 mt-5">
-            Sem taxa de adesão · Cancele quando quiser
+            7 dias grátis · Sem cartão agora · Cancele quando quiser
           </p>
         </div>
       </section>
@@ -423,7 +485,7 @@ export default function LandingPage() {
             {[
               {
                 q: "Preciso falar inglês para usar o sistema?",
-                a: "Não! O painel de configuração é todo em português. Você define sua agenda, preços e preferências no seu idioma. O link de agendamento que o cliente recebe é em inglês, mas é simples e intuitivo.",
+                a: "Não! O painel de configuração é todo em português. Você define sua agenda, preços e preferências no seu idioma. O link que o cliente recebe é em inglês, mas simples e intuitivo — eles conseguem usar sem dificuldade.",
               },
               {
                 q: "Como recebo o dinheiro das faxinas?",
@@ -435,11 +497,15 @@ export default function LandingPage() {
               },
               {
                 q: "E se eu tiver dúvidas depois de criar minha conta?",
-                a: "Nosso suporte está disponível via WhatsApp e e-mail para te ajudar com qualquer dúvida. Profissionais do plano ativo têm atendimento prioritário.",
+                a: "Nosso suporte é em português e está disponível via WhatsApp e e-mail para te ajudar com qualquer coisa. Ninguém fica sem resposta.",
               },
               {
                 q: "O sistema funciona para qualquer tipo de faxina?",
-                a: "Sim! Você pode configurar preços para Regular Cleaning, Deep Cleaning e Move-in/Move-out. O sistema calcula automaticamente baseado no tamanho da casa e no tipo de serviço.",
+                a: "Sim! Você configura preços para Regular Cleaning, Deep Cleaning e Move-in/Move-out. O sistema calcula automaticamente pelo tamanho da casa e tipo de serviço — sem você precisar fazer conta nenhuma.",
+              },
+              {
+                q: "Quanto tempo leva para configurar tudo?",
+                a: "A maioria das profissionais coloca o link no ar em menos de 10 minutos. Você preenche seus preços, marca os dias que trabalha e já está pronta para compartilhar.",
               },
             ].map(({ q, a }) => (
               <details
@@ -464,14 +530,13 @@ export default function LandingPage() {
       {/* ── Footer ── */}
       <footer className="bg-slate-100 border-t border-slate-200 py-12 px-6">
         <div className="max-w-5xl mx-auto space-y-8">
-          {/* Top row */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2">
               <span className="text-2xl">✨</span>
               <span className="text-xl font-extrabold text-slate-900">CleanClick</span>
             </div>
             <p className="text-slate-500 text-sm text-center">
-              🇺🇸 Orgulhosamente servindo profissionais de limpeza nos EUA
+              🇺🇸 Orgulhosamente servindo faxineiras brasileiras nos EUA
             </p>
             <Link
               href="/cleaner/login"
@@ -481,7 +546,6 @@ export default function LandingPage() {
             </Link>
           </div>
 
-          {/* Support */}
           <div className="text-center bg-white rounded-2xl border border-slate-200 py-4 px-6">
             <p className="text-sm text-slate-500">
               Dúvidas? Fale conosco:{" "}
@@ -503,7 +567,6 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Bottom row */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
             <p>© {new Date().getFullYear()} CleanClick. Todos os direitos reservados.</p>
             <div className="flex gap-5">
