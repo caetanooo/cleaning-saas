@@ -56,6 +56,168 @@ function IconClock() {
   );
 }
 
+// ─── Mockup components ────────────────────────────────────────────────────────
+
+function BookingPreview() {
+  return (
+    <div className="flex-1 overflow-hidden px-3 pb-3 pt-1">
+      {/* URL bar */}
+      <div className="flex items-center bg-slate-100 rounded-lg px-2 py-1 mb-3 gap-1.5">
+        <div className="w-1.5 h-1.5 rounded-full bg-teal-400 shrink-0" />
+        <span className="text-[8px] text-slate-500 font-mono truncate">cleanclick.app/ana</span>
+      </div>
+
+      {/* Brand header */}
+      <div className="text-center mb-2.5">
+        <p className="text-[11px] font-extrabold text-slate-800">Ana&apos;s Cleaning ✨</p>
+        <p className="text-[8px] text-sky-500 font-semibold">Book your cleaning</p>
+      </div>
+
+      {/* Step dots */}
+      <div className="flex justify-center gap-1.5 mb-3">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className={`w-1.5 h-1.5 rounded-full ${i === 1 ? "bg-sky-500" : "bg-slate-200"}`} />
+        ))}
+      </div>
+
+      {/* Bedrooms */}
+      <p className="text-[8px] font-bold text-slate-400 uppercase mb-1">Bedrooms</p>
+      <div className="flex gap-1 mb-2.5">
+        {[1, 2, 3, 4].map((n) => (
+          <div
+            key={n}
+            className={`flex-1 text-center text-[9px] font-bold py-1.5 rounded-lg ${
+              n === 2 ? "bg-sky-500 text-white" : "bg-slate-100 text-slate-500"
+            }`}
+          >
+            {n}
+          </div>
+        ))}
+      </div>
+
+      {/* Bathrooms */}
+      <p className="text-[8px] font-bold text-slate-400 uppercase mb-1">Bathrooms</p>
+      <div className="flex gap-1 mb-3">
+        {[1, 2, 3].map((n) => (
+          <div
+            key={n}
+            className={`flex-1 text-center text-[9px] font-bold py-1.5 rounded-lg ${
+              n === 2 ? "bg-sky-500 text-white" : "bg-slate-100 text-slate-500"
+            }`}
+          >
+            {n}
+          </div>
+        ))}
+      </div>
+
+      {/* Service */}
+      <p className="text-[8px] font-bold text-slate-400 uppercase mb-1">Service</p>
+      <div className="flex gap-1 mb-3">
+        {["Regular", "Deep", "Move"].map((s, i) => (
+          <div
+            key={s}
+            className={`flex-1 text-center text-[8px] font-semibold py-1.5 rounded-lg ${
+              i === 0 ? "bg-sky-500 text-white" : "bg-slate-100 text-slate-400"
+            }`}
+          >
+            {s}
+          </div>
+        ))}
+      </div>
+
+      {/* Price display */}
+      <div className="bg-sky-50 rounded-xl p-2 mb-2 text-center">
+        <p className="text-[8px] text-slate-400">Price per session</p>
+        <p className="text-[22px] font-extrabold text-sky-600 leading-tight">$120</p>
+      </div>
+
+      {/* CTA */}
+      <div className="bg-sky-500 rounded-xl py-2 text-center">
+        <p className="text-[10px] font-bold text-white">Continue →</p>
+      </div>
+    </div>
+  );
+}
+
+function PhoneMockup() {
+  return (
+    <div className="animate-float relative w-[256px] h-[520px] bg-slate-900 rounded-[44px] p-[10px] shadow-2xl shadow-slate-400/40">
+      {/* Side buttons */}
+      <div className="absolute -left-[3px] top-[76px]  w-[3px] h-6  bg-slate-700 rounded-l-sm" />
+      <div className="absolute -left-[3px] top-[112px] w-[3px] h-9  bg-slate-700 rounded-l-sm" />
+      <div className="absolute -left-[3px] top-[154px] w-[3px] h-9  bg-slate-700 rounded-l-sm" />
+      <div className="absolute -right-[3px] top-[108px] w-[3px] h-12 bg-slate-700 rounded-r-sm" />
+
+      {/* Screen */}
+      <div className="w-full h-full bg-white rounded-[34px] overflow-hidden flex flex-col">
+        {/* Status bar */}
+        <div className="flex items-center justify-between px-5 pt-3 pb-1 shrink-0">
+          <span className="text-[10px] font-bold text-slate-800">9:41</span>
+          {/* Dynamic Island */}
+          <div className="w-[82px] h-[20px] bg-slate-900 rounded-full" />
+          <div className="flex items-center gap-1">
+            {/* WiFi icon */}
+            <svg className="w-2.5 h-2.5 fill-slate-800" viewBox="0 0 24 24">
+              <path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z" />
+            </svg>
+            {/* Battery icon */}
+            <svg className="w-2.5 h-2.5 fill-slate-800" viewBox="0 0 24 24">
+              <path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33C16.4 22 17 21.4 17 20.67V5.33C17 4.6 16.4 4 15.67 4z" />
+            </svg>
+          </div>
+        </div>
+
+        <BookingPreview />
+      </div>
+    </div>
+  );
+}
+
+function SMSCard() {
+  return (
+    <div className="w-52 bg-white rounded-2xl shadow-xl border border-slate-100 p-3.5">
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-3 pb-2.5 border-b border-slate-100">
+        <div className="w-6 h-6 bg-teal-100 rounded-full flex items-center justify-center text-sm">💬</div>
+        <div>
+          <p className="text-[10px] font-bold text-slate-800">Messages</p>
+          <p className="text-[8px] text-slate-400">now</p>
+        </div>
+      </div>
+
+      {/* Sarah's message */}
+      <div className="flex items-end gap-1.5 mb-2">
+        <div className="w-5 h-5 bg-slate-200 rounded-full shrink-0 flex items-center justify-center text-[9px] font-bold text-slate-500">
+          S
+        </div>
+        <div className="bg-slate-100 rounded-2xl rounded-bl-sm px-2.5 py-1.5">
+          <p className="text-[9px] text-slate-700 leading-tight">How much for 3 bed / 2 bath? 🏠</p>
+        </div>
+      </div>
+
+      {/* Ana's reply */}
+      <div className="flex items-end gap-1.5 flex-row-reverse mb-2.5">
+        <div className="w-5 h-5 bg-sky-500 rounded-full shrink-0 flex items-center justify-center text-[9px] font-bold text-white">
+          A
+        </div>
+        <div className="bg-sky-500 rounded-2xl rounded-br-sm px-2.5 py-1.5">
+          <p className="text-[9px] text-white leading-tight">Hi Sarah! Use my link 👇</p>
+          <p className="text-[8px] text-sky-200 font-mono mt-0.5">cleanclick.app/ana</p>
+        </div>
+      </div>
+
+      {/* Confirmation */}
+      <div className="flex items-center gap-2 bg-teal-50 border border-teal-100 rounded-xl px-2.5 py-2">
+        <span className="text-sm leading-none">✅</span>
+        <div>
+          <p className="text-[9px] font-bold text-teal-700">Booking confirmed!</p>
+          <p className="text-[7px] text-teal-500 mt-0.5">Sarah · Fri Mar 7 · Morning</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const PAIN_POINTS = [
@@ -174,37 +336,64 @@ export default function LandingPage() {
       </header>
 
       {/* ── Hero ── */}
-      <section className="bg-gradient-to-b from-sky-50 to-white pt-16 pb-20 px-6">
-        <div className="max-w-3xl mx-auto text-center">
-          <span className="inline-block bg-teal-100 text-teal-700 text-xs font-bold px-3 py-1.5 rounded-full mb-6 tracking-wide uppercase">
-            Para faxineiras brasileiras nos EUA
-          </span>
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 leading-tight mb-6">
-            Chega de negociar pelo WhatsApp.{" "}
-            <span className="text-sky-500">Seus clientes agendam sozinhos.</span>
-          </h1>
-          <p className="text-lg sm:text-xl text-slate-500 leading-relaxed mb-10 max-w-2xl mx-auto">
-            Crie um link profissional com seu nome em menos de 5 minutos.
-            O cliente vê o preço, escolhe o horário e confirma —{" "}
-            <strong className="text-slate-700">sem você precisar responder uma única mensagem.</strong>
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/cleaner/signup"
-              className="bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white font-bold text-lg px-8 py-4 rounded-2xl transition-colors shadow-lg shadow-sky-200"
+      <section className="bg-gradient-to-b from-sky-50 to-white pt-16 pb-20 px-6 overflow-hidden">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+
+            {/* Left: copy */}
+            <div className="flex-1 text-center lg:text-left">
+              <span className="inline-block bg-teal-100 text-teal-700 text-xs font-bold px-3 py-1.5 rounded-full mb-6 tracking-wide uppercase">
+                Para faxineiras brasileiras nos EUA
+              </span>
+              <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 leading-tight mb-6">
+                Chega de negociar pelo WhatsApp.{" "}
+                <span className="text-sky-500">Seus clientes agendam sozinhos.</span>
+              </h1>
+              <p className="text-lg sm:text-xl text-slate-500 leading-relaxed mb-10 max-w-xl">
+                Crie um link profissional com seu nome em menos de 5 minutos.
+                O cliente vê o preço, escolhe o horário e confirma —{" "}
+                <strong className="text-slate-700">sem você precisar responder uma única mensagem.</strong>
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                <Link
+                  href="/cleaner/signup"
+                  className="bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white font-bold text-lg px-8 py-4 rounded-2xl transition-colors shadow-lg shadow-sky-200"
+                >
+                  Quero meu link grátis por 7 dias →
+                </Link>
+                <Link
+                  href="/cleaner/login"
+                  className="border-2 border-slate-200 text-slate-600 font-semibold text-lg px-8 py-4 rounded-2xl hover:border-sky-300 transition-colors"
+                >
+                  Já tenho conta
+                </Link>
+              </div>
+              <p className="text-sm text-slate-400 mt-5">
+                Sem cartão agora · Cancele quando quiser · Configuração em 5 minutos
+              </p>
+
+              {/* SMS card — mobile only (below CTAs, inline flow) */}
+              <div className="lg:hidden mt-10 flex justify-center">
+                <SMSCard />
+              </div>
+            </div>
+
+            {/* Right: phone + SMS overlay — desktop only */}
+            <div
+              className="hidden lg:block shrink-0 relative"
+              style={{ width: 330, height: 590 }}
             >
-              Quero meu link grátis por 7 dias →
-            </Link>
-            <Link
-              href="/cleaner/login"
-              className="border-2 border-slate-200 text-slate-600 font-semibold text-lg px-8 py-4 rounded-2xl hover:border-sky-300 transition-colors"
-            >
-              Já tenho conta
-            </Link>
+              {/* Phone floats top-right */}
+              <div className="absolute top-0 right-0">
+                <PhoneMockup />
+              </div>
+              {/* SMS card bottom-left, overlaps phone */}
+              <div className="absolute bottom-0 left-0 z-10">
+                <SMSCard />
+              </div>
+            </div>
+
           </div>
-          <p className="text-sm text-slate-400 mt-5">
-            Sem cartão agora · Cancele quando quiser · Configuração em 5 minutos
-          </p>
         </div>
       </section>
 
