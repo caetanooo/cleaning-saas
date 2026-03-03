@@ -42,6 +42,6 @@ export function rowToCleaner(row: Record<string, unknown>): Cleaner {
     frequencyDiscounts: (row.frequency_discounts as Cleaner["frequencyDiscounts"])  || DEFAULT_DISCOUNTS,
     serviceAddons:      (row.service_addons      as Cleaner["serviceAddons"])       || DEFAULT_ADDONS,
     slug:               (row.slug                as string)                         || undefined,
-    subscriptionStatus: (row.subscription_status as string)                         || undefined,
+    subscriptionStatus: (row.subscription_status as string)                         || "trialing",
   };
 }
