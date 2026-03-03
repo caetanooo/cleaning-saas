@@ -56,14 +56,6 @@ function IconClock() {
   );
 }
 
-function IconShield() {
-  return (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-      <polyline points="9 12 11 14 15 10" />
-    </svg>
-  );
-}
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -376,13 +368,20 @@ export default function LandingPage() {
                 Comece seu teste grátis →
               </Link>
 
-              {/* Fine print */}
-              <div className="flex items-center justify-center gap-2 mt-4">
-                <IconShield />
-                <p className="text-xs text-slate-400 text-center">
-                  Cartão obrigatório para validação.{" "}
-                  <strong className="text-slate-500">Cancele quando quiser com um clique.</strong>
-                </p>
+              {/* Trust badges */}
+              <div className="mt-6 pt-5 border-t border-slate-100 space-y-2.5">
+                {[
+                  { icon: "🔒", label: "Pagamento Seguro", detail: "Processado pelo Stripe" },
+                  { icon: "🛠️", label: "Suporte Prioritário", detail: "Via WhatsApp ou E-mail, sempre que precisar" },
+                  { icon: "📄", label: "Sem Contratos", detail: "Cancele quando quiser com um clique" },
+                ].map(({ icon, label, detail }) => (
+                  <div key={label} className="flex items-start gap-3">
+                    <span className="text-base leading-none mt-0.5">{icon}</span>
+                    <p className="text-xs text-slate-500">
+                      <strong className="text-slate-700">{label}:</strong> {detail}
+                    </p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -411,22 +410,111 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Footer ── */}
-      <footer className="bg-slate-900 py-10 px-6">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">✨</span>
-            <span className="text-white font-extrabold">CleanClick</span>
+      {/* ── FAQ ── */}
+      <section className="py-20 px-6 bg-slate-50">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4">
+              Perguntas Frequentes
+            </h2>
+            <p className="text-slate-500">Tire suas dúvidas antes de começar.</p>
           </div>
-          <p className="text-slate-400 text-sm text-center">
-            Feito para profissionais de limpeza nos EUA.
-          </p>
-          <Link
-            href="/cleaner/login"
-            className="text-slate-400 hover:text-white text-sm transition-colors"
-          >
-            Entrar na conta →
-          </Link>
+          <div className="space-y-3">
+            {[
+              {
+                q: "Preciso falar inglês para usar o sistema?",
+                a: "Não! O painel de configuração é todo em português. Você define sua agenda, preços e preferências no seu idioma. O link de agendamento que o cliente recebe é em inglês, mas é simples e intuitivo.",
+              },
+              {
+                q: "Como recebo o dinheiro das faxinas?",
+                a: "O CleanClick organiza o agendamento — o pagamento você continua recebendo como preferir: Zelle, Venmo, Cash ou qualquer outro método. Você tem controle total sobre como quer ser paga.",
+              },
+              {
+                q: "Posso cancelar o teste antes de ser cobrada?",
+                a: "Com certeza! Se cancelar dentro dos 7 dias de teste, não haverá nenhuma cobrança. Basta acessar as configurações da sua conta e cancelar com um clique — sem burocracia, sem ligação, sem multa.",
+              },
+              {
+                q: "E se eu tiver dúvidas depois de criar minha conta?",
+                a: "Nosso suporte está disponível via WhatsApp e e-mail para te ajudar com qualquer dúvida. Profissionais do plano ativo têm atendimento prioritário.",
+              },
+              {
+                q: "O sistema funciona para qualquer tipo de faxina?",
+                a: "Sim! Você pode configurar preços para Regular Cleaning, Deep Cleaning e Move-in/Move-out. O sistema calcula automaticamente baseado no tamanho da casa e no tipo de serviço.",
+              },
+            ].map(({ q, a }) => (
+              <details
+                key={q}
+                className="group bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden"
+              >
+                <summary className="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer list-none font-semibold text-slate-800 text-sm sm:text-base hover:text-sky-600 transition-colors">
+                  {q}
+                  <span className="text-slate-400 text-xl leading-none shrink-0 group-open:rotate-45 transition-transform">
+                    +
+                  </span>
+                </summary>
+                <p className="px-6 pb-5 text-sm text-slate-500 leading-relaxed border-t border-slate-50 pt-4">
+                  {a}
+                </p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Footer ── */}
+      <footer className="bg-slate-100 border-t border-slate-200 py-12 px-6">
+        <div className="max-w-5xl mx-auto space-y-8">
+          {/* Top row */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">✨</span>
+              <span className="text-xl font-extrabold text-slate-900">CleanClick</span>
+            </div>
+            <p className="text-slate-500 text-sm text-center">
+              🇺🇸 Orgulhosamente servindo profissionais de limpeza nos EUA
+            </p>
+            <Link
+              href="/cleaner/login"
+              className="text-sky-600 hover:text-sky-700 text-sm font-semibold transition-colors"
+            >
+              Entrar na conta →
+            </Link>
+          </div>
+
+          {/* Support */}
+          <div className="text-center bg-white rounded-2xl border border-slate-200 py-4 px-6">
+            <p className="text-sm text-slate-500">
+              Dúvidas? Fale conosco:{" "}
+              <a
+                href="mailto:suporte@cleanclick.app"
+                className="text-sky-600 hover:underline font-semibold"
+              >
+                suporte@cleanclick.app
+              </a>
+              {" "}ou via{" "}
+              <a
+                href="https://wa.me/15551234567"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-teal-600 hover:underline font-semibold"
+              >
+                WhatsApp
+              </a>
+            </p>
+          </div>
+
+          {/* Bottom row */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+            <p>© {new Date().getFullYear()} CleanClick. Todos os direitos reservados.</p>
+            <div className="flex gap-5">
+              <Link href="/privacy" className="hover:text-slate-600 transition-colors">
+                Política de Privacidade
+              </Link>
+              <Link href="/terms" className="hover:text-slate-600 transition-colors">
+                Termos de Uso
+              </Link>
+            </div>
+          </div>
         </div>
       </footer>
 
