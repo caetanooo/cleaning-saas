@@ -1,8 +1,17 @@
 import Link from "next/link";
 import DemoTabs from "./DemoTabs";
-import StripePricingTable from "./StripePricingTable";
+
+const CHECKOUT_URL = "https://buy.stripe.com/eVqeV6cfsbOmgz72zR57W00";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
+
+function IconCheck() {
+  return (
+    <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
 
 function IconCalendar() {
   return (
@@ -298,6 +307,17 @@ const TESTIMONIALS = [
 ];
 
 
+const PLAN_INCLUDES = [
+  "Link de agendamento com seu nome (ex: cleanclick.app/seu-nome)",
+  "Cálculo automático de preços por tamanho e tipo de limpeza",
+  "Agenda semanal com controle de turnos e folgas",
+  "Proteção contra double-booking (nunca mais horário duplicado)",
+  "Funciona no celular, tablet e computador",
+  "Compartilhamento via WhatsApp, SMS e Instagram",
+  "Suporte em português via WhatsApp e e-mail",
+  "Cancele quando quiser — sem multa, sem burocracia",
+];
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
@@ -311,12 +331,14 @@ export default function LandingPage() {
             <span className="text-2xl">✨</span>
             <span className="text-xl font-extrabold text-slate-900">CleanClick</span>
           </div>
-          <Link
-            href="/cleaner/signup"
+          <a
+            href={CHECKOUT_URL}
+            target="_blank"
+            rel="noopener noreferrer"
             className="bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-colors"
           >
             Começar Grátis
-          </Link>
+          </a>
         </div>
       </header>
 
@@ -340,12 +362,14 @@ export default function LandingPage() {
                 <strong className="text-slate-700">sem você precisar responder uma única mensagem.</strong>
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <Link
-                  href="/cleaner/signup"
+                <a
+                  href={CHECKOUT_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white font-bold text-lg px-8 py-4 rounded-2xl transition-colors shadow-lg shadow-sky-200"
                 >
                   Quero meu link grátis por 7 dias →
-                </Link>
+                </a>
                 <Link
                   href="/cleaner/login"
                   className="border-2 border-slate-200 text-slate-600 font-semibold text-lg px-8 py-4 rounded-2xl hover:border-sky-300 transition-colors"
@@ -482,12 +506,14 @@ export default function LandingPage() {
             ))}
           </div>
           <div className="text-center mt-12">
-            <Link
-              href="/cleaner/signup"
+            <a
+              href={CHECKOUT_URL}
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-block bg-sky-500 hover:bg-sky-600 text-white font-bold text-lg px-8 py-4 rounded-2xl transition-colors shadow-lg shadow-sky-200"
             >
               Criar meu link agora →
-            </Link>
+            </a>
           </div>
         </div>
       </section>
@@ -519,12 +545,14 @@ export default function LandingPage() {
                 </span>
               ))}
             </div>
-            <Link
-              href="/cleaner/signup"
+            <a
+              href={CHECKOUT_URL}
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-block bg-white text-sky-600 font-bold text-base px-8 py-4 rounded-2xl hover:bg-sky-50 transition-colors shadow-lg"
             >
               Quero meu link personalizado →
-            </Link>
+            </a>
           </div>
         </div>
       </section>
@@ -573,7 +601,37 @@ export default function LandingPage() {
               Comece grátis. Cancele quando quiser — sem contratos.
             </p>
           </div>
-          <StripePricingTable />
+          <div className="max-w-sm mx-auto bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
+            {/* Card header */}
+            <div className="bg-gradient-to-br from-sky-500 to-teal-500 px-8 py-8 text-center text-white">
+              <p className="text-sm font-bold uppercase tracking-widest text-sky-100 mb-2">Plano Pro</p>
+              <div className="flex items-end justify-center gap-1">
+                <span className="text-5xl font-extrabold">$19</span>
+                <span className="text-sky-200 text-base mb-2">/mês</span>
+              </div>
+              <p className="text-sky-100 text-sm mt-2">7 dias grátis · sem cartão agora</p>
+            </div>
+            {/* Features */}
+            <div className="px-8 py-7">
+              <ul className="space-y-3 mb-8">
+                {PLAN_INCLUDES.map((item) => (
+                  <li key={item} className="flex items-start gap-3 text-sm text-slate-700">
+                    <span className="text-sky-500 mt-0.5 shrink-0"><IconCheck /></span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <a
+                href={CHECKOUT_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full text-center bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white font-bold text-base py-4 rounded-2xl transition-colors shadow-lg shadow-sky-200"
+              >
+                Começar 7 dias grátis →
+              </a>
+              <p className="text-center text-xs text-slate-400 mt-3">Cancele quando quiser. Sem multa.</p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -588,12 +646,14 @@ export default function LandingPage() {
             ela pode estar recebendo agendamento automático.
             Não deixa para depois.
           </p>
-          <Link
-            href="/cleaner/signup"
+          <a
+            href={CHECKOUT_URL}
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-block bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white font-bold text-xl px-10 py-5 rounded-2xl transition-colors shadow-xl shadow-sky-200"
           >
             Criar meu link grátis agora →
-          </Link>
+          </a>
           <p className="text-sm text-slate-400 mt-5">
             7 dias grátis · Sem cartão agora · Cancele quando quiser
           </p>
