@@ -288,15 +288,6 @@ function LinkTab() {
           </div>
         </div>
 
-        {/* Buttons — visual only */}
-        <div className="flex gap-3">
-          <div className="flex-1 border-2 border-slate-200 text-slate-400 font-semibold py-3 rounded-xl text-center text-sm">
-            ← Back
-          </div>
-          <div className="flex-1 bg-sky-500 text-white font-bold py-3 rounded-xl text-center text-sm">
-            Continue →
-          </div>
-        </div>
       </div>
     </div>
   );
