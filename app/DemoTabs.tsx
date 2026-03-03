@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
 
 type Tab = "agenda" | "link" | "precos";
 
@@ -192,7 +193,7 @@ function AgendaTab() {
 
 // ─── Tab: Seu Link Profissional ───────────────────────────────────────────────
 
-function LinkTab() {
+function LinkTab({ onContinue }: { onContinue: () => void }) {
   const [step, setStep] = useState(0);
 
   return (
@@ -351,7 +352,10 @@ function LinkTab() {
             >
               ← Back
             </button>
-            <button className="flex-1 bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 rounded-xl transition-colors">
+            <button
+              onClick={onContinue}
+              className="flex-1 bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 rounded-xl transition-colors"
+            >
               Continue →
             </button>
           </div>
@@ -531,12 +535,19 @@ function PrecosTab() {
 
 const TABS: { id: Tab; label: string; flag: string }[] = [
   { id: "agenda", label: "Sua Agenda",             flag: "🇧🇷" },
-  { id: "link",   label: "Seu Link Profissional",  flag: "🇺🇸" },
+  { id: "link",   label: "O que seu cliente vê",    flag: "🇺🇸" },
   { id: "precos", label: "Seus Preços",             flag: "🇧🇷" },
 ];
 
 export default function DemoTabs() {
-  const [active, setActive] = useState<Tab>("agenda");
+  const [active,     setActive]     = useState<Tab>("agenda");
+  const [ctaVisible, setCtaVisible] = useState(false);
+
+  useEffect(() => {
+    if (!ctaVisible) return;
+    const t = setTimeout(() => setCtaVisible(false), 6000);
+    return () => clearTimeout(t);
+  }, [ctaVisible]);
 
   return (
     <section className="py-20 px-6 bg-slate-50">
@@ -572,11 +583,37 @@ export default function DemoTabs() {
         {/* Content */}
         <div>
           {active === "agenda" && <AgendaTab />}
-          {active === "link"   && <LinkTab />}
+          {active === "link"   && <LinkTab onContinue={() => setCtaVisible(true)} />}
           {active === "precos" && <PrecosTab />}
         </div>
 
       </div>
+
+      {/* CTA toast */}
+      {ctaVisible && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-md">
+          <div className="bg-slate-900 text-white rounded-2xl shadow-2xl px-5 py-4 flex items-start gap-4">
+            <div className="flex-1 space-y-2">
+              <p className="text-sm font-semibold leading-snug">
+                Incrível, né? Imagine seu cliente agendando assim com você.
+              </p>
+              <Link
+                href="/cleaner/signup"
+                className="inline-block bg-sky-500 hover:bg-sky-400 text-white text-sm font-bold px-4 py-2 rounded-xl transition-colors"
+              >
+                Começar Grátis →
+              </Link>
+            </div>
+            <button
+              onClick={() => setCtaVisible(false)}
+              className="text-slate-400 hover:text-white transition-colors text-lg leading-none mt-0.5 shrink-0"
+              aria-label="Fechar"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
