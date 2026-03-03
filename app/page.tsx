@@ -181,7 +181,7 @@ export default function LandingPage() {
           </span>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 leading-tight mb-6">
             Chega de negociar pelo WhatsApp.{" "}
-            <span className="text-sky-500">Seus clientes agendam sozinhos — e pagam o preço certo.</span>
+            <span className="text-sky-500">Seus clientes agendam sozinhos.</span>
           </h1>
           <p className="text-lg sm:text-xl text-slate-500 leading-relaxed mb-10 max-w-2xl mx-auto">
             Crie um link profissional com seu nome em menos de 5 minutos.
