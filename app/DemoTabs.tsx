@@ -6,44 +6,31 @@ import Link from "next/link";
 type Tab = "agenda" | "link" | "precos";
 
 // ─── Agenda Tab data ──────────────────────────────────────────────────────────
+// March 2026: starts on Sunday (offset = 0), 31 days, today = 3
 
-const AGENDA_DAYS = [
-  {
-    day: "Segunda-feira",
-    date: "3 mar",
-    morning: { name: "Maria Silva",   service: "Regular Cleaning" },
-    afternoon: null,
-  },
-  {
-    day: "Terça-feira",
-    date: "4 mar",
-    morning: { name: "Sarah Johnson", service: "Regular Cleaning" },
-    afternoon: { name: "John Williams", service: "Deep Cleaning" },
-  },
-  {
-    day: "Quarta-feira",
-    date: "5 mar",
-    morning: null,
-    afternoon: null,
-  },
-  {
-    day: "Quinta-feira",
-    date: "6 mar",
-    morning: { name: "Emily Clark",   service: "Regular Cleaning" },
-    afternoon: null,
-  },
-  {
-    day: "Sexta-feira",
-    date: "7 mar",
-    morning: null,
-    afternoon: { name: "David Lee",   service: "Regular Cleaning" },
-  },
-  {
-    day: "Sábado",
-    date: "8 mar",
-    morning: { name: "Lisa Park",     service: "Deep Cleaning" },
-    afternoon: "folga" as const,
-  },
+const MARCH_START  = 0;  // Sunday
+const MARCH_DAYS   = 31;
+const TODAY_DAY    = 3;
+
+const BOOKINGS_MAP: Record<number, { morning?: string; afternoon?: string }> = {
+  3:  { morning: "Maria Silva" },
+  4:  { morning: "Sarah Johnson", afternoon: "John Williams" },
+  5:  { morning: "Emily Clark" },
+  7:  { afternoon: "David Lee" },
+  10: { morning: "Lisa Park" },
+  12: { morning: "Tom Baker",    afternoon: "Anna Reeves" },
+  17: { morning: "James Carter" },
+  19: { afternoon: "Mia Turner" },
+  24: { morning: "Chris Evans",  afternoon: "Kate Wills" },
+};
+
+const BLOCKED_DAYS = new Set([8, 15, 22]);
+
+const UPCOMING = [
+  { dot: "bg-sky-500",    date: "Ter, 3 de Março",  period: "Manhã (9h–13h)",     name: "Maria Silva",   address: "123 Oak St, Austin, TX" },
+  { dot: "bg-sky-500",    date: "Qua, 4 de Março",  period: "Manhã (9h–13h)",     name: "Sarah Johnson", address: "456 Pine Ave, Austin, TX" },
+  { dot: "bg-violet-500", date: "Qua, 4 de Março",  period: "Tarde (13h30–18h)",  name: "John Williams", address: "789 Elm Blvd, Austin, TX" },
+  { dot: "bg-sky-500",    date: "Qui, 5 de Março",  period: "Manhã (9h–13h)",     name: "Emily Clark",   address: "321 Maple Dr, Austin, TX" },
 ];
 
 // ─── Booking Tab data ─────────────────────────────────────────────────────────
@@ -98,94 +85,111 @@ function calcBase(base: number, eb: number, ebath: number, beds: number, baths: 
 // ─── Tab: Sua Agenda ──────────────────────────────────────────────────────────
 
 function AgendaTab() {
+  // Build flat array of cells (null = empty padding, number = day of month)
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < MARCH_START; i++) cells.push(null);
+  for (let d = 1; d <= MARCH_DAYS; d++) cells.push(d);
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const totalBookings = Object.values(BOOKINGS_MAP).reduce(
+    (acc, b) => acc + (b.morning ? 1 : 0) + (b.afternoon ? 1 : 0),
+    0,
+  );
+
   return (
-    <div className="space-y-3">
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
       {/* Card header */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-          <div>
-            <h3 className="font-bold text-slate-800">Minha Agenda</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Semana de 3 a 8 de março · 2026</p>
-          </div>
-          <span className="bg-teal-100 text-teal-700 text-xs font-bold px-3 py-1.5 rounded-full">
-            5 faxinas
-          </span>
+      <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h3 className="font-bold text-slate-800">Minha Agenda</h3>
+          <p className="text-xs text-slate-400 mt-0.5">Março 2026</p>
         </div>
+        <span className="bg-teal-100 text-teal-700 text-xs font-bold px-3 py-1.5 rounded-full">
+          {totalBookings} faxinas
+        </span>
+      </div>
 
-        {/* Column headers */}
-        <div className="grid grid-cols-[1fr_1fr_1fr] border-b border-slate-50 bg-slate-50">
-          <div className="px-4 py-2.5 text-xs font-bold text-slate-500">Dia</div>
-          <div className="px-4 py-2.5 text-xs font-bold text-sky-600 border-l border-slate-100">
-            Manhã · 9h–13h
-          </div>
-          <div className="px-4 py-2.5 text-xs font-bold text-violet-600 border-l border-slate-100">
-            Tarde · 13h30–18h
-          </div>
-        </div>
-
-        {/* Day rows */}
-        {AGENDA_DAYS.map((row, i) => (
-          <div
-            key={row.day}
-            className={`grid grid-cols-[1fr_1fr_1fr] border-t border-slate-50 ${
-              i % 2 === 1 ? "bg-slate-50/40" : "bg-white"
-            }`}
-          >
-            {/* Day */}
-            <div className="px-4 py-3.5">
-              <p className="text-sm font-bold text-slate-700 leading-tight">{row.day}</p>
-              <p className="text-xs text-slate-400">{row.date}</p>
+      {/* Calendar grid */}
+      <div className="px-4 pt-4 pb-3">
+        {/* Weekday headers */}
+        <div className="grid grid-cols-7 mb-1">
+          {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((d) => (
+            <div key={d} className="text-center text-[10px] font-bold text-slate-400 py-1">
+              {d}
             </div>
+          ))}
+        </div>
 
-            {/* Morning */}
-            <div className="px-4 py-3.5 border-l border-slate-100">
-              {row.morning ? (
-                <div className="flex items-start gap-2">
-                  <span className="w-2 h-2 rounded-full bg-sky-500 shrink-0 mt-1" />
-                  <div>
-                    <p className="text-sm font-semibold text-slate-800 leading-tight">{row.morning.name}</p>
-                    <p className="text-xs text-slate-400">{row.morning.service}</p>
-                  </div>
+        {/* Day cells */}
+        <div className="grid grid-cols-7 gap-y-0.5">
+          {cells.map((day, i) => {
+            if (!day) return <div key={`e-${i}`} className="h-10" />;
+            const isToday   = day === TODAY_DAY;
+            const isBlocked = BLOCKED_DAYS.has(day);
+            const booking   = BOOKINGS_MAP[day];
+            return (
+              <div
+                key={day}
+                className={`flex flex-col items-center justify-center h-10 rounded-lg ${
+                  isBlocked ? "bg-slate-100" : ""
+                }`}
+              >
+                <div
+                  className={`w-7 h-7 flex items-center justify-center rounded-full text-sm font-semibold leading-none ${
+                    isToday
+                      ? "bg-sky-500 text-white"
+                      : "text-slate-700"
+                  }`}
+                >
+                  {day}
                 </div>
-              ) : (
-                <span className="text-xs font-medium text-teal-500">Disponível</span>
-              )}
-            </div>
-
-            {/* Afternoon */}
-            <div className="px-4 py-3.5 border-l border-slate-100">
-              {row.afternoon === "folga" ? (
-                <span className="text-xs text-slate-400 italic">Folga</span>
-              ) : row.afternoon ? (
-                <div className="flex items-start gap-2">
-                  <span className="w-2 h-2 rounded-full bg-violet-500 shrink-0 mt-1" />
-                  <div>
-                    <p className="text-sm font-semibold text-slate-800 leading-tight">{row.afternoon.name}</p>
-                    <p className="text-xs text-slate-400">{row.afternoon.service}</p>
-                  </div>
+                {/* Booking dots */}
+                <div className="flex gap-0.5 h-2 mt-0.5">
+                  {booking?.morning   && <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />}
+                  {booking?.afternoon && <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />}
                 </div>
-              ) : (
-                <span className="text-xs font-medium text-teal-500">Disponível</span>
-              )}
-            </div>
-          </div>
-        ))}
-
-        {/* Legend */}
-        <div className="px-5 py-3 border-t border-slate-100 flex flex-wrap gap-4 text-xs text-slate-500">
-          <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-sky-500 inline-block" />
-            Manhã agendada
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-violet-500 inline-block" />
-            Tarde agendada
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-teal-400 inline-block" />
-            Disponível
-          </span>
+              </div>
+            );
+          })}
         </div>
+      </div>
+
+      {/* Upcoming bookings */}
+      <div className="px-5 py-4 border-t border-slate-100">
+        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-3">
+          Próximos Agendamentos
+        </p>
+        <div className="space-y-3">
+          {UPCOMING.map((b, i) => (
+            <div key={i} className="flex items-start gap-2.5">
+              <span className={`w-2 h-2 rounded-full ${b.dot} shrink-0 mt-1.5`} />
+              <div>
+                <p className="text-sm font-semibold text-slate-800 leading-tight">
+                  {b.date} · {b.name}
+                </p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {b.period} · {b.address}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div className="px-5 py-3 border-t border-slate-100 flex flex-wrap gap-4 text-xs text-slate-500">
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-sky-500 inline-block" />
+          Manhã agendada
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-violet-500 inline-block" />
+          Tarde agendada
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-slate-300 inline-block" />
+          Dia bloqueado
+        </span>
       </div>
     </div>
   );
