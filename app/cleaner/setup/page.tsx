@@ -593,8 +593,9 @@ export default function CleanerSetupPage() {
             </p>
           </div>
           <div className="px-6 py-5 space-y-4">
-            <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-sky-400">
-              <span className="px-3 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-3 select-none whitespace-nowrap">
+            {/* Input do slug */}
+            <div className="flex items-stretch border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-sky-400">
+              <span className="px-3 text-slate-400 text-xs sm:text-sm bg-slate-50 border-r border-slate-200 py-3.5 select-none flex items-center shrink-0 break-all">
                 {typeof window !== "undefined" ? window.location.origin : ""}/
               </span>
               <input
@@ -604,15 +605,16 @@ export default function CleanerSetupPage() {
                 onChange={(e) =>
                   setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
                 }
-                className="flex-1 px-3 py-3 text-sm text-slate-800 bg-white focus:outline-none"
+                className="flex-1 min-w-0 px-3 py-3.5 text-sm text-slate-800 bg-white focus:outline-none"
               />
             </div>
-            <div className="flex gap-3">
+            {/* Botões — coluna no mobile, linha no desktop */}
+            <div className="flex flex-col sm:flex-row gap-3">
               <button
                 type="button"
                 onClick={saveSlug}
                 disabled={slugSaving}
-                className="flex-1 bg-sky-500 hover:bg-sky-600 disabled:opacity-60 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
+                className="flex-1 bg-sky-500 hover:bg-sky-600 active:bg-sky-700 disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl text-sm transition-colors"
               >
                 {slugSaving ? "Salvando…" : "Salvar Link Personalizado"}
               </button>
@@ -620,11 +622,13 @@ export default function CleanerSetupPage() {
                 type="button"
                 onClick={copyLink}
                 disabled={!slug}
-                className={`flex-1 font-semibold py-2.5 rounded-xl text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-                  copied ? "bg-green-500 text-white" : "border-2 border-slate-200 text-slate-600 hover:border-sky-300"
+                className={`flex-1 font-semibold py-3.5 rounded-xl text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                  copied
+                    ? "bg-green-500 text-white"
+                    : "border-2 border-slate-200 text-slate-600 hover:border-sky-300 active:bg-slate-50"
                 }`}
               >
-                {copied ? "Copiado!" : "Copiar Link"}
+                {copied ? "✓ Link copiado!" : "Copiar Link"}
               </button>
             </div>
           </div>
