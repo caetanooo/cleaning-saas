@@ -28,7 +28,9 @@ export default async function SlugPage({
 
   const cleaner = rowToCleaner(data);
 
+  const isOwner = cleaner.email === "pedro.caetano.3anos@gmail.com";
   const isInactive =
+    !isOwner &&
     cleaner.subscriptionStatus !== "active" &&
     cleaner.subscriptionStatus !== "trialing";
 
