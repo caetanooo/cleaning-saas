@@ -614,7 +614,7 @@ export default function CleanerSetupPage() {
                 disabled={slugSaving}
                 className="flex-1 bg-sky-500 hover:bg-sky-600 disabled:opacity-60 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
               >
-                {slugSaving ? "Salvando…" : "Salvar Slug"}
+                {slugSaving ? "Salvando…" : "Salvar Link Personalizado"}
               </button>
               <button
                 type="button"
