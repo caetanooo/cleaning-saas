@@ -592,45 +592,49 @@ export default function CleanerSetupPage() {
               Escolha um endereço personalizado para compartilhar com seus clientes.
             </p>
           </div>
-          <div className="px-6 py-5 space-y-4">
-            {/* Input do slug */}
-            <div className="flex items-stretch border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-sky-400">
-              <span className="px-3 text-slate-400 text-xs sm:text-sm bg-slate-50 border-r border-slate-200 py-3.5 select-none flex items-center shrink-0 break-all">
+          <div className="px-6 py-5 space-y-3">
+            {/* Prefixo: label acima no mobile, prefixo inline no desktop */}
+            <div>
+              <p className="text-xs text-slate-400 mb-1.5 sm:hidden break-all">
                 {typeof window !== "undefined" ? window.location.origin : ""}/
-              </span>
-              <input
-                type="text"
-                placeholder="maria-santos"
-                value={slug}
-                onChange={(e) =>
-                  setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
-                }
-                className="flex-1 min-w-0 px-3 py-3.5 text-sm text-slate-800 bg-white focus:outline-none"
-              />
+              </p>
+              <div className="flex items-stretch border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-sky-400">
+                <span className="hidden sm:flex px-3 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-3.5 items-center select-none whitespace-nowrap">
+                  {typeof window !== "undefined" ? window.location.origin : ""}/
+                </span>
+                <input
+                  type="text"
+                  placeholder="ex: ana-limpezas"
+                  value={slug}
+                  onChange={(e) =>
+                    setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
+                  }
+                  className="flex-1 min-w-0 px-4 py-3.5 text-sm text-slate-800 bg-white focus:outline-none"
+                />
+              </div>
             </div>
-            {/* Botões — coluna no mobile, linha no desktop */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                type="button"
-                onClick={saveSlug}
-                disabled={slugSaving}
-                className="flex-1 bg-sky-500 hover:bg-sky-600 active:bg-sky-700 disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl text-sm transition-colors"
-              >
-                {slugSaving ? "Salvando…" : "Salvar Link Personalizado"}
-              </button>
-              <button
-                type="button"
-                onClick={copyLink}
-                disabled={!slug}
-                className={`flex-1 font-semibold py-3.5 rounded-xl text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-                  copied
-                    ? "bg-green-500 text-white"
-                    : "border-2 border-slate-200 text-slate-600 hover:border-sky-300 active:bg-slate-50"
-                }`}
-              >
-                {copied ? "✓ Link copiado!" : "Copiar Link"}
-              </button>
-            </div>
+            {/* Salvar — sempre full width */}
+            <button
+              type="button"
+              onClick={saveSlug}
+              disabled={slugSaving}
+              className="w-full bg-sky-500 hover:bg-sky-600 active:bg-sky-700 disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl text-sm transition-colors"
+            >
+              {slugSaving ? "Salvando…" : "Salvar Link Personalizado"}
+            </button>
+            {/* Copiar — full width, linha separada */}
+            <button
+              type="button"
+              onClick={copyLink}
+              disabled={!slug}
+              className={`w-full font-semibold py-3.5 rounded-xl text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                copied
+                  ? "bg-green-500 text-white"
+                  : "border-2 border-slate-200 text-slate-600 hover:border-sky-300 active:bg-slate-50"
+              }`}
+            >
+              {copied ? "✓ Link copiado!" : "Copiar Link"}
+            </button>
           </div>
         </section>
 
