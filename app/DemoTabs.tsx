@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 
 type Tab = "agenda" | "link" | "precos";
@@ -195,10 +195,25 @@ function AgendaTab() {
   );
 }
 
-// ─── Tab: Seu Link Profissional ───────────────────────────────────────────────
+// ─── Tab: O que seu cliente vê ────────────────────────────────────────────────
 
-function LinkTab({ onContinue }: { onContinue: () => void }) {
-  const [step, setStep] = useState(0);
+type PetOption   = "dog" | "cat" | "none";
+type FloorOption = "hardwood" | "tile" | "carpet";
+
+function LinkTab() {
+  const [step,     setStep]     = useState(0);
+  // Step 2 form state
+  const [name,     setName]     = useState("");
+  const [email,    setEmail]    = useState("");
+  const [phone,    setPhone]    = useState("");
+  const [pets,     setPets]     = useState<PetOption>("none");
+  const [children, setChildren] = useState(false);
+  const [floor,    setFloor]    = useState<FloorOption>("hardwood");
+  const [entry,    setEntry]    = useState("");
+
+  // Map internal step to wizard visual step index
+  // step 0 → viz 0, step 1 → viz 1, step 2 → viz 3 (skip Date & Time, show done)
+  const vizStep = step < 2 ? step : 3;
 
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
@@ -208,32 +223,34 @@ function LinkTab({ onContinue }: { onContinue: () => void }) {
         <p className="text-slate-500 text-sm">With Ana Santos · Ready in under 60 seconds.</p>
       </div>
 
-      {/* Step indicator — exact CSS from WizardClient.tsx */}
-      <div className="flex items-center gap-0 px-6 pt-6 pb-2">
-        {STEPS.map((label, i) => (
-          <div key={i} className="flex items-center flex-1 last:flex-none">
-            <div className="flex flex-col items-center">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
-                  i < step
-                    ? "bg-sky-500 text-white"
-                    : i === step
-                    ? "bg-sky-500 text-white ring-4 ring-sky-100"
-                    : "bg-slate-200 text-slate-400"
-                }`}
-              >
-                {i < step ? "✓" : i + 1}
+      {/* Step indicator — hidden on summary screen */}
+      {step < 3 && (
+        <div className="flex items-center gap-0 px-6 pt-6 pb-2">
+          {STEPS.map((label, i) => (
+            <div key={i} className="flex items-center flex-1 last:flex-none">
+              <div className="flex flex-col items-center">
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
+                    i < vizStep
+                      ? "bg-sky-500 text-white"
+                      : i === vizStep
+                      ? "bg-sky-500 text-white ring-4 ring-sky-100"
+                      : "bg-slate-200 text-slate-400"
+                  }`}
+                >
+                  {i < vizStep ? "✓" : i + 1}
+                </div>
+                <span className={`text-xs mt-1 font-medium hidden sm:block ${i === vizStep ? "text-sky-600" : "text-slate-400"}`}>
+                  {label}
+                </span>
               </div>
-              <span className={`text-xs mt-1 font-medium hidden sm:block ${i === step ? "text-sky-600" : "text-slate-400"}`}>
-                {label}
-              </span>
+              {i < STEPS.length - 1 && (
+                <div className={`flex-1 h-0.5 mb-5 mx-1 ${i < vizStep ? "bg-sky-500" : "bg-slate-200"}`} />
+              )}
             </div>
-            {i < STEPS.length - 1 && (
-              <div className={`flex-1 h-0.5 mb-5 mx-1 ${i < step ? "bg-sky-500" : "bg-slate-200"}`} />
-            )}
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Step 0: House Size + Service Type — exact from WizardClient.tsx */}
       {step === 0 && (
@@ -277,7 +294,7 @@ function LinkTab({ onContinue }: { onContinue: () => void }) {
               </div>
             </div>
 
-            {/* Service Type — exact from WizardClient.tsx */}
+            {/* Service Type */}
             <div className="pt-2 border-t border-slate-100">
               <p className="text-sm font-bold text-slate-700 mb-3">Service Type</p>
               <div className="space-y-2">
@@ -320,7 +337,7 @@ function LinkTab({ onContinue }: { onContinue: () => void }) {
         </div>
       )}
 
-      {/* Step 1: Frequency — exact from WizardClient.tsx */}
+      {/* Step 1: Frequency */}
       {step === 1 && (
         <div className="px-6 pb-6 pt-4 space-y-6">
           <div className="space-y-3">
@@ -357,12 +374,231 @@ function LinkTab({ onContinue }: { onContinue: () => void }) {
               ← Back
             </button>
             <button
-              onClick={onContinue}
+              onClick={() => setStep(2)}
               className="flex-1 bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 rounded-xl transition-colors"
             >
               Continue →
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Step 2: Your Details — exact design from WizardClient.tsx step 3 */}
+      {step === 2 && (
+        <div className="px-6 pb-6 pt-4 space-y-4">
+
+          {/* Contact Info */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4">
+            <p className="text-sm font-bold text-slate-700">Contact Info</p>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Name</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Jane Doe"
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="jane@example.com"
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Phone Number</label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="(512) 555-0100"
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
+              />
+            </div>
+          </div>
+
+          {/* Home Details */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4">
+            <p className="text-sm font-bold text-slate-700">Home Details</p>
+
+            {/* Pets */}
+            <div>
+              <p className="text-sm font-semibold text-slate-700 mb-2">Do you have pets?</p>
+              <div className="flex gap-2">
+                {(["dog", "cat", "none"] as PetOption[]).map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setPets(opt)}
+                    className={`flex-1 py-2.5 rounded-xl border-2 text-sm font-semibold transition-colors ${
+                      pets === opt
+                        ? "border-sky-500 bg-sky-50 text-sky-600"
+                        : "border-slate-200 text-slate-500 hover:border-sky-300"
+                    }`}
+                  >
+                    {opt === "dog" ? "🐕 Dog" : opt === "cat" ? "🐈 Cat" : "None"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Children */}
+            <div>
+              <p className="text-sm font-semibold text-slate-700 mb-2">Are there children in the house?</p>
+              <div className="flex gap-2">
+                {([true, false] as const).map((opt) => (
+                  <button
+                    key={String(opt)}
+                    type="button"
+                    onClick={() => setChildren(opt)}
+                    className={`flex-1 py-2.5 rounded-xl border-2 text-sm font-semibold transition-colors ${
+                      children === opt
+                        ? "border-sky-500 bg-sky-50 text-sky-600"
+                        : "border-slate-200 text-slate-500 hover:border-sky-300"
+                    }`}
+                  >
+                    {opt ? "Yes" : "No"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Floor type */}
+            <div>
+              <p className="text-sm font-semibold text-slate-700 mb-2">Floor type</p>
+              <div className="flex gap-2">
+                {(["hardwood", "tile", "carpet"] as FloorOption[]).map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setFloor(opt)}
+                    className={`relative flex-1 py-2.5 rounded-xl border-2 text-sm font-semibold capitalize transition-colors ${
+                      floor === opt
+                        ? "border-sky-500 bg-sky-50 text-sky-600"
+                        : "border-slate-200 text-slate-500 hover:border-sky-300"
+                    }`}
+                  >
+                    {opt === "carpet" ? "Carpet" : opt.charAt(0).toUpperCase() + opt.slice(1)}
+                    {opt === "carpet" && (
+                      <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[9px] font-bold bg-amber-400 text-white px-1.5 rounded-full whitespace-nowrap">
+                        Special
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Entry Instructions */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+            <label className="block text-sm font-bold text-slate-700 mb-2">Entry Instructions</label>
+            <textarea
+              value={entry}
+              onChange={(e) => setEntry(e.target.value)}
+              placeholder="How should we enter the house? (e.g., door code, key under mat…)"
+              rows={3}
+              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 resize-none"
+            />
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={() => setStep(1)}
+              className="flex-1 border-2 border-slate-200 text-slate-600 font-semibold py-3 rounded-xl hover:border-slate-300 transition-colors"
+            >
+              ← Back
+            </button>
+            <button
+              onClick={() => setStep(3)}
+              className="flex-1 bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 rounded-xl transition-colors"
+            >
+              Continue →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 3: Booking Summary */}
+      {step === 3 && (
+        <div className="px-6 pb-8 pt-6 space-y-5">
+          {/* Header */}
+          <div className="text-center space-y-2">
+            <div className="w-12 h-12 bg-sky-100 rounded-full flex items-center justify-center mx-auto text-xl font-bold text-sky-600">
+              ✓
+            </div>
+            <p className="font-extrabold text-slate-900 text-lg">Your Booking Summary</p>
+            <p className="text-sm text-slate-500">Here&apos;s everything we&apos;ll need before your first visit.</p>
+          </div>
+
+          {/* Summary card */}
+          <div className="rounded-2xl border border-slate-100 divide-y divide-slate-100 text-sm overflow-hidden">
+            <div className="flex justify-between px-5 py-3 bg-white">
+              <span className="text-slate-500">Service</span>
+              <span className="font-semibold text-slate-800">Regular Cleaning</span>
+            </div>
+            <div className="flex justify-between px-5 py-3 bg-white">
+              <span className="text-slate-500">Frequency</span>
+              <span className="font-semibold text-slate-800">
+                Bi-Weekly{" "}
+                <span className="text-green-600 text-xs font-bold">(Save 10%)</span>
+              </span>
+            </div>
+            <div className="flex justify-between items-baseline px-5 py-3 bg-white">
+              <span className="text-slate-500">Price / session</span>
+              <span className="font-extrabold text-sky-600 text-base">$130.50</span>
+            </div>
+            <div className="px-5 py-3 bg-slate-50/60">
+              <span className="text-slate-500 text-xs font-semibold uppercase tracking-wide block mb-2">
+                Home Details
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {pets !== "none" && (
+                  <span className="text-xs font-semibold bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full">
+                    {pets === "dog" ? "🐕 Dog" : "🐈 Cat"}
+                  </span>
+                )}
+                {children && (
+                  <span className="text-xs font-semibold bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full">
+                    👶 Children
+                  </span>
+                )}
+                {floor === "carpet" && (
+                  <span className="text-xs font-semibold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                    🪞 Carpet floor
+                  </span>
+                )}
+                {floor !== "carpet" && pets === "none" && !children && (
+                  <span className="text-xs text-slate-400">Standard home</span>
+                )}
+              </div>
+              {entry && (
+                <p className="text-xs text-slate-400 italic mt-2">
+                  &ldquo;{entry.length > 50 ? entry.slice(0, 50) + "…" : entry}&rdquo;
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* CTA */}
+          <Link
+            href="/cleaner/signup"
+            className="block w-full text-center bg-sky-500 hover:bg-sky-600 text-white font-bold py-4 rounded-2xl transition-colors text-base"
+          >
+            Get your own booking link →
+          </Link>
+
+          <button
+            onClick={() => setStep(0)}
+            className="w-full text-center text-slate-400 text-sm hover:text-slate-600 transition-colors py-1"
+          >
+            ← Start over
+          </button>
         </div>
       )}
     </div>
@@ -544,14 +780,7 @@ const TABS: { id: Tab; label: string; flag: string }[] = [
 ];
 
 export default function DemoTabs() {
-  const [active,     setActive]     = useState<Tab>("agenda");
-  const [ctaVisible, setCtaVisible] = useState(false);
-
-  useEffect(() => {
-    if (!ctaVisible) return;
-    const t = setTimeout(() => setCtaVisible(false), 6000);
-    return () => clearTimeout(t);
-  }, [ctaVisible]);
+  const [active, setActive] = useState<Tab>("agenda");
 
   return (
     <section className="py-20 px-6 bg-slate-50">
@@ -587,37 +816,11 @@ export default function DemoTabs() {
         {/* Content */}
         <div>
           {active === "agenda" && <AgendaTab />}
-          {active === "link"   && <LinkTab onContinue={() => setCtaVisible(true)} />}
+          {active === "link"   && <LinkTab />}
           {active === "precos" && <PrecosTab />}
         </div>
 
       </div>
-
-      {/* CTA toast */}
-      {ctaVisible && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-md">
-          <div className="bg-slate-900 text-white rounded-2xl shadow-2xl px-5 py-4 flex items-start gap-4">
-            <div className="flex-1 space-y-2">
-              <p className="text-sm font-semibold leading-snug">
-                Incrível, né? Imagine seu cliente agendando assim com você.
-              </p>
-              <Link
-                href="/cleaner/signup"
-                className="inline-block bg-sky-500 hover:bg-sky-400 text-white text-sm font-bold px-4 py-2 rounded-xl transition-colors"
-              >
-                Começar Grátis →
-              </Link>
-            </div>
-            <button
-              onClick={() => setCtaVisible(false)}
-              className="text-slate-400 hover:text-white transition-colors text-lg leading-none mt-0.5 shrink-0"
-              aria-label="Fechar"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-      )}
     </section>
   );
 }
