@@ -43,7 +43,18 @@ export default function CleanerLoginPage() {
       return;
     }
 
-    router.replace("/cleaner/setup");
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch("/api/stripe/sync-subscription", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session!.access_token}`,
+      },
+      body: JSON.stringify({ cleanerId: session!.user.id, email: session!.user.email }),
+    });
+    const { status } = await res.json() as { status: string };
+    const isBlocked = status === "past_due" || status === "canceled" || status === "no_subscription";
+    router.replace(isBlocked ? "/cleaner/subscription" : "/cleaner/setup");
   }
 
   return (

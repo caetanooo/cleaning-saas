@@ -21,15 +21,34 @@ function CallbackInner() {
       // PKCE flow: exchange the one-time code for a session.
       // Use window.location (full reload) so the destination page reads
       // the session from localStorage on a clean initialisation.
-      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
-        window.location.replace(
-          error ? "/cleaner/login?error=confirmation_failed" : "/cleaner/setup",
-        );
+      supabase.auth.exchangeCodeForSession(code).then(async ({ data, error }) => {
+        if (error || !data.session) {
+          window.location.replace("/cleaner/login?error=confirmation_failed");
+          return;
+        }
+        await fetch("/api/stripe/sync-subscription", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${data.session.access_token}`,
+          },
+          body: JSON.stringify({ cleanerId: data.session.user.id, email: data.session.user.email }),
+        });
+        window.location.replace("/cleaner/setup");
       });
     } else {
       // Implicit / magic-link flow: session is already in the URL hash.
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        window.location.replace(session ? "/cleaner/setup" : "/cleaner/login");
+      supabase.auth.getSession().then(async ({ data: { session } }) => {
+        if (!session) { window.location.replace("/cleaner/login"); return; }
+        await fetch("/api/stripe/sync-subscription", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ cleanerId: session.user.id, email: session.user.email }),
+        });
+        window.location.replace("/cleaner/setup");
       });
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

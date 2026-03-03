@@ -68,6 +68,14 @@ export default function CleanerSetupPage() {
         if (cancelled) return;
 
         if (data?.id) {
+          if (
+            data.subscriptionStatus === "past_due" ||
+            data.subscriptionStatus === "canceled" ||
+            data.subscriptionStatus === "inactive"
+          ) {
+            router.replace("/cleaner/subscription");
+            return;
+          }
           setCleaner(data);
           setSlug(data.slug ?? "");
         } else {

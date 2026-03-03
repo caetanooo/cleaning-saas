@@ -103,8 +103,18 @@ export default function CleanerAgendaPage() {
         const cleanerData = await cleanerRes.json();
         const bookingsData = await bookingsRes.json();
 
-        if (cleanerData?.id) setCleaner(cleanerData as Cleaner);
-        else setApiError(cleanerData?.error ?? "Erro ao carregar perfil.");
+        if (cleanerData?.id) {
+          const profile = cleanerData as Cleaner;
+          if (
+            profile.subscriptionStatus === "past_due" ||
+            profile.subscriptionStatus === "canceled" ||
+            profile.subscriptionStatus === "inactive"
+          ) {
+            router.replace("/cleaner/subscription");
+            return;
+          }
+          setCleaner(profile);
+        } else setApiError(cleanerData?.error ?? "Erro ao carregar perfil.");
 
         if (Array.isArray(bookingsData)) setBookings(bookingsData as Booking[]);
       } catch (err) {

@@ -40,9 +40,19 @@ export default function CleanerSignupPage() {
       return;
     }
 
-    // If session is returned immediately (email confirmation disabled), go to setup
+    // If session is returned immediately (email confirmation disabled), sync and go to setup
     if (data.session) {
-      router.replace("/cleaner/setup");
+      const res = await fetch("/api/stripe/sync-subscription", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${data.session.access_token}`,
+        },
+        body: JSON.stringify({ cleanerId: data.session.user.id, email }),
+      });
+      const { status } = await res.json() as { status: string };
+      const isBlocked = status === "past_due" || status === "canceled" || status === "no_subscription";
+      router.replace(isBlocked ? "/cleaner/subscription" : "/cleaner/setup");
     } else {
       // Email confirmation required
       setDone(true);
