@@ -1,11 +1,11 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Terms of Use – CleanClick",
-  description: "Terms and conditions governing your use of the CleanClick platform.",
+  title: "Termos de Uso – CleanClick",
+  description: "Termos e condições que regem o uso da plataforma CleanClick.",
 };
 
-const LAST_UPDATED = "March 1, 2026";
+const LAST_UPDATED = "1º de março de 2026";
 const CONTACT_EMAIL = "contatocleanclick@gmail.com";
 
 export default function TermsPage() {
@@ -22,7 +22,7 @@ export default function TermsPage() {
             href="/"
             className="text-sm text-slate-500 hover:text-slate-700 transition-colors"
           >
-            ← Back to Home
+            ← Voltar ao início
           </Link>
         </div>
       </header>
@@ -31,148 +31,147 @@ export default function TermsPage() {
       <main className="max-w-3xl mx-auto px-6 py-16">
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm px-8 py-12 space-y-8">
           <div>
-            <h1 className="text-3xl font-extrabold text-slate-800 mb-2">Terms of Use</h1>
-            <p className="text-sm text-slate-400">Last updated: {LAST_UPDATED}</p>
+            <h1 className="text-3xl font-extrabold text-slate-800 mb-2">Termos de Uso</h1>
+            <p className="text-sm text-slate-400">Última atualização: {LAST_UPDATED}</p>
           </div>
 
           <p className="text-slate-600 leading-relaxed">
-            Welcome to CleanClick. By accessing or using our platform, you agree to be
-            bound by these Terms of Use. Please read them carefully. If you do not agree,
-            do not use the platform.
+            Bem-vindo ao CleanClick. Ao acessar ou utilizar nossa plataforma, você concorda
+            em estar vinculado a estes Termos de Uso. Leia-os com atenção. Se não concordar,
+            não utilize a plataforma.
           </p>
 
-          <Section title="1. About the Platform">
+          <Section title="1. Sobre a Plataforma">
             <p>
-              CleanClick is a software-as-a-service (SaaS) platform that enables independent
-              cleaning professionals (&quot;Cleaners&quot;) to manage their availability, pricing,
-              and receive bookings from customers (&quot;Customers&quot;) through a shareable booking link.
+              O CleanClick é uma plataforma de software como serviço (SaaS) que permite a
+              profissionais autônomos de limpeza (&quot;Profissionais&quot;) gerenciar sua disponibilidade,
+              preços e receber agendamentos de clientes (&quot;Clientes&quot;) por meio de um link
+              de agendamento personalizado.
             </p>
             <p>
-              CleanClick is a technology platform only. We are not a cleaning company,
-              employer, or staffing agency. All cleaning services are provided independently
-              by Cleaners who use our platform.
+              O CleanClick é apenas uma plataforma tecnológica. Não somos uma empresa de
+              limpeza, empregador ou agência de mão de obra. Todos os serviços de limpeza
+              são prestados de forma independente pelos Profissionais que utilizam nossa plataforma.
             </p>
           </Section>
 
-          <Section title="2. Eligibility">
+          <Section title="2. Elegibilidade">
             <ul className="list-disc pl-5 space-y-1">
-              <li>You must be at least 18 years old to create an account.</li>
-              <li>Cleaners must provide accurate personal and business information during registration.</li>
-              <li>You are responsible for maintaining the confidentiality of your account credentials.</li>
+              <li>Você deve ter pelo menos 18 anos para criar uma conta.</li>
+              <li>Os Profissionais devem fornecer informações pessoais e profissionais precisas no cadastro.</li>
+              <li>Você é responsável por manter a confidencialidade das suas credenciais de acesso.</li>
             </ul>
           </Section>
 
-          <Section title="3. Cleaner Accounts and Subscriptions">
+          <Section title="3. Contas de Profissional e Assinaturas">
             <p>
-              Cleaners access the platform through a paid subscription billed via Stripe.
-              By subscribing, you authorize recurring charges to your payment method on the
-              billing cycle selected at checkout.
+              Os Profissionais acessam a plataforma por meio de uma assinatura paga cobrada
+              pelo Stripe. Ao assinar, você autoriza cobranças recorrentes no método de
+              pagamento escolhido no ciclo de faturamento selecionado.
             </p>
             <ul className="list-disc pl-5 space-y-1 mt-2">
-              <li>Subscriptions renew automatically unless cancelled before the renewal date.</li>
-              <li>Access to the dashboard and booking link is contingent on an active subscription.</li>
-              <li>We reserve the right to suspend or terminate accounts for non-payment or violation of these Terms.</li>
-              <li>Refunds are handled on a case-by-case basis. Contact us within 7 days of a charge to request a review.</li>
+              <li>As assinaturas são renovadas automaticamente, salvo cancelamento antes da data de renovação.</li>
+              <li>O acesso ao painel e ao link de agendamento está condicionado a uma assinatura ativa.</li>
+              <li>Reservamo-nos o direito de suspender ou encerrar contas por inadimplência ou violação destes Termos.</li>
+              <li>Reembolsos são analisados caso a caso. Entre em contato em até 7 dias após uma cobrança para solicitar revisão.</li>
             </ul>
           </Section>
 
-          <Section title="4. Customer Bookings">
+          <Section title="4. Agendamentos de Clientes">
             <p>
-              Customers may submit booking requests through a Cleaner&apos;s public booking link
-              without creating an account. By submitting a booking, customers agree to provide
-              accurate contact and service information.
+              Os Clientes podem solicitar agendamentos pelo link público do Profissional sem
+              criar uma conta. Ao enviar um agendamento, o Cliente concorda em fornecer
+              informações de contato e de serviço precisas.
             </p>
             <p>
-              CleanClick does not guarantee the availability, quality, or outcome of any
-              cleaning service. Any disputes regarding a cleaning service must be resolved
-              directly between the Customer and the Cleaner.
+              O CleanClick não garante a disponibilidade, qualidade ou resultado de qualquer
+              serviço de limpeza. Quaisquer disputas relacionadas a um serviço devem ser
+              resolvidas diretamente entre o Cliente e o Profissional.
             </p>
           </Section>
 
-          <Section title="5. Prohibited Conduct">
-            <p>You agree not to:</p>
+          <Section title="5. Condutas Proibidas">
+            <p>Você concorda em não:</p>
             <ul className="list-disc pl-5 space-y-1 mt-2">
-              <li>Use the platform for any unlawful purpose or in violation of these Terms.</li>
-              <li>Submit false, misleading, or fraudulent information.</li>
-              <li>Attempt to access accounts or data that do not belong to you.</li>
-              <li>Reverse-engineer, copy, or resell any part of the platform.</li>
-              <li>Use automated tools to scrape or abuse the platform&apos;s APIs.</li>
+              <li>Usar a plataforma para qualquer finalidade ilegal ou em violação destes Termos.</li>
+              <li>Fornecer informações falsas, enganosas ou fraudulentas.</li>
+              <li>Tentar acessar contas ou dados que não lhe pertencem.</li>
+              <li>Fazer engenharia reversa, copiar ou revender qualquer parte da plataforma.</li>
+              <li>Usar ferramentas automatizadas para raspar ou abusar das APIs da plataforma.</li>
             </ul>
           </Section>
 
-          <Section title="6. Intellectual Property">
+          <Section title="6. Propriedade Intelectual">
             <p>
-              All content, design, code, and branding on CleanClick are the exclusive
-              property of CleanClick and are protected by applicable intellectual property laws.
-              You may not reproduce or distribute any part of the platform without our
-              prior written consent.
+              Todo o conteúdo, design, código e marca do CleanClick são propriedade exclusiva
+              do CleanClick e estão protegidos pelas leis de propriedade intelectual aplicáveis.
+              Você não pode reproduzir ou distribuir qualquer parte da plataforma sem nosso
+              consentimento prévio por escrito.
             </p>
           </Section>
 
-          <Section title="7. Disclaimer of Warranties">
+          <Section title="7. Isenção de Garantias">
             <p>
-              The platform is provided &quot;as is&quot; and &quot;as available&quot; without warranties of
-              any kind, express or implied, including but not limited to warranties of
-              merchantability, fitness for a particular purpose, or non-infringement.
-              We do not warrant that the platform will be uninterrupted or error-free.
+              A plataforma é fornecida &quot;no estado em que se encontra&quot; e &quot;conforme disponível&quot;,
+              sem garantias de qualquer tipo, expressas ou implícitas, incluindo, mas não
+              se limitando a, garantias de comerciabilidade, adequação a uma finalidade
+              específica ou não violação. Não garantimos que a plataforma será ininterrupta
+              ou livre de erros.
             </p>
           </Section>
 
-          <Section title="8. Limitation of Liability">
+          <Section title="8. Limitação de Responsabilidade">
             <p>
-              To the fullest extent permitted by law, CleanClick shall not be liable for
-              any indirect, incidental, special, consequential, or punitive damages arising
-              from your use of or inability to use the platform, even if we have been
-              advised of the possibility of such damages. Our total liability to you for
-              any claim shall not exceed the amount you paid us in the 3 months preceding
-              the claim.
+              Na máxima extensão permitida por lei, o CleanClick não será responsável por
+              quaisquer danos indiretos, incidentais, especiais, consequenciais ou punitivos
+              decorrentes do uso ou da impossibilidade de uso da plataforma. Nossa
+              responsabilidade total perante você por qualquer reclamação não excederá o
+              valor pago por você nos 3 meses anteriores ao evento que originou o dano.
             </p>
           </Section>
 
-          <Section title="9. Indemnification">
+          <Section title="9. Indenização">
             <p>
-              You agree to indemnify and hold CleanClick harmless from any claims, damages,
-              losses, or expenses (including reasonable attorneys&apos; fees) arising from your
-              use of the platform, your violation of these Terms, or your violation of any
-              third-party rights.
+              Você concorda em indenizar e isentar o CleanClick de quaisquer reclamações,
+              danos, perdas ou despesas (incluindo honorários advocatícios razoáveis)
+              decorrentes do seu uso da plataforma, da sua violação destes Termos ou da
+              violação de direitos de terceiros.
             </p>
           </Section>
 
-          <Section title="10. Termination">
+          <Section title="10. Rescisão">
             <p>
-              We may suspend or terminate your access to the platform at any time, with or
-              without notice, for conduct that we determine violates these Terms or is harmful
-              to other users, us, or third parties. You may cancel your account at any time
-              by contacting us or managing your subscription through your billing portal.
+              Podemos suspender ou encerrar seu acesso à plataforma a qualquer momento,
+              com ou sem aviso prévio, por conduta que consideremos violar estes Termos ou
+              prejudicial a outros usuários. Você pode cancelar sua conta a qualquer momento
+              entrando em contato conosco ou gerenciando sua assinatura pelo portal de cobrança.
             </p>
           </Section>
 
-          <Section title="11. Governing Law">
+          <Section title="11. Lei Aplicável">
             <p>
-              These Terms are governed by the laws of the State of Florida, United States,
-              without regard to its conflict of law provisions. Any disputes arising under
-              these Terms shall be subject to the exclusive jurisdiction of the courts
-              located in Florida.
+              Estes Termos são regidos pelas leis da República Federativa do Brasil. Quaisquer
+              disputas decorrentes destes Termos serão submetidas ao foro da comarca do
+              Rio de Janeiro — RJ, com renúncia expressa a qualquer outro, por mais privilegiado
+              que seja.
             </p>
           </Section>
 
-          <Section title="12. Changes to These Terms">
+          <Section title="12. Alterações nestes Termos">
             <p>
-              We reserve the right to modify these Terms at any time. We will notify
-              registered Cleaners of material changes via email at least 7 days before
-              they take effect. Continued use of the platform after changes take effect
-              constitutes your acceptance of the revised Terms.
+              Reservamo-nos o direito de modificar estes Termos a qualquer momento.
+              Notificaremos os Profissionais cadastrados sobre mudanças relevantes por e-mail
+              com pelo menos 7 dias de antecedência. O uso continuado da plataforma após
+              as alterações entrarem em vigor constitui sua aceitação dos Termos revisados.
             </p>
           </Section>
 
-          <Section title="13. Contact Us">
-            <p>
-              For questions about these Terms, please reach out:
-            </p>
+          <Section title="13. Fale Conosco">
+            <p>Para dúvidas sobre estes Termos, entre em contato:</p>
             <div className="mt-3 bg-slate-50 rounded-xl px-5 py-4 text-sm text-slate-700 space-y-1">
               <p className="font-semibold">CleanClick</p>
               <p>
-                Email:{" "}
+                E-mail:{" "}
                 <a href={`mailto:${CONTACT_EMAIL}`} className="text-sky-500 hover:underline">
                   {CONTACT_EMAIL}
                 </a>
@@ -185,7 +184,7 @@ export default function TermsPage() {
                   rel="noopener noreferrer"
                   className="text-sky-500 hover:underline"
                 >
-                  +55 21 99158-8263
+                  (21) 99158-8263
                 </a>
               </p>
             </div>
@@ -195,10 +194,10 @@ export default function TermsPage() {
 
       {/* Footer */}
       <footer className="text-center py-8 text-xs text-slate-400">
-        <p>© {new Date().getFullYear()} CleanClick. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} CleanClick. Todos os direitos reservados.</p>
         <div className="flex justify-center gap-5 mt-2">
-          <Link href="/privacy" className="hover:text-slate-600 transition-colors">Privacy Policy</Link>
-          <Link href="/terms" className="hover:text-slate-600 transition-colors">Terms of Use</Link>
+          <Link href="/privacy" className="hover:text-slate-600 transition-colors">Política de Privacidade</Link>
+          <Link href="/terms" className="hover:text-slate-600 transition-colors">Termos de Uso</Link>
         </div>
       </footer>
     </div>
