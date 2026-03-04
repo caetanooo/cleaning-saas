@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 
-const OWNER_EMAIL = "pedro.caetano.3anos@gmail.com";
+const OWNER_EMAILS = ["pedro.caetano.3anos@gmail.com", "caetanochavesmaria@gmail.com"];
 
 export async function POST(req: Request) {
   const authHeader = req.headers.get("Authorization") ?? "";
@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (user.email !== OWNER_EMAIL) {
+  if (!OWNER_EMAILS.includes(user.email ?? "")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
