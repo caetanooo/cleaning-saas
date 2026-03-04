@@ -738,14 +738,14 @@ export default function LandingPage() {
             <p className="text-sm text-slate-500">
               Dúvidas? Fale conosco:{" "}
               <a
-                href="mailto:suporte@cleanclick.app"
+                href="mailto:contatocleanclick@gmail.com"
                 className="text-sky-600 hover:underline font-semibold"
               >
-                suporte@cleanclick.app
+                contatocleanclick@gmail.com
               </a>
               {" "}ou via{" "}
               <a
-                href="https://wa.me/15551234567"
+                href="https://wa.me/5521991588263"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-teal-600 hover:underline font-semibold"
