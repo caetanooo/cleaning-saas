@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import PhoneField from "@/components/PhoneField";
 import type {
   Cleaner,
   Booking,
@@ -680,13 +681,11 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1">Phone Number</label>
-              <input
-                type="tel"
+              <PhoneField
                 required
                 value={state.customerPhone}
-                onChange={(e) => update({ customerPhone: e.target.value })}
+                onChange={(v) => update({ customerPhone: v })}
                 placeholder="(512) 555-0100"
-                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
               />
             </div>
             <div>

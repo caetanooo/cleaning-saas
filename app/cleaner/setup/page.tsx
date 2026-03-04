@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createBrowserClient } from "@/lib/supabase";
 import type { Cleaner, DayOfWeek } from "@/types";
+import PhoneField from "@/components/PhoneField";
 
 const DAYS: { key: DayOfWeek; label: string }[] = [
   { key: "monday",    label: "Segunda-feira" },
@@ -333,12 +334,10 @@ export default function CleanerSetupPage() {
               <label className="block text-sm font-semibold text-slate-700 mb-1">
                 Telefone (SMS / WhatsApp)
               </label>
-              <input
-                type="tel"
-                placeholder="+1 (512) 555-0100"
+              <PhoneField
                 value={cleaner.phone ?? ""}
-                onChange={(e) => setCleaner({ ...cleaner, phone: e.target.value })}
-                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                onChange={(v) => setCleaner({ ...cleaner, phone: v })}
+                placeholder="(512) 555-0100"
               />
             </div>
             <div>
