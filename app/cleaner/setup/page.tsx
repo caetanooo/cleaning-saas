@@ -155,20 +155,12 @@ export default function CleanerSetupPage() {
   }
 
   function updateDiscount(field: "weekly" | "biweekly" | "monthly", value: string) {
-    // Aceita só dígitos e ponto — guarda string bruta durante digitação
-    if (!/^\d*\.?\d*$/.test(value)) return;
-    setDraftDiscounts((d) => ({ ...d, [field]: value }));
-  }
-
-  function commitDiscount(field: "weekly" | "biweekly" | "monthly") {
     if (!cleaner) return;
-    const raw = draftDiscounts[field] ?? "";
-    const num = parseFloat(raw);
-    const clamped = isNaN(num) ? 0 : Math.min(100, Math.max(0, num));
-    setDraftDiscounts((d) => ({ ...d, [field]: "" })); // limpa draft
+    setDraftDiscounts((d) => ({ ...d, [field]: value }));
+    const num = parseFloat(value);
     setCleaner({
       ...cleaner,
-      frequencyDiscounts: { ...cleaner.frequencyDiscounts, [field]: clamped },
+      frequencyDiscounts: { ...cleaner.frequencyDiscounts, [field]: isNaN(num) ? 0 : num },
     });
   }
 
@@ -589,16 +581,14 @@ export default function CleanerSetupPage() {
                 <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400">
                   <input
                     type="text"
-                    inputMode="numeric"
-                    value={draftDiscounts[field] !== undefined && draftDiscounts[field] !== ""
-                      ? draftDiscounts[field]
-                      : String(cleaner.frequencyDiscounts[field])}
+                    inputMode="decimal"
+                    placeholder="0"
+                    value={draftDiscounts[field] ?? String(cleaner.frequencyDiscounts[field])}
                     onChange={(e) => updateDiscount(field, e.target.value)}
-                    onFocus={() => setDraftDiscounts((d) => ({ ...d, [field]: String(cleaner.frequencyDiscounts[field]) }))}
-                    onBlur={() => commitDiscount(field)}
+                    onFocus={(e) => { setDraftDiscounts((d) => ({ ...d, [field]: String(cleaner.frequencyDiscounts[field]) })); e.target.select(); }}
                     className="flex-1 px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none"
                   />
-                  <span className="px-3 text-slate-400 text-sm">%</span>
+                  <span className="px-2.5 text-slate-400 text-sm bg-slate-50 border-l border-slate-200 py-2 select-none">%</span>
                 </div>
               </div>
             ))}
