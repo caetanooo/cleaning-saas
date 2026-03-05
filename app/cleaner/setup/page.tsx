@@ -33,6 +33,8 @@ export default function CleanerSetupPage() {
   const [apiError,        setApiError]        = useState("");
   // Valores brutos (string) para os inputs de preço, permite campo vazio durante edição
   const [draftPrices,     setDraftPrices]     = useState<Record<string, string>>({});
+  // Valores brutos para descontos por frequência (mesmo padrão)
+  const [draftDiscounts,  setDraftDiscounts]  = useState<Record<string, string>>({});
   const [newBlockedDate,  setNewBlockedDate]  = useState("");
   const [slug,            setSlug]            = useState("");
   const [slugSaving,      setSlugSaving]      = useState(false);
@@ -153,14 +155,20 @@ export default function CleanerSetupPage() {
   }
 
   function updateDiscount(field: "weekly" | "biweekly" | "monthly", value: string) {
+    // Aceita só dígitos e ponto — guarda string bruta durante digitação
+    if (!/^\d*\.?\d*$/.test(value)) return;
+    setDraftDiscounts((d) => ({ ...d, [field]: value }));
+  }
+
+  function commitDiscount(field: "weekly" | "biweekly" | "monthly") {
     if (!cleaner) return;
-    const num = parseFloat(value);
+    const raw = draftDiscounts[field] ?? "";
+    const num = parseFloat(raw);
+    const clamped = isNaN(num) ? 0 : Math.min(100, Math.max(0, num));
+    setDraftDiscounts((d) => ({ ...d, [field]: "" })); // limpa draft
     setCleaner({
       ...cleaner,
-      frequencyDiscounts: {
-        ...cleaner.frequencyDiscounts,
-        [field]: isNaN(num) ? 0 : num,
-      },
+      frequencyDiscounts: { ...cleaner.frequencyDiscounts, [field]: clamped },
     });
   }
 
@@ -580,12 +588,14 @@ export default function CleanerSetupPage() {
                 <label className="block text-sm font-semibold text-slate-700 mb-2">{label}</label>
                 <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400">
                   <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    step={1}
-                    value={cleaner.frequencyDiscounts[field]}
+                    type="text"
+                    inputMode="numeric"
+                    value={draftDiscounts[field] !== undefined && draftDiscounts[field] !== ""
+                      ? draftDiscounts[field]
+                      : String(cleaner.frequencyDiscounts[field])}
                     onChange={(e) => updateDiscount(field, e.target.value)}
+                    onFocus={() => setDraftDiscounts((d) => ({ ...d, [field]: String(cleaner.frequencyDiscounts[field]) }))}
+                    onBlur={() => commitDiscount(field)}
                     className="flex-1 px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none"
                   />
                   <span className="px-3 text-slate-400 text-sm">%</span>
