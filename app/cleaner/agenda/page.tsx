@@ -96,7 +96,9 @@ export default function CleanerAgendaPage() {
 
         const [cleanerRes, bookingsRes] = await Promise.all([
           fetch(`/api/cleaners/${session.user.id}`),
-          fetch(`/api/bookings?cleanerId=${session.user.id}`),
+          fetch(`/api/bookings?cleanerId=${session.user.id}`, {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          }),
         ]);
         if (cancelled) return;
 

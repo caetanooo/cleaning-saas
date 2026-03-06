@@ -39,12 +39,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json() as { cleanerId?: string; email?: string };
+  const body = await req.json() as { cleanerId?: string };
   if (!body.cleanerId || body.cleanerId !== user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const email = body.email ?? user.email ?? "";
+  // Always use the verified email from the JWT — never trust the request body
+  const email = user.email ?? "";
 
   // 2. Search Stripe for customer by email
   const customers = await stripe.customers.list({ email, limit: 5 });

@@ -48,7 +48,7 @@ export default function CleanerSignupPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${data.session.access_token}`,
         },
-        body: JSON.stringify({ cleanerId: data.session.user.id, email }),
+        body: JSON.stringify({ cleanerId: data.session.user.id }),
       });
       const { status } = await res.json() as { status: string };
       const isBlocked = status === "past_due" || status === "canceled" || status === "no_subscription";

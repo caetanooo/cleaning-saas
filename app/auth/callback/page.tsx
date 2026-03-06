@@ -32,7 +32,7 @@ function CallbackInner() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${data.session.access_token}`,
           },
-          body: JSON.stringify({ cleanerId: data.session.user.id, email: data.session.user.email }),
+          body: JSON.stringify({ cleanerId: data.session.user.id }),
         });
         window.location.replace("/cleaner/setup");
       });
@@ -46,7 +46,7 @@ function CallbackInner() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ cleanerId: session.user.id, email: session.user.email }),
+          body: JSON.stringify({ cleanerId: session.user.id }),
         });
         window.location.replace("/cleaner/setup");
       });

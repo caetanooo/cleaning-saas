@@ -50,7 +50,7 @@ export default function CleanerLoginPage() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${session!.access_token}`,
       },
-      body: JSON.stringify({ cleanerId: session!.user.id, email: session!.user.email }),
+      body: JSON.stringify({ cleanerId: session!.user.id }),
     });
     const { status } = await res.json() as { status: string };
     const OWNER_EMAILS = ["pedro.caetano.3anos@gmail.com", "caetanochavesmaria@gmail.com"];

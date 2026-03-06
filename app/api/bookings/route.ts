@@ -36,7 +36,16 @@ export async function GET(request: Request) {
   const cleanerId = searchParams.get("cleanerId");
   if (!cleanerId) return NextResponse.json({ error: "cleanerId required" }, { status: 400 });
 
+  // Require auth — only the cleaner themselves can list their bookings
+  const token = request.headers.get("Authorization")?.replace("Bearer ", "");
+  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const supabase = createServiceClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user || user.id !== cleanerId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { data, error } = await supabase
     .from("bookings")
     .select("*")
@@ -62,6 +71,26 @@ export async function POST(request: Request) {
     date: string;
     timeBlock: TimeBlock;
   };
+
+  // Input validation
+  const validFrequencies = ["one_time", "weekly", "biweekly", "monthly"];
+  const validTimeBlocks  = ["morning", "afternoon"];
+  const validServices    = ["regular", "deep", "move"];
+
+  if (
+    !body.cleanerId || typeof body.cleanerId !== "string" ||
+    !body.customerName?.trim() ||
+    !body.customerPhone?.trim() ||
+    !body.customerAddress?.trim() ||
+    typeof body.bedrooms  !== "number" || body.bedrooms  < 1 || body.bedrooms  > 20 ||
+    typeof body.bathrooms !== "number" || body.bathrooms < 1 || body.bathrooms > 20 ||
+    !validFrequencies.includes(body.frequency) ||
+    !validTimeBlocks.includes(body.timeBlock) ||
+    (body.serviceType && !validServices.includes(body.serviceType)) ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(body.date)
+  ) {
+    return NextResponse.json({ error: "Invalid request data" }, { status: 400 });
+  }
 
   const supabase = createServiceClient();
 
