@@ -17,12 +17,22 @@ const DAYS: { key: DayOfWeek; label: string }[] = [
   { key: "sunday",    label: "Domingo"       },
 ];
 
+type TabId = "agenda" | "precos" | "contato" | "link";
+
+const TABS: { id: TabId; label: string; icon: string }[] = [
+  { id: "agenda",  label: "Agenda",  icon: "📅" },
+  { id: "precos",  label: "Preços",  icon: "💰" },
+  { id: "contato", label: "Contato", icon: "📱" },
+  { id: "link",    label: "Link",    icon: "🔗" },
+];
+
 function calcBase(formula: Cleaner["pricingFormula"], beds: number, baths: number): number {
   return formula.base + (beds - 1) * formula.extraPerBedroom + (baths - 1) * formula.extraPerBathroom;
 }
 
 export default function CleanerSetupPage() {
   const router = useRouter();
+  const [activeTab,       setActiveTab]       = useState<TabId>("agenda");
   const [cleanerId,       setCleanerId]       = useState<string | null>(null);
   const [token,           setToken]           = useState<string | null>(null);
   const [cleaner,         setCleaner]         = useState<Cleaner | null>(null);
@@ -31,9 +41,7 @@ export default function CleanerSetupPage() {
   const [toast,           setToast]           = useState("");
   const [copied,          setCopied]          = useState(false);
   const [apiError,        setApiError]        = useState("");
-  // Valores brutos (string) para os inputs de preço, permite campo vazio durante edição
   const [draftPrices,     setDraftPrices]     = useState<Record<string, string>>({});
-  // Valores brutos para descontos por frequência (mesmo padrão)
   const [draftDiscounts,  setDraftDiscounts]  = useState<Record<string, string>>({});
   const [newBlockedDate,  setNewBlockedDate]  = useState("");
   const [slug,            setSlug]            = useState("");
@@ -71,7 +79,7 @@ export default function CleanerSetupPage() {
         if (cancelled) return;
 
         if (data?.id) {
-          const OWNER_EMAILS = ["pedro.caetano.3anos@gmail.com", "caetanochavesmaria@gmail.com"];
+          const OWNER_EMAILS = ["pedro.caetano.3anos@gmail.com", "caetanochavesmaria@gmail.com", "Amandaadmoreira@gmail.com"];
           const isOwner = OWNER_EMAILS.includes(session.user.email ?? "");
           if (
             !isOwner && (
@@ -273,7 +281,6 @@ export default function CleanerSetupPage() {
     );
   }
 
-  // Linhas da prévia de preços
   const previewRows = [
     { beds: 1, baths: 1 },
     { beds: 2, baths: 1 },
@@ -313,350 +320,394 @@ export default function CleanerSetupPage() {
         </div>
       )}
 
-      <main className="max-w-3xl mx-auto px-6 py-12 space-y-10">
-        <div>
-          <h1 className="text-3xl font-extrabold text-slate-900">Disponibilidade & Preços</h1>
-          <p className="text-slate-500 mt-1 text-sm">
-            Olá, {cleaner.name}. Configure sua agenda e valores abaixo.
-          </p>
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+        {/* Page title */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-extrabold text-slate-900">Configurações</h1>
+          <p className="text-slate-500 mt-1 text-sm">Olá, {cleaner.name}. Gerencie sua agenda, preços e canais de contato.</p>
         </div>
 
-        {/* ── Canais de Contato ── */}
-        <section className="bg-white rounded-2xl shadow-sm border border-sky-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-sky-100 bg-sky-50">
-            <h2 className="font-bold text-slate-800 text-lg">Canais de Contato</h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Os clientes usarão estes canais para enviar os detalhes do agendamento. Preencha pelo menos um.
-            </p>
-          </div>
-          <div className="px-6 py-5 space-y-5">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">
-                Telefone (SMS / WhatsApp)
-              </label>
-              <PhoneField
-                value={cleaner.phone ?? ""}
-                onChange={(v) => setCleaner({ ...cleaner, phone: v })}
-                placeholder="(512) 555-0100"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">
-                Usuário do Facebook Messenger{" "}
-                <span className="text-slate-400 font-normal">(opcional)</span>
-              </label>
-              <p className="text-xs text-slate-400 mb-2">
-                Encontrado em facebook.com/seu.usuario. Exemplo: <span className="font-mono">maria.faxina</span>
-              </p>
-              <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-sky-400">
-                <span className="px-3 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-3 select-none">
-                  m.me/
-                </span>
-                <input
-                  type="text"
-                  placeholder="maria.faxina"
-                  value={cleaner.messengerUsername ?? ""}
-                  onChange={(e) => setCleaner({ ...cleaner, messengerUsername: e.target.value })}
-                  className="flex-1 px-3 py-3 text-sm text-slate-800 bg-white focus:outline-none"
-                />
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* Tab bar */}
+        <div className="flex gap-1 bg-white border border-slate-200 rounded-2xl p-1.5 mb-6 overflow-x-auto">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 min-w-[80px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${
+                activeTab === tab.id
+                  ? "bg-sky-500 text-white shadow-sm"
+                  : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              <span className="text-base leading-none">{tab.icon}</span>
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </div>
 
-        {/* ── Rotina Semanal ── */}
-        <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100">
-            <h2 className="font-bold text-slate-800 text-lg">Rotina Semanal</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Esta é sua agenda padrão. &nbsp;Manhã a partir das 9h &nbsp;|&nbsp; Tarde a partir das 14h
-            </p>
-          </div>
-          <div className="divide-y divide-slate-50">
-            {DAYS.map(({ key, label }) => {
-              const day = cleaner.availability[key];
-              return (
-                <div key={key} className="px-6 py-4 flex items-center gap-6">
-                  <span className="w-36 text-sm font-semibold text-slate-700">{label}</span>
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={day.morning}
-                      onChange={() => toggleBlock(key, "morning")}
-                      className="w-4 h-4 accent-sky-500 cursor-pointer"
-                    />
-                    <span className={`text-sm ${day.morning ? "text-slate-700" : "text-slate-400"}`}>Manhã</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={day.afternoon}
-                      onChange={() => toggleBlock(key, "afternoon")}
-                      className="w-4 h-4 accent-sky-500 cursor-pointer"
-                    />
-                    <span className={`text-sm ${day.afternoon ? "text-slate-700" : "text-slate-400"}`}>Tarde</span>
-                  </label>
-                  {!day.morning && !day.afternoon && (
-                    <span className="text-xs text-slate-400 italic ml-auto">Folga</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* ── Folgas Específicas ── */}
-        <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100">
-            <h2 className="font-bold text-slate-800 text-lg">Folgas Específicas</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Bloqueie datas pontuais sem alterar sua rotina semanal. Ex: consulta médica, feriado, viagem.
-            </p>
-          </div>
-          <div className="px-6 py-5 space-y-4">
-            <div className="flex gap-3">
-              <input
-                type="date"
-                value={newBlockedDate}
-                min={new Date().toISOString().slice(0, 10)}
-                onChange={(e) => setNewBlockedDate(e.target.value)}
-                className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-400 bg-white"
-              />
-              <button
-                type="button"
-                disabled={!newBlockedDate}
-                onClick={addBlockedDate}
-                className="px-5 py-2.5 bg-sky-500 hover:bg-sky-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-colors shrink-0"
-              >
-                Adicionar
-              </button>
-            </div>
-            {(cleaner.blockedDates ?? []).length === 0 ? (
-              <p className="text-xs text-slate-400 italic">Nenhuma folga específica adicionada ainda.</p>
-            ) : (
-              <ul className="space-y-1.5">
-                {(cleaner.blockedDates ?? []).map((d) => (
-                  <li key={d} className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-2.5">
-                    <span className="text-sm text-slate-700 font-medium capitalize">{formatBlockedDate(d)}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeBlockedDate(d)}
-                      className="text-slate-400 hover:text-red-500 transition-colors text-sm font-semibold ml-4 shrink-0"
-                    >
-                      Remover
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </section>
-
-        {/* ── Precificação ── */}
-        <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100">
-            <h2 className="font-bold text-slate-800 text-lg">Precificação</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Definindo os valores abaixo, calculamos automaticamente o preço para qualquer tamanho de casa.
-            </p>
-          </div>
-          <div className="px-6 py-5 space-y-6">
-
-            {/* Fórmula base */}
-            <div className="space-y-3">
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Fórmula Base</p>
-                <p className="text-xs text-slate-400 mt-1">
-                  Preço = Preço Base + (Quartos − 1) × Quarto Adicional + (Banheiros − 1) × Banheiro Adicional
+        {/* ── Tab: Agenda ─────────────────────────────────────────────────────── */}
+        {activeTab === "agenda" && (
+          <div className="space-y-6">
+            {/* Rotina Semanal */}
+            <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-100">
+                <h2 className="font-bold text-slate-800 text-lg">Rotina Semanal</h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Esta é sua agenda padrão. &nbsp;Manhã a partir das 9h &nbsp;|&nbsp; Tarde a partir das 14h
                 </p>
               </div>
-              {([
-                { field: "base"             as const, label: "Preço Base (1 Bed / 1 Bath)",        prefix: "$",  placeholder: "90"  },
-                { field: "extraPerBedroom"  as const, label: "Quarto Adicional",                    prefix: "+$", placeholder: "20"  },
-                { field: "extraPerBathroom" as const, label: "Banheiro Adicional",                  prefix: "+$", placeholder: "15"  },
-              ]).map(({ field, label, prefix, placeholder }) => (
-                <div key={field} className="flex items-center gap-4">
-                  <label className="flex-1 text-sm font-semibold text-slate-700">{label}</label>
-                  <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400 w-[120px] shrink-0">
-                    <span className="px-2.5 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-2 select-none">{prefix}</span>
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      placeholder={placeholder}
-                      value={draftPrices[`f_${field}`] ?? String(cleaner.pricingFormula[field])}
-                      onChange={(e) => updateFormula(field, e.target.value)}
-                      onFocus={(e) => e.target.select()}
-                      className="flex-1 px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Adicionais de Serviço */}
-            <div className="space-y-3 pt-1 border-t border-slate-100">
-              <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide pt-2">Adicionais de Serviço</p>
-                <p className="text-xs text-slate-400 mt-1">
-                  Valor extra cobrado além do preço base para serviços mais completos.
-                </p>
-              </div>
-              {([
-                { field: "deep" as const, label: "Deep Cleaning",      color: "text-sky-600"    },
-                { field: "move" as const, label: "Move-in / Move-out", color: "text-violet-600" },
-              ]).map(({ field, label, color }) => (
-                <div key={field} className="flex items-center gap-4">
-                  <label className={`flex-1 text-sm font-semibold ${color}`}>{label}</label>
-                  <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400 w-[120px] shrink-0">
-                    <span className="px-2.5 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-2 select-none">+$</span>
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      placeholder="0"
-                      value={draftPrices[`a_${field}`] ?? String(cleaner.serviceAddons?.[field] ?? 0)}
-                      onChange={(e) => updateAddon(field, e.target.value)}
-                      onFocus={(e) => e.target.select()}
-                      className="flex-1 px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Prévia comparativa ao vivo */}
-            <div className="pt-1 border-t border-slate-100">
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wide pt-2 mb-3">
-                Pré-visualização (Regular Cleaning)
-              </p>
-              <div className="rounded-xl border border-slate-100 overflow-hidden text-xs">
-                {/* Cabeçalho */}
-                <div className="grid grid-cols-4 bg-slate-50 border-b border-slate-100">
-                  <div className="px-3 py-2 font-bold text-slate-500">Casa</div>
-                  <div className="px-3 py-2 font-bold text-slate-600 text-center">Regular</div>
-                  <div className="px-3 py-2 font-bold text-sky-600 text-center">Deep</div>
-                  <div className="px-3 py-2 font-bold text-violet-600 text-center">Move-in/out</div>
-                </div>
-                {/* Linhas */}
-                {previewRows.map(({ beds, baths }, i) => {
-                  const base = calcBase(cleaner.pricingFormula, beds, baths);
-                  const deep = base + (cleaner.serviceAddons?.deep ?? 0);
-                  const move = base + (cleaner.serviceAddons?.move ?? 0);
+              <div className="divide-y divide-slate-50">
+                {DAYS.map(({ key, label }) => {
+                  const day = cleaner.availability[key];
                   return (
-                    <div
-                      key={`${beds}-${baths}`}
-                      className={`grid grid-cols-4 ${i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}`}
-                    >
-                      <div className="px-3 py-2.5 text-slate-500">
-                        {beds} {beds > 1 ? "qtos" : "qto"} · {baths} {baths > 1 ? "bnhs" : "bnh"}
-                      </div>
-                      <div className="px-3 py-2.5 font-semibold text-slate-800 text-center">${base.toFixed(0)}</div>
-                      <div className="px-3 py-2.5 font-semibold text-sky-600 text-center">${deep.toFixed(0)}</div>
-                      <div className="px-3 py-2.5 font-semibold text-violet-600 text-center">${move.toFixed(0)}</div>
+                    <div key={key} className="px-6 py-4 flex items-center gap-6">
+                      <span className="w-36 text-sm font-semibold text-slate-700">{label}</span>
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={day.morning}
+                          onChange={() => toggleBlock(key, "morning")}
+                          className="w-4 h-4 accent-sky-500 cursor-pointer"
+                        />
+                        <span className={`text-sm ${day.morning ? "text-slate-700" : "text-slate-400"}`}>Manhã</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={day.afternoon}
+                          onChange={() => toggleBlock(key, "afternoon")}
+                          className="w-4 h-4 accent-sky-500 cursor-pointer"
+                        />
+                        <span className={`text-sm ${day.afternoon ? "text-slate-700" : "text-slate-400"}`}>Tarde</span>
+                      </label>
+                      {!day.morning && !day.afternoon && (
+                        <span className="text-xs text-slate-400 italic ml-auto">Folga</span>
+                      )}
                     </div>
                   );
                 })}
               </div>
-            </div>
-          </div>
-        </section>
+            </section>
 
-        {/* ── Descontos por Frequência ── */}
-        <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100">
-            <h2 className="font-bold text-slate-800 text-lg">Descontos por Frequência</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Desconto em % oferecido para clientes com agendamentos recorrentes.
-            </p>
-          </div>
-          <div className="px-6 py-5 grid grid-cols-3 gap-6">
-            {(
-              [
-                { field: "weekly",   label: "Semanal"   },
-                { field: "biweekly", label: "Quinzenal" },
-                { field: "monthly",  label: "Mensal"    },
-              ] as const
-            ).map(({ field, label }) => (
-              <div key={field}>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">{label}</label>
-                <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400">
+            {/* Folgas Específicas */}
+            <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-100">
+                <h2 className="font-bold text-slate-800 text-lg">Folgas Específicas</h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Bloqueie datas pontuais sem alterar sua rotina semanal. Ex: consulta médica, feriado, viagem.
+                </p>
+              </div>
+              <div className="px-6 py-5 space-y-4">
+                <div className="flex gap-3">
                   <input
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="0"
-                    value={draftDiscounts[field] ?? String(cleaner.frequencyDiscounts[field])}
-                    onChange={(e) => updateDiscount(field, e.target.value)}
-                    onFocus={(e) => { setDraftDiscounts((d) => ({ ...d, [field]: String(cleaner.frequencyDiscounts[field]) })); e.target.select(); }}
-                    className="flex-1 px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none"
+                    type="date"
+                    value={newBlockedDate}
+                    min={new Date().toISOString().slice(0, 10)}
+                    onChange={(e) => setNewBlockedDate(e.target.value)}
+                    className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-400 bg-white"
                   />
-                  <span className="px-2.5 text-slate-400 text-sm bg-slate-50 border-l border-slate-200 py-2 select-none">%</span>
+                  <button
+                    type="button"
+                    disabled={!newBlockedDate}
+                    onClick={addBlockedDate}
+                    className="px-5 py-2.5 bg-sky-500 hover:bg-sky-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-colors shrink-0"
+                  >
+                    Adicionar
+                  </button>
+                </div>
+                {(cleaner.blockedDates ?? []).length === 0 ? (
+                  <p className="text-xs text-slate-400 italic">Nenhuma folga específica adicionada ainda.</p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {(cleaner.blockedDates ?? []).map((d) => (
+                      <li key={d} className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-2.5">
+                        <span className="text-sm text-slate-700 font-medium capitalize">{formatBlockedDate(d)}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeBlockedDate(d)}
+                          className="text-slate-400 hover:text-red-500 transition-colors text-sm font-semibold ml-4 shrink-0"
+                        >
+                          Remover
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </section>
+
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="w-full bg-sky-500 hover:bg-sky-600 disabled:opacity-60 text-white font-bold py-4 rounded-2xl transition-colors text-base"
+            >
+              {saving ? "Salvando…" : "Salvar Agenda"}
+            </button>
+          </div>
+        )}
+
+        {/* ── Tab: Preços ──────────────────────────────────────────────────────── */}
+        {activeTab === "precos" && (
+          <div className="space-y-6">
+            {/* Precificação */}
+            <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-100">
+                <h2 className="font-bold text-slate-800 text-lg">Precificação</h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Definindo os valores abaixo, calculamos automaticamente o preço para qualquer tamanho de casa.
+                </p>
+              </div>
+              <div className="px-6 py-5 space-y-6">
+                {/* Fórmula base */}
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Fórmula Base</p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Preço = Preço Base + (Quartos − 1) × Quarto Adicional + (Banheiros − 1) × Banheiro Adicional
+                    </p>
+                  </div>
+                  {([
+                    { field: "base"             as const, label: "Preço Base (1 Bed / 1 Bath)",        prefix: "$",  placeholder: "90"  },
+                    { field: "extraPerBedroom"  as const, label: "Quarto Adicional",                    prefix: "+$", placeholder: "20"  },
+                    { field: "extraPerBathroom" as const, label: "Banheiro Adicional",                  prefix: "+$", placeholder: "15"  },
+                  ]).map(({ field, label, prefix, placeholder }) => (
+                    <div key={field} className="flex items-center gap-4">
+                      <label className="flex-1 text-sm font-semibold text-slate-700">{label}</label>
+                      <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400 w-[120px] shrink-0">
+                        <span className="px-2.5 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-2 select-none">{prefix}</span>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder={placeholder}
+                          value={draftPrices[`f_${field}`] ?? String(cleaner.pricingFormula[field])}
+                          onChange={(e) => updateFormula(field, e.target.value)}
+                          onFocus={(e) => e.target.select()}
+                          className="flex-1 px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Adicionais de Serviço */}
+                <div className="space-y-3 pt-1 border-t border-slate-100">
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wide pt-2">Adicionais de Serviço</p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Valor extra cobrado além do preço base para serviços mais completos.
+                    </p>
+                  </div>
+                  {([
+                    { field: "deep" as const, label: "Deep Cleaning",      color: "text-sky-600"    },
+                    { field: "move" as const, label: "Move-in / Move-out", color: "text-violet-600" },
+                  ]).map(({ field, label, color }) => (
+                    <div key={field} className="flex items-center gap-4">
+                      <label className={`flex-1 text-sm font-semibold ${color}`}>{label}</label>
+                      <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400 w-[120px] shrink-0">
+                        <span className="px-2.5 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-2 select-none">+$</span>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="0"
+                          value={draftPrices[`a_${field}`] ?? String(cleaner.serviceAddons?.[field] ?? 0)}
+                          onChange={(e) => updateAddon(field, e.target.value)}
+                          onFocus={(e) => e.target.select()}
+                          className="flex-1 px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Prévia comparativa ao vivo */}
+                <div className="pt-1 border-t border-slate-100">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wide pt-2 mb-3">
+                    Pré-visualização (Regular Cleaning)
+                  </p>
+                  <div className="rounded-xl border border-slate-100 overflow-hidden text-xs">
+                    <div className="grid grid-cols-4 bg-slate-50 border-b border-slate-100">
+                      <div className="px-3 py-2 font-bold text-slate-500">Casa</div>
+                      <div className="px-3 py-2 font-bold text-slate-600 text-center">Regular</div>
+                      <div className="px-3 py-2 font-bold text-sky-600 text-center">Deep</div>
+                      <div className="px-3 py-2 font-bold text-violet-600 text-center">Move-in/out</div>
+                    </div>
+                    {previewRows.map(({ beds, baths }, i) => {
+                      const base = calcBase(cleaner.pricingFormula, beds, baths);
+                      const deep = base + (cleaner.serviceAddons?.deep ?? 0);
+                      const move = base + (cleaner.serviceAddons?.move ?? 0);
+                      return (
+                        <div
+                          key={`${beds}-${baths}`}
+                          className={`grid grid-cols-4 ${i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}`}
+                        >
+                          <div className="px-3 py-2.5 text-slate-500">
+                            {beds} {beds > 1 ? "qtos" : "qto"} · {baths} {baths > 1 ? "bnhs" : "bnh"}
+                          </div>
+                          <div className="px-3 py-2.5 font-semibold text-slate-800 text-center">${base.toFixed(0)}</div>
+                          <div className="px-3 py-2.5 font-semibold text-sky-600 text-center">${deep.toFixed(0)}</div>
+                          <div className="px-3 py-2.5 font-semibold text-violet-600 text-center">${move.toFixed(0)}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
-        </section>
+            </section>
 
-        {/* ── Link de Agendamento ── */}
-        <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100">
-            <h2 className="font-bold text-slate-800 text-lg">Seu Link de Agendamento</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Escolha um endereço personalizado para compartilhar com seus clientes.
-            </p>
-          </div>
-          <div className="px-6 py-5 space-y-3">
-            {/* Prefixo: label acima no mobile, prefixo inline no desktop */}
-            <div>
-              <p className="text-xs text-slate-400 mb-1.5 sm:hidden break-all">
-                {typeof window !== "undefined" ? window.location.origin : ""}/
-              </p>
-              <div className="flex items-stretch border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-sky-400">
-                <span className="hidden sm:flex px-3 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-3.5 items-center select-none whitespace-nowrap">
-                  {typeof window !== "undefined" ? window.location.origin : ""}/
-                </span>
-                <input
-                  type="text"
-                  placeholder="ex: ana-limpezas"
-                  value={slug}
-                  onChange={(e) =>
-                    setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
-                  }
-                  className="flex-1 min-w-0 px-4 py-3.5 text-sm text-slate-800 bg-white focus:outline-none"
-                />
+            {/* Descontos por Frequência */}
+            <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-100">
+                <h2 className="font-bold text-slate-800 text-lg">Descontos por Frequência</h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Desconto em % oferecido para clientes com agendamentos recorrentes.
+                </p>
               </div>
-            </div>
-            {/* Salvar — sempre full width */}
+              <div className="px-6 py-5 grid grid-cols-3 gap-6">
+                {(
+                  [
+                    { field: "weekly",   label: "Semanal"   },
+                    { field: "biweekly", label: "Quinzenal" },
+                    { field: "monthly",  label: "Mensal"    },
+                  ] as const
+                ).map(({ field, label }) => (
+                  <div key={field}>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">{label}</label>
+                    <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-sky-400">
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="0"
+                        value={draftDiscounts[field] ?? String(cleaner.frequencyDiscounts[field])}
+                        onChange={(e) => updateDiscount(field, e.target.value)}
+                        onFocus={(e) => { setDraftDiscounts((d) => ({ ...d, [field]: String(cleaner.frequencyDiscounts[field]) })); e.target.select(); }}
+                        className="flex-1 px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none"
+                      />
+                      <span className="px-2.5 text-slate-400 text-sm bg-slate-50 border-l border-slate-200 py-2 select-none">%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
             <button
-              type="button"
-              onClick={saveSlug}
-              disabled={slugSaving}
-              className="w-full bg-sky-500 hover:bg-sky-600 active:bg-sky-700 disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl text-sm transition-colors"
+              onClick={handleSave}
+              disabled={saving}
+              className="w-full bg-sky-500 hover:bg-sky-600 disabled:opacity-60 text-white font-bold py-4 rounded-2xl transition-colors text-base"
             >
-              {slugSaving ? "Salvando…" : "Salvar Link Personalizado"}
-            </button>
-            {/* Copiar — full width, linha separada */}
-            <button
-              type="button"
-              onClick={copyLink}
-              disabled={!slug}
-              className={`w-full font-semibold py-3.5 rounded-xl text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-                copied
-                  ? "bg-green-500 text-white"
-                  : "border-2 border-slate-200 text-slate-600 hover:border-sky-300 active:bg-slate-50"
-              }`}
-            >
-              {copied ? "✓ Link copiado!" : "Copiar Link"}
+              {saving ? "Salvando…" : "Salvar Preços"}
             </button>
           </div>
-        </section>
+        )}
 
-        {/* Salvar */}
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full bg-sky-500 hover:bg-sky-600 disabled:opacity-60 text-white font-bold py-4 rounded-2xl transition-colors text-lg"
-        >
-          {saving ? "Salvando…" : "Salvar Configurações"}
-        </button>
+        {/* ── Tab: Contato ─────────────────────────────────────────────────────── */}
+        {activeTab === "contato" && (
+          <div className="space-y-6">
+            <section className="bg-white rounded-2xl shadow-sm border border-sky-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-sky-100 bg-sky-50">
+                <h2 className="font-bold text-slate-800 text-lg">Canais de Contato</h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Os clientes usarão estes canais para enviar os detalhes do agendamento. Preencha pelo menos um.
+                </p>
+              </div>
+              <div className="px-6 py-5 space-y-5">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">
+                    Telefone (SMS / WhatsApp)
+                  </label>
+                  <PhoneField
+                    value={cleaner.phone ?? ""}
+                    onChange={(v) => setCleaner({ ...cleaner, phone: v })}
+                    placeholder="(512) 555-0100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">
+                    Usuário do Facebook Messenger{" "}
+                    <span className="text-slate-400 font-normal">(opcional)</span>
+                  </label>
+                  <p className="text-xs text-slate-400 mb-2">
+                    Encontrado em facebook.com/seu.usuario. Exemplo: <span className="font-mono">maria.faxina</span>
+                  </p>
+                  <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-sky-400">
+                    <span className="px-3 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-3 select-none">
+                      m.me/
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="maria.faxina"
+                      value={cleaner.messengerUsername ?? ""}
+                      onChange={(e) => setCleaner({ ...cleaner, messengerUsername: e.target.value })}
+                      className="flex-1 px-3 py-3 text-sm text-slate-800 bg-white focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="w-full bg-sky-500 hover:bg-sky-600 disabled:opacity-60 text-white font-bold py-4 rounded-2xl transition-colors text-base"
+            >
+              {saving ? "Salvando…" : "Salvar Contato"}
+            </button>
+          </div>
+        )}
+
+        {/* ── Tab: Link ────────────────────────────────────────────────────────── */}
+        {activeTab === "link" && (
+          <div className="space-y-6">
+            <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-100">
+                <h2 className="font-bold text-slate-800 text-lg">Seu Link de Agendamento</h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Escolha um endereço personalizado para compartilhar com seus clientes.
+                </p>
+              </div>
+              <div className="px-6 py-5 space-y-3">
+                <div>
+                  <p className="text-xs text-slate-400 mb-1.5 sm:hidden break-all">
+                    {typeof window !== "undefined" ? window.location.origin : ""}/
+                  </p>
+                  <div className="flex items-stretch border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-sky-400">
+                    <span className="hidden sm:flex px-3 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-3.5 items-center select-none whitespace-nowrap">
+                      {typeof window !== "undefined" ? window.location.origin : ""}/
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="ex: ana-limpezas"
+                      value={slug}
+                      onChange={(e) =>
+                        setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
+                      }
+                      className="flex-1 min-w-0 px-4 py-3.5 text-sm text-slate-800 bg-white focus:outline-none"
+                    />
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={saveSlug}
+                  disabled={slugSaving}
+                  className="w-full bg-sky-500 hover:bg-sky-600 active:bg-sky-700 disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl text-sm transition-colors"
+                >
+                  {slugSaving ? "Salvando…" : "Salvar Link Personalizado"}
+                </button>
+                <button
+                  type="button"
+                  onClick={copyLink}
+                  disabled={!slug}
+                  className={`w-full font-semibold py-3.5 rounded-xl text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                    copied
+                      ? "bg-green-500 text-white"
+                      : "border-2 border-slate-200 text-slate-600 hover:border-sky-300 active:bg-slate-50"
+                  }`}
+                >
+                  {copied ? "✓ Link copiado!" : "Copiar Link"}
+                </button>
+              </div>
+            </section>
+          </div>
+        )}
       </main>
     </div>
   );
