@@ -453,17 +453,17 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
         </div>
       </header>
 
-      <main className={`mx-auto px-6 py-12 ${state.step === 3 ? "max-w-4xl" : "max-w-xl"}`}>
-        <h1 className="text-3xl font-extrabold text-slate-900 text-center mb-2">
+      <main className={`mx-auto px-4 sm:px-6 py-8 sm:py-12 ${state.step === 3 ? "max-w-4xl" : "max-w-xl"}`}>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 text-center mb-2">
           Book Your Cleaning
         </h1>
-        <p className="text-slate-500 text-center mb-10 text-sm">
+        <p className="text-slate-500 text-center mb-6 sm:mb-10 text-sm">
           With {cleaner.name} · Ready in under 60 seconds.
         </p>
 
         {/* Step indicator */}
         {state.step < 4 && (
-          <div className="flex items-center gap-0 mb-10">
+          <div className="flex items-center gap-0 mb-6 sm:mb-10">
             {STEPS.map((label, i) => (
               <div key={i} className="flex items-center flex-1 last:flex-none">
                 <div className="flex flex-col items-center">
@@ -497,7 +497,7 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
         {/* ── Step 0: House Details ── */}
         {state.step === 0 && (
           <div className="space-y-6">
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-6">
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-6 space-y-6">
               {/* Bedrooms */}
               <div>
                 <p className="text-sm font-bold text-slate-700 mb-3">Bedrooms</p>
@@ -533,7 +533,7 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
               {/* Service Type */}
               <div className="pt-2 border-t border-slate-100">
                 <p className="text-sm font-bold text-slate-700 mb-3">Service Type</p>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                   {SERVICE_OPTIONS.map((opt) => {
                     const svcPrice = calcPrice(cleaner, state.bedrooms, state.bathrooms, null, opt.value);
                     const addonAmt =
@@ -545,16 +545,16 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
                         key={opt.value}
                         type="button"
                         onClick={() => update({ serviceType: opt.value })}
-                        className={`text-left border-2 rounded-xl p-3 transition-colors flex flex-col gap-2 ${
+                        className={`border-2 rounded-xl p-3 transition-colors flex flex-row sm:flex-col items-center sm:items-start gap-3 sm:gap-2 ${
                           isSelected
                             ? "border-sky-500 bg-sky-50"
                             : "border-slate-200 bg-white hover:border-sky-300"
                         }`}
                       >
-                        <div className={`${isSelected ? "text-sky-500" : "text-slate-400"}`}>
+                        <div className={`shrink-0 ${isSelected ? "text-sky-500" : "text-slate-400"}`}>
                           {SERVICE_ICONS[opt.value]}
                         </div>
-                        <div>
+                        <div className="flex-1 min-w-0 text-left">
                           <div className="flex items-center gap-1 flex-wrap">
                             <p className="font-bold text-slate-800 text-xs leading-tight">{opt.label}</p>
                             {addonAmt != null && addonAmt > 0 && (
@@ -566,7 +566,7 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
                           <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">{opt.description}</p>
                         </div>
                         {svcPrice !== null && (
-                          <p className="text-lg font-extrabold text-sky-600 mt-auto text-center w-full">
+                          <p className="text-base sm:text-lg font-extrabold text-sky-600 ml-auto sm:ml-0 sm:mt-auto sm:w-full sm:text-center shrink-0">
                             ${svcPrice.toFixed(2)}
                           </p>
                         )}
@@ -691,7 +691,7 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
                       type="button"
                       disabled={d.isOff}
                       onClick={() => !d.isOff && handleDateClick(d.dateStr)}
-                      className={`relative flex flex-col items-center rounded-xl py-2.5 px-1 transition-colors ${
+                      className={`relative flex flex-col items-center rounded-xl py-2 sm:py-2.5 px-0.5 sm:px-1 transition-colors ${
                         d.isOff
                           ? "cursor-not-allowed opacity-30"
                           : isConfirmed
@@ -815,7 +815,7 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
               {/* ── Left column: form fields ── */}
               <div className="flex-1 space-y-5">
                 {/* Contact Information */}
-                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-6 space-y-4">
                   <h3 className="font-bold text-slate-800 text-sm">Contact Information</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -843,7 +843,7 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
                 </div>
 
                 {/* Address Details */}
-                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-6 space-y-4">
                   <h3 className="font-bold text-slate-800 text-sm">Address Details</h3>
                   <div>
                     <label htmlFor="homeAddress" className="block text-sm font-semibold text-slate-700 mb-1">Home Address</label>
@@ -911,7 +911,7 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
                 </div>
 
                 {/* Household Profile */}
-                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-3">
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-6 space-y-3">
                   <h3 className="font-bold text-slate-800 text-sm">Household Profile</h3>
                   <div className="grid grid-cols-3 gap-3">
                     <button
@@ -971,7 +971,7 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
 
               {/* ── Right column: Booking Summary ── */}
               <div className="w-full lg:w-72 lg:sticky lg:top-6 space-y-4">
-                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-0">
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-6 space-y-0">
                   <h3 className="font-bold text-slate-800 text-sm mb-4">Booking Summary</h3>
 
                   <div className="divide-y divide-slate-100">
