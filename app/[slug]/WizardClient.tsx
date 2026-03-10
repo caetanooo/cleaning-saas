@@ -566,7 +566,7 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
                           <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">{opt.description}</p>
                         </div>
                         {svcPrice !== null && (
-                          <p className="text-lg font-extrabold text-sky-600 mt-auto">
+                          <p className="text-lg font-extrabold text-sky-600 mt-auto text-center w-full">
                             ${svcPrice.toFixed(2)}
                           </p>
                         )}
