@@ -742,21 +742,17 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
                         type="button"
                         disabled={!avail}
                         onClick={() => avail && handleBlockSelect(block)}
-                        className={`border-2 rounded-2xl px-4 py-5 flex items-center gap-3 transition-colors text-left ${
+                        className={`group border-2 rounded-2xl px-4 py-5 flex items-center gap-3 transition-colors text-left ${
                           !avail
                             ? "border-slate-100 bg-slate-50 cursor-not-allowed"
-                            : "border-slate-200 bg-white hover:border-sky-500 hover:bg-sky-50"
+                            : "border-slate-200 bg-white hover:border-sky-500 hover:bg-sky-500 active:bg-sky-600 active:border-sky-600"
                         }`}
                       >
-                        {/* Toggle switch */}
-                        <div className={`flex-shrink-0 w-11 h-6 rounded-full flex items-center px-0.5 transition-colors ${avail ? "bg-sky-500" : "bg-slate-200"}`}>
-                          <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${avail ? "translate-x-5" : "translate-x-0"}`} />
-                        </div>
                         <div>
-                          <p className={`font-bold text-sm ${avail ? "text-slate-800" : "text-slate-300"}`}>
+                          <p className={`font-bold text-sm transition-colors ${avail ? "text-slate-800 group-hover:text-white" : "text-slate-300"}`}>
                             {info.label}
                           </p>
-                          <p className={`text-xs mt-0.5 ${avail ? "text-slate-500" : "text-slate-300"}`}>
+                          <p className={`text-xs mt-0.5 transition-colors ${avail ? "text-slate-500 group-hover:text-white/80" : "text-slate-300"}`}>
                             Start at {info.start}
                           </p>
                         </div>
