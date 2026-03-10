@@ -1012,7 +1012,7 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
                       disabled={state.submitting}
                       className="w-full bg-sky-500 hover:bg-sky-600 disabled:opacity-60 text-white font-bold py-3.5 rounded-xl transition-colors text-sm"
                     >
-                      {state.submitting ? "Confirming…" : "Confirm & Pay →"}
+                      {state.submitting ? "Confirming…" : "Confirm →"}
                     </button>
                     <button
                       type="button"
