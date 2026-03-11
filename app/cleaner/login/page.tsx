@@ -55,12 +55,13 @@ export default function CleanerLoginPage() {
           Authorization: `Bearer ${session!.access_token}`,
         },
         body: JSON.stringify({ cleanerId: session!.user.id }),
+        signal: AbortSignal.timeout(12000),
       });
+      if (!res.ok) throw new Error("sync failed");
       const { status } = await res.json() as { status: string };
       const isBlocked = !isOwner && (status === "past_due" || status === "canceled" || status === "no_subscription");
       router.replace(isBlocked ? "/cleaner/subscription" : "/cleaner/setup");
     } catch {
-      // If subscription check fails, owners always proceed; others go to subscription page
       router.replace(isOwner ? "/cleaner/setup" : "/cleaner/subscription");
     }
   }

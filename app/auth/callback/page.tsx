@@ -36,7 +36,9 @@ function CallbackInner() {
               Authorization: `Bearer ${data.session.access_token}`,
             },
             body: JSON.stringify({ cleanerId: data.session.user.id }),
+            signal: AbortSignal.timeout(12000),
           });
+          if (!syncRes.ok) throw new Error("sync failed");
           const { status } = await syncRes.json() as { status: string };
           const isBlocked = !isOwner && (status === "past_due" || status === "canceled" || status === "no_subscription");
           window.location.replace(isBlocked ? "/cleaner/subscription" : "/cleaner/setup");
@@ -58,7 +60,9 @@ function CallbackInner() {
               Authorization: `Bearer ${session.access_token}`,
             },
             body: JSON.stringify({ cleanerId: session.user.id }),
+            signal: AbortSignal.timeout(12000),
           });
+          if (!syncRes.ok) throw new Error("sync failed");
           const { status } = await syncRes.json() as { status: string };
           const isBlocked = !isOwner && (status === "past_due" || status === "canceled" || status === "no_subscription");
           window.location.replace(isBlocked ? "/cleaner/subscription" : "/cleaner/setup");
