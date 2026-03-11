@@ -341,7 +341,7 @@ export default function CleanerSetupPage() {
               }`}
             >
               <tab.icon size={16} className={activeTab === tab.id ? "text-white" : tab.color} />
-              <span>{tab.label}</span>
+              <span className="hidden sm:inline">{tab.label}</span>
             </button>
           ))}
         </div>
