@@ -4,7 +4,6 @@ import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createBrowserClient } from "@/lib/supabase";
-import { CleanClickLogo } from "@/components/CleanClickLogo";
 import type { Booking, Cleaner, TimeBlock } from "@/types";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -108,7 +107,7 @@ export default function CleanerAgendaPage() {
 
         if (cleanerData?.id) {
           const profile = cleanerData as Cleaner;
-          const OWNER_EMAILS = ["pedro.caetano.3anos@gmail.com", "caetanochavesmaria@gmail.com", "Amandaadmoreira@gmail.com"];
+          const OWNER_EMAILS = ["pedro.caetano.3anos@gmail.com", "caetanochavesmaria@gmail.com"];
           const isOwner = OWNER_EMAILS.includes(session.user.email ?? "");
           if (
             !isOwner && (
@@ -287,7 +286,10 @@ export default function CleanerAgendaPage() {
       {/* Navbar */}
       <header className="bg-white border-b border-slate-100">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <CleanClickLogo href="/" height={48} />
+          <Link href="/" className="flex items-center gap-2">
+            <span className="text-2xl">✨</span>
+            <span className="text-xl font-extrabold text-slate-800">CleanClick</span>
+          </Link>
           <nav className="flex items-center gap-4">
             <Link href="/cleaner/setup" className="text-sm text-slate-500 hover:text-slate-700 font-medium transition-colors">
               Configurações
