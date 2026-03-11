@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createBrowserClient } from "@/lib/supabase";
+import { CleanClickLogo } from "@/components/CleanClickLogo";
 
 const CHECKOUT_URL = "https://buy.stripe.com/eVqeV6cfsbOmgz72zR57W00";
 
@@ -52,10 +53,7 @@ export default function SubscriptionPage() {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <span className="text-3xl">✨</span>
-            <span className="text-2xl font-extrabold text-slate-800">CleanClick</span>
-          </Link>
+          <CleanClickLogo href="/" size={40} />
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 text-center space-y-5">

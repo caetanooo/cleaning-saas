@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createBrowserClient } from "@/lib/supabase";
+import { CleanClickLogo } from "@/components/CleanClickLogo";
 
 export default function CleanerSignupPage() {
   const supabase = createBrowserClient();
@@ -85,10 +86,7 @@ export default function CleanerSignupPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <span className="text-3xl">✨</span>
-            <span className="text-2xl font-extrabold text-slate-800">CleanClick</span>
-          </Link>
+          <CleanClickLogo href="/" size={40} />
           <p className="text-slate-500 text-sm mt-2">Create your cleaner account</p>
         </div>
 

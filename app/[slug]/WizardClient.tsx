@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import PhoneField from "@/components/PhoneField";
+import { CleanClickLogo } from "@/components/CleanClickLogo";
 import type {
   Cleaner,
   Booking,
@@ -445,10 +446,7 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
       {/* Navbar */}
       <header className="bg-white border-b border-slate-100">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl">✨</span>
-            <span className="text-xl font-extrabold text-slate-800">CleanClick</span>
-          </Link>
+          <CleanClickLogo href="/" size={34} />
           <span className="text-sm text-slate-500">Booking</span>
         </div>
       </header>

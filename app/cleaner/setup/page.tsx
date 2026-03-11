@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CalendarDays, BadgeDollarSign, Phone, Link2, type LucideIcon } from "lucide-react";
+import { CleanClickLogo } from "@/components/CleanClickLogo";
 import { createBrowserClient } from "@/lib/supabase";
 import type { Cleaner, DayOfWeek } from "@/types";
 import PhoneField from "@/components/PhoneField";
@@ -295,10 +296,7 @@ export default function CleanerSetupPage() {
       {/* Navbar */}
       <header className="bg-white border-b border-slate-100">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl">✨</span>
-            <span className="text-xl font-extrabold text-slate-800">CleanClick</span>
-          </Link>
+          <CleanClickLogo href="/" size={34} />
           <div className="flex items-center gap-4">
             <Link href="/cleaner/agenda" className="text-sm text-slate-500 hover:text-sky-600 font-medium transition-colors">
               Agenda

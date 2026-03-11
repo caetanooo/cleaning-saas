@@ -3,6 +3,7 @@
 import { useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { createBrowserClient } from "@/lib/supabase";
+import { CleanClickLogo } from "@/components/CleanClickLogo";
 
 function CallbackInner() {
   const searchParams = useSearchParams();
@@ -57,7 +58,7 @@ function CallbackInner() {
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center">
       <div className="text-center space-y-3">
-        <span className="text-5xl block">✨</span>
+        <CleanClickLogo size={56} className="justify-center" />
         <p className="text-slate-400 text-sm animate-pulse">Confirming your account…</p>
       </div>
     </div>

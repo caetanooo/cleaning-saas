@@ -1,5 +1,6 @@
 import Link from "next/link";
 import DemoTabs from "./DemoTabs";
+import { CleanClickLogo } from "@/components/CleanClickLogo";
 
 const CHECKOUT_URL = "https://buy.stripe.com/eVqeV6cfsbOmgz72zR57W00";
 
@@ -327,10 +328,7 @@ export default function LandingPage() {
       {/* ── Navbar ── */}
       <header className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-slate-100">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">✨</span>
-            <span className="text-xl font-extrabold text-slate-900">CleanClick</span>
-          </div>
+          <CleanClickLogo size={34} />
           <a
             href={CHECKOUT_URL}
             target="_blank"
@@ -719,10 +717,7 @@ export default function LandingPage() {
       <footer className="bg-slate-100 border-t border-slate-200 py-12 px-6">
         <div className="max-w-5xl mx-auto space-y-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">✨</span>
-              <span className="text-xl font-extrabold text-slate-900">CleanClick</span>
-            </div>
+            <CleanClickLogo size={34} />
             <p className="text-slate-500 text-sm text-center">
               🇺🇸 Orgulhosamente servindo faxineiras brasileiras nos EUA
             </p>

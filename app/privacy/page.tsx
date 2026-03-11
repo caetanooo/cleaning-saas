@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CleanClickLogo } from "@/components/CleanClickLogo";
 
 export const metadata = {
   title: "Política de Privacidade – CleanClick",
@@ -14,10 +15,7 @@ export default function PrivacyPage() {
       {/* Navbar */}
       <header className="bg-white border-b border-slate-100 sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl">✨</span>
-            <span className="text-xl font-extrabold text-slate-800">CleanClick</span>
-          </Link>
+          <CleanClickLogo href="/" size={34} />
           <Link
             href="/"
             className="text-sm text-slate-500 hover:text-slate-700 transition-colors"
