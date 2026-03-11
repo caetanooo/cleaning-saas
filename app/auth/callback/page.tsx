@@ -26,37 +26,45 @@ function CallbackInner() {
           window.location.replace("/cleaner/login?error=confirmation_failed");
           return;
         }
-        const syncRes = await fetch("/api/stripe/sync-subscription", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${data.session.access_token}`,
-          },
-          body: JSON.stringify({ cleanerId: data.session.user.id }),
-        });
-        const { status } = await syncRes.json() as { status: string };
         const ownerEmails = (process.env.NEXT_PUBLIC_OWNER_EMAILS ?? "").split(",").map(e => e.trim());
         const isOwner = ownerEmails.includes(data.session.user.email ?? "");
-        const isBlocked = !isOwner && (status === "past_due" || status === "canceled" || status === "no_subscription");
-        window.location.replace(isBlocked ? "/cleaner/subscription" : "/cleaner/setup");
+        try {
+          const syncRes = await fetch("/api/stripe/sync-subscription", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${data.session.access_token}`,
+            },
+            body: JSON.stringify({ cleanerId: data.session.user.id }),
+          });
+          const { status } = await syncRes.json() as { status: string };
+          const isBlocked = !isOwner && (status === "past_due" || status === "canceled" || status === "no_subscription");
+          window.location.replace(isBlocked ? "/cleaner/subscription" : "/cleaner/setup");
+        } catch {
+          window.location.replace(isOwner ? "/cleaner/setup" : "/cleaner/subscription");
+        }
       });
     } else {
       // Implicit / magic-link flow: session is already in the URL hash.
       supabase.auth.getSession().then(async ({ data: { session } }) => {
         if (!session) { window.location.replace("/cleaner/login"); return; }
-        const syncRes = await fetch("/api/stripe/sync-subscription", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ cleanerId: session.user.id }),
-        });
-        const { status } = await syncRes.json() as { status: string };
         const ownerEmails = (process.env.NEXT_PUBLIC_OWNER_EMAILS ?? "").split(",").map(e => e.trim());
         const isOwner = ownerEmails.includes(session.user.email ?? "");
-        const isBlocked = !isOwner && (status === "past_due" || status === "canceled" || status === "no_subscription");
-        window.location.replace(isBlocked ? "/cleaner/subscription" : "/cleaner/setup");
+        try {
+          const syncRes = await fetch("/api/stripe/sync-subscription", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({ cleanerId: session.user.id }),
+          });
+          const { status } = await syncRes.json() as { status: string };
+          const isBlocked = !isOwner && (status === "past_due" || status === "canceled" || status === "no_subscription");
+          window.location.replace(isBlocked ? "/cleaner/subscription" : "/cleaner/setup");
+        } catch {
+          window.location.replace(isOwner ? "/cleaner/setup" : "/cleaner/subscription");
+        }
       });
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

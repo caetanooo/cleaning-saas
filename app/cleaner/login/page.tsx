@@ -44,19 +44,25 @@ export default function CleanerLoginPage() {
     }
 
     const { data: { session } } = await supabase.auth.getSession();
-    const res = await fetch("/api/stripe/sync-subscription", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session!.access_token}`,
-      },
-      body: JSON.stringify({ cleanerId: session!.user.id }),
-    });
-    const { status } = await res.json() as { status: string };
     const ownerEmails = (process.env.NEXT_PUBLIC_OWNER_EMAILS ?? "").split(",").map(e => e.trim());
     const isOwner = ownerEmails.includes(email);
-    const isBlocked = !isOwner && (status === "past_due" || status === "canceled" || status === "no_subscription");
-    router.replace(isBlocked ? "/cleaner/subscription" : "/cleaner/setup");
+
+    try {
+      const res = await fetch("/api/stripe/sync-subscription", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session!.access_token}`,
+        },
+        body: JSON.stringify({ cleanerId: session!.user.id }),
+      });
+      const { status } = await res.json() as { status: string };
+      const isBlocked = !isOwner && (status === "past_due" || status === "canceled" || status === "no_subscription");
+      router.replace(isBlocked ? "/cleaner/subscription" : "/cleaner/setup");
+    } catch {
+      // If subscription check fails, owners always proceed; others go to subscription page
+      router.replace(isOwner ? "/cleaner/setup" : "/cleaner/subscription");
+    }
   }
 
   return (
