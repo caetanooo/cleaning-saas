@@ -1,14 +1,13 @@
 "use client";
 
-import { useEffect, useRef, Suspense } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { createBrowserClient } from "@/lib/supabase";
 
 function CallbackInner() {
   const searchParams = useSearchParams();
-  // Guard against React StrictMode / dependency-change double-execution.
-  // exchangeCodeForSession must only run ONCE — the code is single-use.
   const ran = useRef(false);
+  const [debugError, setDebugError] = useState<string | null>(null);
 
   useEffect(() => {
     if (ran.current) return;
@@ -18,12 +17,9 @@ function CallbackInner() {
     const code = searchParams.get("code");
 
     if (code) {
-      // PKCE flow: exchange the one-time code for a session.
-      // Use window.location (full reload) so the destination page reads
-      // the session from localStorage on a clean initialisation.
       supabase.auth.exchangeCodeForSession(code).then(async ({ data, error }: Awaited<ReturnType<typeof supabase.auth.exchangeCodeForSession>>) => {
         if (error || !data.session) {
-          window.location.replace("/cleaner/login?error=confirmation_failed");
+          setDebugError(error?.message ?? "session null");
           return;
         }
         const ownerEmails = (process.env.NEXT_PUBLIC_OWNER_EMAILS ?? "").split(",").map(e => e.trim());
@@ -73,6 +69,18 @@ function CallbackInner() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // Empty deps: intentionally runs only once on mount.
+
+  if (debugError) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+        <div className="bg-white rounded-2xl border border-red-200 p-8 max-w-md w-full space-y-3">
+          <p className="font-bold text-red-700">Auth error (debug)</p>
+          <p className="text-sm text-slate-600 font-mono break-all">{debugError}</p>
+          <a href="/cleaner/login" className="block text-sm text-sky-500 hover:underline">← Back to login</a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center">
