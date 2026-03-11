@@ -53,7 +53,7 @@ export default function SubscriptionPage() {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <CleanClickLogo href="/" size={40} />
+          <CleanClickLogo href="/" height={48} />
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 text-center space-y-5">

@@ -287,7 +287,7 @@ export default function CleanerAgendaPage() {
       {/* Navbar */}
       <header className="bg-white border-b border-slate-100">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <CleanClickLogo href="/" size={34} />
+          <CleanClickLogo href="/" height={48} />
           <nav className="flex items-center gap-4">
             <Link href="/cleaner/setup" className="text-sm text-slate-500 hover:text-slate-700 font-medium transition-colors">
               Configurações

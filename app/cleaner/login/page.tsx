@@ -65,7 +65,7 @@ export default function CleanerLoginPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <CleanClickLogo href="/" size={40} />
+          <CleanClickLogo href="/" height={48} />
           <p className="text-slate-500 text-sm mt-2">Sign in to your cleaner dashboard</p>
         </div>
 

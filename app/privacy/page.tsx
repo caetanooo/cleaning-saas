@@ -15,7 +15,7 @@ export default function PrivacyPage() {
       {/* Navbar */}
       <header className="bg-white border-b border-slate-100 sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <CleanClickLogo href="/" size={34} />
+          <CleanClickLogo href="/" height={48} />
           <Link
             href="/"
             className="text-sm text-slate-500 hover:text-slate-700 transition-colors"
