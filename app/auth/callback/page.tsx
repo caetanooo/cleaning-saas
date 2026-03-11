@@ -21,7 +21,7 @@ function CallbackInner() {
       // PKCE flow: exchange the one-time code for a session.
       // Use window.location (full reload) so the destination page reads
       // the session from localStorage on a clean initialisation.
-      supabase.auth.exchangeCodeForSession(code).then(async ({ data, error }) => {
+      supabase.auth.exchangeCodeForSession(code).then(async ({ data, error }: Awaited<ReturnType<typeof supabase.auth.exchangeCodeForSession>>) => {
         if (error || !data.session) {
           window.location.replace("/cleaner/login?error=confirmation_failed");
           return;
@@ -48,7 +48,7 @@ function CallbackInner() {
       });
     } else {
       // Implicit / magic-link flow: session is already in the URL hash.
-      supabase.auth.getSession().then(async ({ data: { session } }) => {
+      supabase.auth.getSession().then(async ({ data: { session } }: Awaited<ReturnType<typeof supabase.auth.getSession>>) => {
         if (!session) { window.location.replace("/cleaner/login"); return; }
         const ownerEmails = (process.env.NEXT_PUBLIC_OWNER_EMAILS ?? "").split(",").map(e => e.trim());
         const isOwner = ownerEmails.includes(session.user.email ?? "");

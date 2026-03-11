@@ -1,3 +1,4 @@
+import { createBrowserClient as ssrBrowserClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 
 // Fallbacks prevent createClient from throwing during SSR when env vars
@@ -7,16 +8,17 @@ const PLACEHOLDER_KEY = "placeholder-key";
 
 /**
  * Browser / client-side client (anon key, subject to RLS).
+ * Uses @supabase/ssr so the session is stored in cookies — readable by
+ * the middleware's createServerClient (which also uses cookies).
  * Singleton — only one GoTrueClient instance per browser context.
- * NEXT_PUBLIC_ vars are baked into the bundle at build time by Next.js.
  */
-let _browserClient: ReturnType<typeof createClient> | null = null;
+let _browserClient: ReturnType<typeof ssrBrowserClient> | null = null;
 
 export function createBrowserClient() {
   if (_browserClient) return _browserClient;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || PLACEHOLDER_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || PLACEHOLDER_KEY;
-  _browserClient = createClient(url, key);
+  _browserClient = ssrBrowserClient(url, key);
   return _browserClient;
 }
 

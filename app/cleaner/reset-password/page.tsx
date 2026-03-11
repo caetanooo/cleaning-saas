@@ -23,7 +23,7 @@ function ResetPasswordInner() {
 
     const code = searchParams.get("code");
     if (code) {
-      supabase.auth.exchangeCodeForSession(code).then(({ error: err }) => {
+      supabase.auth.exchangeCodeForSession(code).then(({ error: err }: Awaited<ReturnType<typeof supabase.auth.exchangeCodeForSession>>) => {
         if (err) {
           setError("Link inválido ou expirado.");
         } else {
@@ -32,7 +32,7 @@ function ResetPasswordInner() {
       });
     } else {
       // Implicit flow — Supabase SDK processes the hash automatically.
-      supabase.auth.getSession().then(({ data: { session } }) => {
+      supabase.auth.getSession().then(({ data: { session } }: Awaited<ReturnType<typeof supabase.auth.getSession>>) => {
         if (!session) {
           setError("Link inválido ou expirado.");
         } else {
