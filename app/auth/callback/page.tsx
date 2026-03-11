@@ -26,7 +26,7 @@ function CallbackInner() {
           window.location.replace("/cleaner/login?error=confirmation_failed");
           return;
         }
-        await fetch("/api/stripe/sync-subscription", {
+        const syncRes = await fetch("/api/stripe/sync-subscription", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -34,13 +34,17 @@ function CallbackInner() {
           },
           body: JSON.stringify({ cleanerId: data.session.user.id }),
         });
-        window.location.replace("/cleaner/setup");
+        const { status } = await syncRes.json() as { status: string };
+        const ownerEmails = (process.env.NEXT_PUBLIC_OWNER_EMAILS ?? "").split(",").map(e => e.trim());
+        const isOwner = ownerEmails.includes(data.session.user.email ?? "");
+        const isBlocked = !isOwner && (status === "past_due" || status === "canceled" || status === "no_subscription");
+        window.location.replace(isBlocked ? "/cleaner/subscription" : "/cleaner/setup");
       });
     } else {
       // Implicit / magic-link flow: session is already in the URL hash.
       supabase.auth.getSession().then(async ({ data: { session } }) => {
         if (!session) { window.location.replace("/cleaner/login"); return; }
-        await fetch("/api/stripe/sync-subscription", {
+        const syncRes = await fetch("/api/stripe/sync-subscription", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -48,7 +52,11 @@ function CallbackInner() {
           },
           body: JSON.stringify({ cleanerId: session.user.id }),
         });
-        window.location.replace("/cleaner/setup");
+        const { status } = await syncRes.json() as { status: string };
+        const ownerEmails = (process.env.NEXT_PUBLIC_OWNER_EMAILS ?? "").split(",").map(e => e.trim());
+        const isOwner = ownerEmails.includes(session.user.email ?? "");
+        const isBlocked = !isOwner && (status === "past_due" || status === "canceled" || status === "no_subscription");
+        window.location.replace(isBlocked ? "/cleaner/subscription" : "/cleaner/setup");
       });
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

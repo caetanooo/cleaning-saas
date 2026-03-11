@@ -117,7 +117,12 @@ export default function CleanerLoginPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Password</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-semibold text-slate-700">Password</label>
+                <Link href="/cleaner/forgot-password" className="text-xs text-sky-500 hover:underline font-medium">
+                  Forgot password?
+                </Link>
+              </div>
               <input
                 type="password"
                 required
