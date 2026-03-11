@@ -20,7 +20,7 @@ export default function CleanerSignupPage() {
     e.preventDefault();
     setError("");
     if (password !== confirm) { setError("Passwords do not match."); return; }
-    if (password.length < 6)  { setError("Password must be at least 6 characters."); return; }
+    if (password.length < 8)  { setError("Password must be at least 8 characters."); return; }
     setLoading(true);
 
     const { data, error: signUpError } = await supabase.auth.signUp({
@@ -131,7 +131,7 @@ export default function CleanerSignupPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="At least 6 characters"
+                placeholder="At least 8 characters"
                 className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
               />
             </div>

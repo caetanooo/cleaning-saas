@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { createServiceClient } from "@/lib/supabase";
+import { extractBearerToken } from "@/lib/auth";
 
 type StripeStatus =
   | "active"
@@ -27,8 +28,7 @@ function mapStatus(stripeStatus: StripeStatus): string {
 
 export async function POST(req: Request) {
   // 1. Verify auth token
-  const authHeader = req.headers.get("Authorization") ?? "";
-  const token = authHeader.replace(/^Bearer\s+/, "");
+  const token = extractBearerToken(req.headers.get("Authorization"));
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

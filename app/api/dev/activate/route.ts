@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
-
-const OWNER_EMAILS = ["pedro.caetano.3anos@gmail.com", "caetanochavesmaria@gmail.com"];
+import { extractBearerToken } from "@/lib/auth";
+import { getOwnerEmails } from "@/lib/owners";
 
 export async function POST(req: Request) {
-  const authHeader = req.headers.get("Authorization") ?? "";
-  const token = authHeader.replace(/^Bearer\s+/, "");
+  const token = extractBearerToken(req.headers.get("Authorization"));
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -16,7 +15,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (!OWNER_EMAILS.includes(user.email ?? "")) {
+  if (!getOwnerEmails().includes(user.email ?? "")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

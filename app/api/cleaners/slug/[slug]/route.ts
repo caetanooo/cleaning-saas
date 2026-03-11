@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
-import { rowToCleaner } from "../../_shared";
+import { rowToPublicCleaner } from "../../_shared";
 
 export const dynamic = "force-dynamic";
 
@@ -23,5 +23,5 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  return NextResponse.json(rowToCleaner(data));
+  return NextResponse.json(rowToPublicCleaner(data));
 }

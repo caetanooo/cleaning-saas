@@ -1,5 +1,6 @@
 import { createServiceClient } from "@/lib/supabase";
 import { rowToCleaner } from "@/app/api/cleaners/_shared";
+import { getOwnerEmails } from "@/lib/owners";
 import WizardClient from "./WizardClient";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +29,7 @@ export default async function SlugPage({
 
   const cleaner = rowToCleaner(data);
 
-  const isOwner = cleaner.email === "pedro.caetano.3anos@gmail.com";
+  const isOwner = getOwnerEmails().includes(cleaner.email);
   const isInactive =
     !isOwner &&
     cleaner.subscriptionStatus !== "active" &&

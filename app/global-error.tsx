@@ -46,21 +46,9 @@ export default function GlobalError({
                 Digest: {error.digest}
               </p>
             )}
-            <pre
-              style={{
-                background: "#f1f5f9",
-                borderRadius: "8px",
-                padding: "0.75rem 1rem",
-                fontSize: "0.75rem",
-                color: "#b91c1c",
-                overflow: "auto",
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-all",
-                marginBottom: "1.25rem",
-              }}
-            >
-              {error.message || String(error)}
-            </pre>
+            <p style={{ fontSize: "0.875rem", color: "#64748b", marginBottom: "1.25rem" }}>
+              An unexpected error occurred. Please refresh the page.
+            </p>
             <button
               onClick={reset}
               style={{

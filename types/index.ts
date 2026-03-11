@@ -1,12 +1,5 @@
-export type BookingStatus = "pending" | "confirmed" | "cancelled";
+export type BookingStatus = "confirmed" | "cancelled";
 
-// Legacy types kept for component compatibility
-export type ServiceType = "standard" | "deep" | "move_in_out";
-export interface TimeSlot {
-  startTime: string;
-  endTime: string;
-  available: boolean;
-}
 export type DayOfWeek =
   | "monday"
   | "tuesday"

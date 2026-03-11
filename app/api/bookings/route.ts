@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
+import { extractBearerToken } from "@/lib/auth";
 import type { Booking, BookingStatus, FrequencyType, TimeBlock, CleaningServiceType, PricingFormula, FrequencyDiscounts, ServiceAddons } from "@/types";
 
 function rowToBooking(row: Record<string, unknown>): Booking {
@@ -37,7 +38,7 @@ export async function GET(request: Request) {
   if (!cleanerId) return NextResponse.json({ error: "cleanerId required" }, { status: 400 });
 
   // Require auth — only the cleaner themselves can list their bookings
-  const token = request.headers.get("Authorization")?.replace("Bearer ", "");
+  const token = extractBearerToken(request.headers.get("Authorization"));
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const supabase = createServiceClient();
@@ -51,11 +52,20 @@ export async function GET(request: Request) {
     .select("*")
     .eq("cleaner_id", cleanerId)
     .order("date", { ascending: true });
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[bookings GET] fetch failed:", error.message);
+    return NextResponse.json({ error: "Failed to load bookings" }, { status: 500 });
+  }
   return NextResponse.json((data ?? []).map(rowToBooking));
 }
 
 export async function POST(request: Request) {
+  // Guard against excessively large payloads
+  const contentLength = request.headers.get("content-length");
+  if (contentLength && parseInt(contentLength) > 10_000) {
+    return NextResponse.json({ error: "Request too large" }, { status: 413 });
+  }
+
   const body = (await request.json()) as {
     cleanerId: string;
     customerName: string;
@@ -82,8 +92,8 @@ export async function POST(request: Request) {
     !body.customerName?.trim() ||
     !body.customerPhone?.trim() ||
     !body.customerAddress?.trim() ||
-    typeof body.bedrooms  !== "number" || body.bedrooms  < 1 || body.bedrooms  > 20 ||
-    typeof body.bathrooms !== "number" || body.bathrooms < 1 || body.bathrooms > 20 ||
+    typeof body.bedrooms  !== "number" || !Number.isInteger(body.bedrooms)  || body.bedrooms  < 1 || body.bedrooms  > 20 ||
+    typeof body.bathrooms !== "number" || !Number.isInteger(body.bathrooms) || body.bathrooms < 1 || body.bathrooms > 20 ||
     !validFrequencies.includes(body.frequency) ||
     !validTimeBlocks.includes(body.timeBlock) ||
     (body.serviceType && !validServices.includes(body.serviceType)) ||
@@ -166,30 +176,17 @@ export async function POST(request: Request) {
     .select()
     .single();
 
-  if (error || !row) {
+  if (error) {
+    // Unique constraint violation — slot taken by concurrent request
+    if ((error as { code?: string }).code === "23505") {
+      return NextResponse.json({ error: "Time slot no longer available" }, { status: 409 });
+    }
+    console.error("[bookings POST] insert failed:", error.message);
+    return NextResponse.json({ error: "Failed to create booking" }, { status: 500 });
+  }
+  if (!row) {
     return NextResponse.json({ error: "Failed to create booking" }, { status: 500 });
   }
 
-  const booking: Booking = {
-    id:              row.id,
-    cleanerId:       row.cleaner_id,
-    customerName:    row.customer_name,
-    customerPhone:   row.customer_phone,
-    customerAddress: row.customer_address,
-    hasPets:         row.has_pets,
-    hasChildren:     row.has_children ?? false,
-    hasCarpet:       row.has_carpet   ?? false,
-    bedrooms:        row.bedrooms,
-    bathrooms:       row.bathrooms,
-    frequency:       row.frequency,
-    date:            row.date,
-    timeBlock:       row.time_block,
-    startTime:       row.start_time,
-    endTime:         row.end_time,
-    totalPrice:      Number(row.total_price),
-    status:          row.status,
-    createdAt:       row.created_at,
-  };
-
-  return NextResponse.json(booking, { status: 201 });
+  return NextResponse.json(rowToBooking(row as Record<string, unknown>), { status: 201 });
 }

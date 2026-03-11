@@ -53,8 +53,8 @@ export default function CleanerLoginPage() {
       body: JSON.stringify({ cleanerId: session!.user.id }),
     });
     const { status } = await res.json() as { status: string };
-    const OWNER_EMAILS = ["pedro.caetano.3anos@gmail.com", "caetanochavesmaria@gmail.com"];
-    const isOwner = OWNER_EMAILS.includes(email);
+    const ownerEmails = (process.env.NEXT_PUBLIC_OWNER_EMAILS ?? "").split(",").map(e => e.trim());
+    const isOwner = ownerEmails.includes(email);
     const isBlocked = !isOwner && (status === "past_due" || status === "canceled" || status === "no_subscription");
     router.replace(isBlocked ? "/cleaner/subscription" : "/cleaner/setup");
   }

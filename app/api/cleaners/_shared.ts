@@ -29,6 +29,12 @@ export const DEFAULT_ADDONS: Cleaner["serviceAddons"] = {
 
 export const DEFAULT_BLOCKED_DATES: Cleaner["blockedDates"] = [];
 
+/** Public shape — omits private contact fields (email, phone). Used for unauthenticated requests. */
+export function rowToPublicCleaner(row: Record<string, unknown>): Omit<Cleaner, "email" | "phone"> {
+  const { email: _e, phone: _p, ...pub } = rowToCleaner(row);
+  return pub;
+}
+
 export function rowToCleaner(row: Record<string, unknown>): Cleaner {
   return {
     id:                 row.id    as string,

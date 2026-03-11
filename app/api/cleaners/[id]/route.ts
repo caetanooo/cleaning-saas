@@ -1,16 +1,24 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
-import type { Cleaner } from "@/types";
-import { rowToCleaner } from "../_shared";
+import { extractBearerToken } from "@/lib/auth";
+import { rowToCleaner, rowToPublicCleaner } from "../_shared";
 
 // ── GET /api/cleaners/[id] ────────────────────────────────────────────────────
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
   const supabase = createServiceClient();
+
+  // Check if the caller is the authenticated owner
+  const token = extractBearerToken(req.headers.get("Authorization"));
+  let isOwner = false;
+  if (token) {
+    const { data: { user } } = await supabase.auth.getUser(token);
+    isOwner = !!user && user.id === id;
+  }
 
   const result = await supabase
     .from("cleaners")
@@ -19,7 +27,8 @@ export async function GET(
     .single();
   let data = result.data;
 
-  if (!data || result.error) {
+  // Auto-create profile only for authenticated owner
+  if ((!data || result.error) && isOwner) {
     const { data: authUser } = await supabase.auth.admin.getUserById(id);
     const name  = authUser?.user?.user_metadata?.name  || "New Cleaner";
     const email = authUser?.user?.email || "";
@@ -39,7 +48,14 @@ export async function GET(
     data = created;
   }
 
-  return NextResponse.json(rowToCleaner(data));
+  if (!data) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  // Return full profile to owner, public-safe profile to everyone else
+  return NextResponse.json(
+    isOwner ? rowToCleaner(data) : rowToPublicCleaner(data)
+  );
 }
 
 // ── PUT /api/cleaners/[id] ────────────────────────────────────────────────────
@@ -50,7 +66,7 @@ export async function PUT(
 ) {
   const { id } = await params;
 
-  const token = request.headers.get("Authorization")?.replace("Bearer ", "");
+  const token = extractBearerToken(request.headers.get("Authorization"));
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const supabase = createServiceClient();
@@ -59,7 +75,14 @@ export async function PUT(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = (await request.json()) as Partial<Cleaner>;
+  const body = await request.json() as Record<string, unknown>;
+
+  // Guard against excessively large payloads
+  const contentLength = request.headers.get("content-length");
+  if (contentLength && parseInt(contentLength) > 50_000) {
+    return NextResponse.json({ error: "Request too large" }, { status: 413 });
+  }
+
   const patch: Record<string, unknown> = {};
   if (body.phone               !== undefined) patch.phone                = body.phone;
   if (body.messengerUsername   !== undefined) patch.messenger_username   = body.messengerUsername;
@@ -78,7 +101,7 @@ export async function PUT(
     .single();
   if (error || !data) {
     console.error("[cleaners PUT] update failed:", error?.message, "patch keys:", Object.keys(patch));
-    return NextResponse.json({ error: error?.message ?? "Update failed" }, { status: 500 });
+    return NextResponse.json({ error: "Update failed" }, { status: 500 });
   }
   return NextResponse.json(rowToCleaner(data));
 }

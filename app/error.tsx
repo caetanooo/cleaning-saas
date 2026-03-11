@@ -27,9 +27,9 @@ export default function ErrorPage({
           </div>
         </div>
 
-        <pre className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs text-red-700 overflow-auto whitespace-pre-wrap break-all">
-          {error.message || String(error)}
-        </pre>
+        <p className="text-sm text-slate-500">
+          An unexpected error occurred. Please try again or contact support.
+        </p>
 
         <div className="flex gap-3">
           <button

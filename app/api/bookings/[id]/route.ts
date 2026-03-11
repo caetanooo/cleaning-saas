@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
+import { extractBearerToken } from "@/lib/auth";
 
 // ── PATCH /api/bookings/[id] — cancel a booking ───────────────────────────────
 
@@ -9,7 +10,7 @@ export async function PATCH(
 ) {
   const { id } = await params;
 
-  const token = request.headers.get("Authorization")?.replace("Bearer ", "").trim();
+  const token = extractBearerToken(request.headers.get("Authorization"));
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const supabase = createServiceClient();
@@ -42,7 +43,10 @@ export async function PATCH(
     .update({ status: "cancelled" })
     .eq("id", id);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[bookings PATCH] cancel failed:", error.message);
+    return NextResponse.json({ error: "Failed to cancel booking" }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true });
 }

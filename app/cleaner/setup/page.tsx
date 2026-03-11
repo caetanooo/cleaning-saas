@@ -80,8 +80,8 @@ export default function CleanerSetupPage() {
         if (cancelled) return;
 
         if (data?.id) {
-          const OWNER_EMAILS = ["pedro.caetano.3anos@gmail.com", "caetanochavesmaria@gmail.com", "Amandaadmoreira@gmail.com"];
-          const isOwner = OWNER_EMAILS.includes(session.user.email ?? "");
+          const ownerEmails = (process.env.NEXT_PUBLIC_OWNER_EMAILS ?? "").split(",").map(e => e.trim());
+          const isOwner = ownerEmails.includes(session.user.email ?? "");
           if (
             !isOwner && (
               data.subscriptionStatus === "past_due" ||

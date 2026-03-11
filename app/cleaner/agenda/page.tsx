@@ -107,8 +107,8 @@ export default function CleanerAgendaPage() {
 
         if (cleanerData?.id) {
           const profile = cleanerData as Cleaner;
-          const OWNER_EMAILS = ["pedro.caetano.3anos@gmail.com", "caetanochavesmaria@gmail.com"];
-          const isOwner = OWNER_EMAILS.includes(session.user.email ?? "");
+          const ownerEmails = (process.env.NEXT_PUBLIC_OWNER_EMAILS ?? "").split(",").map(e => e.trim());
+          const isOwner = ownerEmails.includes(session.user.email ?? "");
           if (
             !isOwner && (
               profile.subscriptionStatus === "past_due" ||
