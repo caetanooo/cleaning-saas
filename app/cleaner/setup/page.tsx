@@ -350,7 +350,7 @@ export default function CleanerSetupPage() {
           <div className="space-y-6">
             {/* Rotina Semanal */}
             <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100">
+              <div className="px-4 sm:px-6 py-4 border-b border-slate-100">
                 <h2 className="font-bold text-slate-800 text-lg">Rotina Semanal</h2>
                 <p className="text-xs text-slate-400 mt-0.5">
                   Esta é sua agenda padrão. &nbsp;Manhã a partir das 9h &nbsp;|&nbsp; Tarde a partir das 14h
@@ -360,8 +360,8 @@ export default function CleanerSetupPage() {
                 {DAYS.map(({ key, label }) => {
                   const day = cleaner.availability[key];
                   return (
-                    <div key={key} className="px-6 py-4 flex items-center gap-6">
-                      <span className="w-36 text-sm font-semibold text-slate-700">{label}</span>
+                    <div key={key} className="px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-3 sm:gap-6">
+                      <span className="w-24 sm:w-36 text-sm font-semibold text-slate-700 shrink-0">{label}</span>
                       <label className="flex items-center gap-2 cursor-pointer select-none">
                         <input
                           type="checkbox"
@@ -391,13 +391,13 @@ export default function CleanerSetupPage() {
 
             {/* Folgas Específicas */}
             <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100">
+              <div className="px-4 sm:px-6 py-4 border-b border-slate-100">
                 <h2 className="font-bold text-slate-800 text-lg">Folgas Específicas</h2>
                 <p className="text-xs text-slate-400 mt-0.5">
                   Bloqueie datas pontuais sem alterar sua rotina semanal. Ex: consulta médica, feriado, viagem.
                 </p>
               </div>
-              <div className="px-6 py-5 space-y-4">
+              <div className="px-4 sm:px-6 py-5 space-y-4">
                 <div className="flex gap-3">
                   <input
                     type="date"
@@ -451,13 +451,13 @@ export default function CleanerSetupPage() {
           <div className="space-y-6">
             {/* Precificação */}
             <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100">
+              <div className="px-4 sm:px-6 py-4 border-b border-slate-100">
                 <h2 className="font-bold text-slate-800 text-lg">Precificação</h2>
                 <p className="text-xs text-slate-400 mt-0.5">
                   Definindo os valores abaixo, calculamos automaticamente o preço para qualquer tamanho de casa.
                 </p>
               </div>
-              <div className="px-6 py-5 space-y-6">
+              <div className="px-4 sm:px-6 py-5 space-y-6">
                 {/* Fórmula base */}
                 <div className="space-y-3">
                   <div>
@@ -556,13 +556,13 @@ export default function CleanerSetupPage() {
 
             {/* Descontos por Frequência */}
             <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100">
+              <div className="px-4 sm:px-6 py-4 border-b border-slate-100">
                 <h2 className="font-bold text-slate-800 text-lg">Descontos por Frequência</h2>
                 <p className="text-xs text-slate-400 mt-0.5">
                   Desconto em % oferecido para clientes com agendamentos recorrentes.
                 </p>
               </div>
-              <div className="px-6 py-5 grid grid-cols-3 gap-6">
+              <div className="px-4 sm:px-6 py-5 grid grid-cols-3 gap-3 sm:gap-6">
                 {(
                   [
                     { field: "weekly",   label: "Semanal"   },
@@ -603,13 +603,13 @@ export default function CleanerSetupPage() {
         {activeTab === "contato" && (
           <div className="space-y-6">
             <section className="bg-white rounded-2xl shadow-sm border border-sky-100 overflow-hidden">
-              <div className="px-6 py-4 border-b border-sky-100 bg-sky-50">
+              <div className="px-4 sm:px-6 py-4 border-b border-sky-100 bg-sky-50">
                 <h2 className="font-bold text-slate-800 text-lg">Canais de Contato</h2>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Os clientes usarão estes canais para enviar os detalhes do agendamento. Preencha pelo menos um.
                 </p>
               </div>
-              <div className="px-6 py-5 space-y-5">
+              <div className="px-4 sm:px-6 py-5 space-y-5">
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">
                     Telefone (SMS / WhatsApp)
@@ -658,13 +658,13 @@ export default function CleanerSetupPage() {
         {activeTab === "link" && (
           <div className="space-y-6">
             <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100">
+              <div className="px-4 sm:px-6 py-4 border-b border-slate-100">
                 <h2 className="font-bold text-slate-800 text-lg">Seu Link de Agendamento</h2>
                 <p className="text-xs text-slate-400 mt-0.5">
                   Escolha um endereço personalizado para compartilhar com seus clientes.
                 </p>
               </div>
-              <div className="px-6 py-5 space-y-3">
+              <div className="px-4 sm:px-6 py-5 space-y-3">
                 <div>
                   <p className="text-xs text-slate-400 mb-1.5 sm:hidden break-all">
                     {typeof window !== "undefined" ? window.location.origin : ""}/
