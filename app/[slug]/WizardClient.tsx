@@ -5,13 +5,20 @@ import Link from "next/link";
 import PhoneField from "@/components/PhoneField";
 import type {
   Cleaner,
-  Booking,
   FrequencyType,
   TimeBlock,
   BlockAvailability,
   CleaningServiceType,
   DayOfWeek,
 } from "@/types";
+
+// Minimal server response from POST /api/bookings — no customer PII
+type ConfirmedSlot = {
+  id:         string;
+  date:       string;
+  timeBlock:  TimeBlock;
+  totalPrice: number;
+};
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -157,25 +164,24 @@ function getWeekLabel(weekOffset: number): string {
 
 // ─── SMS body ────────────────────────────────────────────────────────────────
 
-function buildSmsBody(bookings: Booking[], serviceType: CleaningServiceType): string {
+function buildSmsBody(slots: ConfirmedSlot[], state: WizardState): string {
   const freqMap: Record<FrequencyType, string> = {
     one_time: "One-Time",
     weekly:   "Weekly",
     biweekly: "Bi-Weekly",
     monthly:  "Monthly",
   };
-  const first     = bookings[0];
-  const beds      = first.bedrooms  === 5 ? "5+" : String(first.bedrooms);
-  const baths     = first.bathrooms === 5 ? "5+" : String(first.bathrooms);
-  const dateLines = bookings
+  const beds      = state.bedrooms  === 5 ? "5+" : String(state.bedrooms);
+  const baths     = state.bathrooms === 5 ? "5+" : String(state.bathrooms);
+  const dateLines = slots
     .map(b => `  ${formatDate(b.date)} · ${BLOCK_INFO[b.timeBlock].label} (${BLOCK_INFO[b.timeBlock].start})`)
     .join("\n");
   return [
-    `Name: ${first.customerName}`,
+    `Name: ${state.customerName}`,
     `Dates:\n${dateLines}`,
-    `Address: ${first.customerAddress}`,
-    `Service: ${SERVICE_LABELS[serviceType]} — ${beds} bed · ${baths} bath — ${freqMap[first.frequency]}`,
-    `Notes: Pets: ${first.hasPets ? "Yes" : "No"} | Children: ${first.hasChildren ? "Yes" : "No"} | Carpet: ${first.hasCarpet ? "Yes" : "No"}`,
+    `Address: ${state.customerAddress}`,
+    `Service: ${SERVICE_LABELS[state.serviceType]} — ${beds} bed · ${baths} bath — ${freqMap[state.frequency!]}`,
+    `Notes: Pets: ${state.hasPets ? "Yes" : "No"} | Children: ${state.hasChildren ? "Yes" : "No"} | Carpet: ${state.hasCarpet ? "Yes" : "No"}`,
   ].join("\n");
 }
 
@@ -264,7 +270,7 @@ interface WizardState {
   hasCarpet:         boolean;
   submitting:        boolean;
   submitError:       string;
-  confirmedBookings: Booking[];
+  confirmedBookings: ConfirmedSlot[];
   messengerCopied:   boolean;
 }
 
@@ -369,7 +375,7 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
     update({ submitting: true, submitError: "" });
     const selectedDates = state.selectedDates;
     try {
-      const results: Booking[] = [];
+      const results: ConfirmedSlot[] = [];
       for (const { dateStr, timeBlock } of selectedDates) {
         const res = await fetch("/api/bookings", {
           method:  "POST",
@@ -401,7 +407,7 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
         }
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Booking failed");
-        results.push(data as Booking);
+        results.push(data as ConfirmedSlot);
       }
       update({ submitting: false, step: 4, confirmedBookings: results });
     } catch (err) {
@@ -411,7 +417,7 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
 
   async function handleMessenger() {
     if (!state.confirmedBookings.length || !cleaner?.messengerUsername) return;
-    await navigator.clipboard.writeText(buildSmsBody(state.confirmedBookings, state.serviceType));
+    await navigator.clipboard.writeText(buildSmsBody(state.confirmedBookings, state));
     update({ messengerCopied: true });
     setTimeout(() => update({ messengerCopied: false }), 5000);
     window.open(`https://m.me/${cleaner.messengerUsername}`, "_blank");
@@ -1046,19 +1052,19 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
                 ["Service",   SERVICE_LABELS[state.serviceType]],
                 [
                   "Home",
-                  `${state.confirmedBookings[0].bedrooms === 5 ? "5+" : state.confirmedBookings[0].bedrooms} bed · ${
-                    state.confirmedBookings[0].bathrooms === 5 ? "5+" : state.confirmedBookings[0].bathrooms
+                  `${state.bedrooms === 5 ? "5+" : state.bedrooms} bed · ${
+                    state.bathrooms === 5 ? "5+" : state.bathrooms
                   } bath`,
                 ],
                 [
                   "Frequency",
-                  FREQ_OPTIONS.find((f) => f.value === state.confirmedBookings[0].frequency)?.label ?? "",
+                  FREQ_OPTIONS.find((f) => f.value === state.frequency)?.label ?? "",
                 ],
-                ["Address",  state.confirmedBookings[0].customerAddress],
-                ["Phone",    state.confirmedBookings[0].customerPhone],
-                ["Pets",     state.confirmedBookings[0].hasPets     ? "Yes" : "No"],
-                ["Children", state.confirmedBookings[0].hasChildren ? "Yes" : "No"],
-                ["Carpet",   state.confirmedBookings[0].hasCarpet   ? "Yes" : "No"],
+                ["Address",  state.customerAddress],
+                ["Phone",    state.customerPhone],
+                ["Pets",     state.hasPets     ? "Yes" : "No"],
+                ["Children", state.hasChildren ? "Yes" : "No"],
+                ["Carpet",   state.hasCarpet   ? "Yes" : "No"],
               ].map(([label, value]) => (
                 <div key={label} className="flex justify-between py-2.5 text-sm">
                   <span className="text-slate-500">{label}</span>
@@ -1079,7 +1085,7 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
               <div className="flex justify-between items-baseline py-2.5 text-sm">
                 <span className="text-slate-500">Price per cleaning session</span>
                 <span className="font-extrabold text-sky-600 text-base">
-                  ${state.confirmedBookings[0].totalPrice.toFixed(2)}
+                  ${state.confirmedBookings[0]?.totalPrice.toFixed(2)}
                 </span>
               </div>
             </div>
@@ -1105,7 +1111,7 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
 
               {cleaner.phone ? (
                 <a
-                  href={`sms:${cleaner.phone}?body=${encodeURIComponent(buildSmsBody(state.confirmedBookings, state.serviceType))}`}
+                  href={`sms:${cleaner.phone}?body=${encodeURIComponent(buildSmsBody(state.confirmedBookings, state))}`}
                   className="flex-1 font-bold py-4 rounded-2xl transition-colors text-sm bg-sky-500 hover:bg-sky-600 text-white flex items-center justify-center gap-2"
                 >
                   Send via Text Message (SMS)

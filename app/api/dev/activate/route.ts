@@ -4,6 +4,10 @@ import { extractBearerToken } from "@/lib/auth";
 import { getOwnerEmails } from "@/lib/owners";
 
 export async function POST(req: Request) {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   const token = extractBearerToken(req.headers.get("Authorization"));
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

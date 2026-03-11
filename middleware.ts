@@ -7,11 +7,20 @@ import { createServerClient } from "@supabase/ssr";
  * Subscription checks remain in the page components; this layer only enforces login.
  */
 export async function middleware(request: NextRequest) {
+  const supabaseUrl     = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  // If env vars are missing, redirect to login so pages aren't left unprotected
+  if (!supabaseUrl || !supabaseAnonKey) {
+    const loginUrl = new URL("/cleaner/login", request.url);
+    return NextResponse.redirect(loginUrl);
+  }
+
   const response = NextResponse.next();
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         getAll() {

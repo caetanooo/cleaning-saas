@@ -188,5 +188,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to create booking" }, { status: 500 });
   }
 
-  return NextResponse.json(rowToBooking(row as Record<string, unknown>), { status: 201 });
+  // Return only the server-generated fields — customer PII stays client-side
+  const booking = rowToBooking(row as Record<string, unknown>);
+  return NextResponse.json(
+    {
+      id:         booking.id,
+      date:       booking.date,
+      timeBlock:  booking.timeBlock,
+      startTime:  booking.startTime,
+      endTime:    booking.endTime,
+      totalPrice: booking.totalPrice,
+      status:     booking.status,
+    },
+    { status: 201 },
+  );
 }
