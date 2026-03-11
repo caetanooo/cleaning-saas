@@ -20,11 +20,11 @@ const DAYS: { key: DayOfWeek; label: string }[] = [
 
 type TabId = "agenda" | "precos" | "contato" | "link";
 
-const TABS: { id: TabId; label: string; icon: LucideIcon }[] = [
-  { id: "agenda",  label: "Agenda",  icon: CalendarDays      },
-  { id: "precos",  label: "Preços",  icon: BadgeDollarSign   },
-  { id: "contato", label: "Contato", icon: Phone             },
-  { id: "link",    label: "Link",    icon: Link2             },
+const TABS: { id: TabId; label: string; icon: LucideIcon; color: string }[] = [
+  { id: "agenda",  label: "Agenda",  icon: CalendarDays,    color: "text-sky-500"     },
+  { id: "precos",  label: "Preços",  icon: BadgeDollarSign, color: "text-emerald-500" },
+  { id: "contato", label: "Contato", icon: Phone,           color: "text-violet-500"  },
+  { id: "link",    label: "Link",    icon: Link2,           color: "text-orange-500"  },
 ];
 
 function calcBase(formula: Cleaner["pricingFormula"], beds: number, baths: number): number {
@@ -340,7 +340,7 @@ export default function CleanerSetupPage() {
                   : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
               }`}
             >
-              <tab.icon size={16} />
+              <tab.icon size={16} className={activeTab === tab.id ? "text-white" : tab.color} />
               <span>{tab.label}</span>
             </button>
           ))}
