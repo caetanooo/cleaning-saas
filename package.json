@@ -12,15 +12,32 @@
   "jest": {
     "testEnvironment": "jsdom",
     "transform": {
-      "^.+\\.(ts|tsx|js|jsx)$": ["babel-jest", { "presets": ["@babel/preset-env", ["@babel/preset-react", { "runtime": "automatic" }], "@babel/preset-typescript"] }]
+      "^.+\\.(ts|tsx|js|jsx)$": [
+        "babel-jest",
+        {
+          "presets": [
+            "@babel/preset-env",
+            [
+              "@babel/preset-react",
+              {
+                "runtime": "automatic"
+              }
+            ],
+            "@babel/preset-typescript"
+          ]
+        }
+      ]
     },
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/$1"
     },
-    "testMatch": ["**/__tests__/**/*.test.{ts,tsx}"]
+    "testMatch": [
+      "**/__tests__/**/*.test.{ts,tsx}"
+    ]
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.97.0",
+    "lucide-react": "^0.577.0",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",

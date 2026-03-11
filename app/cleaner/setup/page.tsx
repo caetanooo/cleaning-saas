@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { CalendarDays, BadgeDollarSign, Phone, Link2, type LucideIcon } from "lucide-react";
 import { createBrowserClient } from "@/lib/supabase";
 import type { Cleaner, DayOfWeek } from "@/types";
 import PhoneField from "@/components/PhoneField";
@@ -19,11 +20,11 @@ const DAYS: { key: DayOfWeek; label: string }[] = [
 
 type TabId = "agenda" | "precos" | "contato" | "link";
 
-const TABS: { id: TabId; label: string; icon: string }[] = [
-  { id: "agenda",  label: "Agenda",  icon: "📅" },
-  { id: "precos",  label: "Preços",  icon: "💰" },
-  { id: "contato", label: "Contato", icon: "📱" },
-  { id: "link",    label: "Link",    icon: "🔗" },
+const TABS: { id: TabId; label: string; icon: LucideIcon }[] = [
+  { id: "agenda",  label: "Agenda",  icon: CalendarDays      },
+  { id: "precos",  label: "Preços",  icon: BadgeDollarSign   },
+  { id: "contato", label: "Contato", icon: Phone             },
+  { id: "link",    label: "Link",    icon: Link2             },
 ];
 
 function calcBase(formula: Cleaner["pricingFormula"], beds: number, baths: number): number {
@@ -339,7 +340,7 @@ export default function CleanerSetupPage() {
                   : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
               }`}
             >
-              <span className="text-base leading-none">{tab.icon}</span>
+              <tab.icon size={16} />
               <span>{tab.label}</span>
             </button>
           ))}
