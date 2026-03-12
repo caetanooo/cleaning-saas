@@ -18,9 +18,7 @@ export function createBrowserClient() {
   if (_browserClient) return _browserClient;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || PLACEHOLDER_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || PLACEHOLDER_KEY;
-  _browserClient = ssrBrowserClient(url, key, {
-    auth: { flowType: "implicit" },
-  });
+  _browserClient = ssrBrowserClient(url, key);
   return _browserClient;
 }
 
