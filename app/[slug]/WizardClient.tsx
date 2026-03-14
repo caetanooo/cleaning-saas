@@ -340,13 +340,21 @@ export default function WizardClient({
   cleaner,
   customerId,
   customerProfile,
+  displayName,
 }: {
   cleaner: Cleaner;
   customerId?: string;
   customerProfile?: CustomerProfile | null;
+  displayName?: string;
 }) {
   const cleanerId = cleaner.id;
+  const supabase  = createBrowserClient();
   const [state, setState] = useState<WizardState>(() => initFromProfile(customerProfile));
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    window.location.reload();
+  }
 
   function update(patch: Partial<WizardState>) {
     setState((s) => ({ ...s, ...patch }));
@@ -514,7 +522,16 @@ export default function WizardClient({
             <span className="text-2xl">✨</span>
             <span className="text-xl font-extrabold text-slate-800">CleanClick</span>
           </Link>
-          <span className="text-sm text-slate-500">Booking</span>
+          {displayName && (
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-red-500 border border-slate-200 hover:border-red-200 rounded-xl px-3 py-1.5 transition-colors"
+            >
+              <span>{displayName.split(" ")[0]}</span>
+              <span className="text-xs text-slate-400 hover:text-red-400">· Sign out</span>
+            </button>
+          )}
         </div>
       </header>
 

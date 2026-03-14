@@ -18,7 +18,7 @@ export default async function SlugPage({
   const { data: { user } } = await anonClient.auth.getUser();
 
   if (!user) {
-    redirect(`/customer/login?redirectTo=/${slug}`);
+    redirect(`/customer/signup?redirectTo=/${slug}`);
   }
 
   // ── Cleaner lookup (service role — bypasses RLS) ──────────────────────────
@@ -68,11 +68,18 @@ export default async function SlugPage({
     .eq("id", user.id)
     .single();
 
+  const displayName: string =
+    (user.user_metadata?.name as string | undefined) ||
+    (profile as CustomerProfile | null)?.name ||
+    user.email ||
+    "";
+
   return (
     <WizardClient
       cleaner={cleaner}
       customerId={user.id}
       customerProfile={(profile as CustomerProfile) ?? null}
+      displayName={displayName}
     />
   );
 }
