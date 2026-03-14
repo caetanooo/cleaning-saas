@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CalendarDays, BadgeDollarSign, Phone, Link2, type LucideIcon } from "lucide-react";
 import { createBrowserClient } from "@/lib/supabase";
+import { isVipEmail } from "@/lib/vip";
 import type { Cleaner, DayOfWeek } from "@/types";
 import PhoneField from "@/components/PhoneField";
 
@@ -83,7 +84,7 @@ export default function CleanerSetupPage() {
 
         if (data?.id) {
           if (
-            !data.isVip && (
+            !isVipEmail(session.user.email ?? "") && (
               data.subscriptionStatus === "past_due" ||
               data.subscriptionStatus === "canceled" ||
               data.subscriptionStatus === "inactive"

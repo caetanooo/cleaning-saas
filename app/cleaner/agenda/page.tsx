@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createBrowserClient } from "@/lib/supabase";
+import { isVipEmail } from "@/lib/vip";
 import type { Booking, Cleaner, TimeBlock } from "@/types";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -110,7 +111,7 @@ export default function CleanerAgendaPage() {
         if (cleanerData?.id) {
           const profile = cleanerData as Cleaner;
           if (
-            !profile.isVip && (
+            !isVipEmail(session.user.email ?? "") && (
               profile.subscriptionStatus === "past_due" ||
               profile.subscriptionStatus === "canceled" ||
               profile.subscriptionStatus === "inactive"
