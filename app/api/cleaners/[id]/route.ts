@@ -57,6 +57,14 @@ export async function GET(
 
   // Return full profile to owner (with isVip flag), public-safe profile to everyone else
   if (isOwner) {
+    // VIP users are always active — auto-heal if DB status is blocked
+    if (isVipEmail(callerEmail)) {
+      const blocked = ["past_due", "canceled", "inactive"];
+      if (blocked.includes(data.subscription_status as string)) {
+        await supabase.from("cleaners").update({ subscription_status: "active" }).eq("id", id);
+        data = { ...data, subscription_status: "active" };
+      }
+    }
     const cleaner = rowToCleaner(data);
     cleaner.isVip = isVipEmail(callerEmail);
     return NextResponse.json(cleaner);
