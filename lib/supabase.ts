@@ -1,4 +1,4 @@
-import { createBrowserClient as ssrBrowserClient } from "@supabase/ssr";
+import { createBrowserClient as ssrBrowserClient, createServerClient as ssrServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 
 // Fallbacks prevent createClient from throwing during SSR when env vars
@@ -35,4 +35,22 @@ export function createServiceClient() {
     PLACEHOLDER_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || PLACEHOLDER_KEY;
   return createClient(url, key, { auth: { persistSession: false } });
+}
+
+/**
+ * Server Component client (anon key, reads session from cookies, subject to RLS).
+ * Use in async Server Components to check auth and query user-scoped data.
+ * Never import this in client components.
+ */
+export async function createServerComponentClient() {
+  const { cookies } = await import("next/headers");
+  const cookieStore = await cookies();
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || PLACEHOLDER_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || PLACEHOLDER_KEY;
+  return ssrServerClient(url, key, {
+    cookies: {
+      getAll() { return cookieStore.getAll(); },
+      setAll() {}, // Server Components cannot set cookies; middleware handles refresh
+    },
+  });
 }

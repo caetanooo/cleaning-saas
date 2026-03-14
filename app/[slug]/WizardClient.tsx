@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import PhoneField from "@/components/PhoneField";
+import { createBrowserClient } from "@/lib/supabase";
 import type {
   Cleaner,
   FrequencyType,
@@ -11,6 +12,18 @@ import type {
   CleaningServiceType,
   DayOfWeek,
 } from "@/types";
+
+export type CustomerProfile = {
+  id: string;
+  name: string | null;
+  phone: string | null;
+  address: string | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  has_pets: boolean;
+  has_children: boolean;
+  has_carpet: boolean;
+};
 
 // Minimal server response from POST /api/bookings — no customer PII
 type ConfirmedSlot = {
@@ -274,7 +287,7 @@ interface WizardState {
   messengerCopied:   boolean;
 }
 
-const INITIAL: WizardState = {
+const BLANK: WizardState = {
   step:              0,
   bedrooms:          null,
   bathrooms:         null,
@@ -302,11 +315,34 @@ const INITIAL: WizardState = {
   messengerCopied:   false,
 };
 
+function initFromProfile(profile: CustomerProfile | null | undefined): WizardState {
+  if (!profile) return BLANK;
+  return {
+    ...BLANK,
+    bedrooms:       profile.bedrooms  ?? null,
+    bathrooms:      profile.bathrooms ?? null,
+    customerName:   profile.name      ?? "",
+    customerPhone:  profile.phone     ?? "",
+    customerAddress: profile.address  ?? "",
+    hasPets:        profile.has_pets,
+    hasChildren:    profile.has_children,
+    hasCarpet:      profile.has_carpet,
+  };
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
+export default function WizardClient({
+  cleaner,
+  customerId,
+  customerProfile,
+}: {
+  cleaner: Cleaner;
+  customerId?: string;
+  customerProfile?: CustomerProfile | null;
+}) {
   const cleanerId = cleaner.id;
-  const [state, setState] = useState<WizardState>(INITIAL);
+  const [state, setState] = useState<WizardState>(() => initFromProfile(customerProfile));
 
   function update(patch: Partial<WizardState>) {
     setState((s) => ({ ...s, ...patch }));
@@ -410,6 +446,23 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
         results.push(data as ConfirmedSlot);
       }
       update({ submitting: false, step: 4, confirmedBookings: results });
+
+      // Upsert customer profile so next booking auto-fills
+      if (customerId) {
+        const supabase = createBrowserClient();
+        await supabase.from("customer_profiles").upsert({
+          id:           customerId,
+          name:         state.customerName.trim(),
+          phone:        state.customerPhone.trim(),
+          address:      fullAddress || state.customerAddress.trim(),
+          bedrooms:     state.bedrooms,
+          bathrooms:    state.bathrooms,
+          has_pets:     state.hasPets,
+          has_children: state.hasChildren,
+          has_carpet:   state.hasCarpet,
+          updated_at:   new Date().toISOString(),
+        }, { onConflict: "id" });
+      }
     } catch (err) {
       update({ submitting: false, submitError: (err as Error).message });
     }
@@ -1133,7 +1186,7 @@ export default function WizardClient({ cleaner }: { cleaner: Cleaner }) {
             )}
 
             <button
-              onClick={() => setState(INITIAL)}
+              onClick={() => setState(initFromProfile(customerProfile))}
               className="w-full border-2 border-slate-200 text-slate-500 font-semibold py-3 rounded-xl hover:border-sky-300 hover:text-sky-600 transition-colors text-sm"
             >
               Book Another Cleaning

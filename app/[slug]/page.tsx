@@ -1,7 +1,8 @@
-import { createServiceClient } from "@/lib/supabase";
+import { redirect } from "next/navigation";
+import { createServiceClient, createServerComponentClient } from "@/lib/supabase";
 import { rowToCleaner } from "@/app/api/cleaners/_shared";
 import { getOwnerEmails } from "@/lib/owners";
-import WizardClient from "./WizardClient";
+import WizardClient, { type CustomerProfile } from "./WizardClient";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,16 @@ export default async function SlugPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+
+  // ── Auth guard ────────────────────────────────────────────────────────────
+  const anonClient = await createServerComponentClient();
+  const { data: { user } } = await anonClient.auth.getUser();
+
+  if (!user) {
+    redirect(`/customer/login?redirectTo=/${slug}`);
+  }
+
+  // ── Cleaner lookup (service role — bypasses RLS) ──────────────────────────
   const supabase = createServiceClient();
 
   const { data, error } = await supabase
@@ -50,5 +61,18 @@ export default async function SlugPage({
     );
   }
 
-  return <WizardClient cleaner={cleaner} />;
+  // ── Customer profile (anon client — RLS ensures user sees only own row) ───
+  const { data: profile } = await anonClient
+    .from("customer_profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
+
+  return (
+    <WizardClient
+      cleaner={cleaner}
+      customerId={user.id}
+      customerProfile={(profile as CustomerProfile) ?? null}
+    />
+  );
 }
