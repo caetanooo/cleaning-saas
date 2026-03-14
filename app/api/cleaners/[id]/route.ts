@@ -16,9 +16,11 @@ export async function GET(
   // Check if the caller is the authenticated owner
   const token = extractBearerToken(req.headers.get("Authorization"));
   let isOwner = false;
+  let callerEmail = "";
   if (token) {
     const { data: { user } } = await supabase.auth.getUser(token);
     isOwner = !!user && user.id === id;
+    callerEmail = user?.email ?? "";
   }
 
   const result = await supabase
@@ -55,9 +57,8 @@ export async function GET(
 
   // Return full profile to owner (with isVip flag), public-safe profile to everyone else
   if (isOwner) {
-    const { data: { user: authUser } } = await supabase.auth.getUser(token!);
     const cleaner = rowToCleaner(data);
-    cleaner.isVip = isVipEmail(authUser?.email ?? "");
+    cleaner.isVip = isVipEmail(callerEmail);
     return NextResponse.json(cleaner);
   }
   return NextResponse.json(rowToPublicCleaner(data));
