@@ -922,7 +922,7 @@ export default function WizardClient({
                       className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
                     />
                   </div>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label htmlFor="city" className="block text-sm font-semibold text-slate-700 mb-1">City</label>
                       <input
@@ -945,17 +945,6 @@ export default function WizardClient({
                         onChange={(e) => update({ customerState: e.target.value })}
                         placeholder="TX"
                         maxLength={2}
-                        className="w-full border border-slate-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="zipCode" className="block text-sm font-semibold text-slate-700 mb-1">ZIP Code</label>
-                      <input
-                        id="zipCode"
-                        type="text"
-                        value={state.customerZip}
-                        onChange={(e) => update({ customerZip: e.target.value })}
-                        placeholder="78701"
                         className="w-full border border-slate-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
                       />
                     </div>
