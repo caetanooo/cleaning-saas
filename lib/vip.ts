@@ -5,6 +5,7 @@
 export const VIP_EMAILS: string[] = [
   "debbie.rj@gmail.com",
   "caetanochavesmaria@gmail.com",
+  "garofalogui@gmail.com",
 ];
 
 export function isVipEmail(email: string): boolean {
