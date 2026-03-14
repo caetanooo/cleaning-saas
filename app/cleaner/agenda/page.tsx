@@ -94,14 +94,11 @@ export default function CleanerAgendaPage() {
         setCleanerId(session.user.id);
         setToken(session.access_token);
 
-        const [cleanerRes, bookingsRes, vipRes] = await Promise.all([
+        const [cleanerRes, bookingsRes] = await Promise.all([
           fetch(`/api/cleaners/${session.user.id}`, {
             headers: { Authorization: `Bearer ${session.access_token}` },
           }),
           fetch(`/api/bookings?cleanerId=${session.user.id}`, {
-            headers: { Authorization: `Bearer ${session.access_token}` },
-          }),
-          fetch("/api/vip/check", {
             headers: { Authorization: `Bearer ${session.access_token}` },
           }),
         ]);
@@ -109,12 +106,11 @@ export default function CleanerAgendaPage() {
 
         const cleanerData = await cleanerRes.json();
         const bookingsData = await bookingsRes.json();
-        const { isVip } = (await vipRes.json()) as { isVip: boolean };
 
         if (cleanerData?.id) {
           const profile = cleanerData as Cleaner;
           if (
-            !isVip && (
+            !profile.isVip && (
               profile.subscriptionStatus === "past_due" ||
               profile.subscriptionStatus === "canceled" ||
               profile.subscriptionStatus === "inactive"

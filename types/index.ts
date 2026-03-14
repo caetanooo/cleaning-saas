@@ -50,6 +50,7 @@ export interface Cleaner {
   serviceAddons: ServiceAddons;
   slug?: string;
   subscriptionStatus?: string;   // 'active' | 'trialing' | 'inactive' | ...
+  isVip?: boolean;               // true = bypasses subscription paywall
 }
 
 export interface Booking {

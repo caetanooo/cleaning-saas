@@ -74,22 +74,16 @@ export default function CleanerSetupPage() {
         setCleanerId(session.user.id);
         setToken(session.access_token);
 
-        const [cleanerRes, vipRes] = await Promise.all([
-          fetch(`/api/cleaners/${session.user.id}`, {
-            headers: { Authorization: `Bearer ${session.access_token}` },
-          }),
-          fetch("/api/vip/check", {
-            headers: { Authorization: `Bearer ${session.access_token}` },
-          }),
-        ]);
-        const data     = (await cleanerRes.json()) as Cleaner & { error?: string };
-        const { isVip } = (await vipRes.json()) as { isVip: boolean };
+        const cleanerRes = await fetch(`/api/cleaners/${session.user.id}`, {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        const data = (await cleanerRes.json()) as Cleaner & { error?: string };
 
         if (cancelled) return;
 
         if (data?.id) {
           if (
-            !isVip && (
+            !data.isVip && (
               data.subscriptionStatus === "past_due" ||
               data.subscriptionStatus === "canceled" ||
               data.subscriptionStatus === "inactive"

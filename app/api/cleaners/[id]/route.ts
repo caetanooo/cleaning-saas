@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { extractBearerToken } from "@/lib/auth";
 import { rowToCleaner, rowToPublicCleaner } from "../_shared";
+import { isVipEmail } from "@/lib/vip";
 
 // ── GET /api/cleaners/[id] ────────────────────────────────────────────────────
 
@@ -52,10 +53,14 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  // Return full profile to owner, public-safe profile to everyone else
-  return NextResponse.json(
-    isOwner ? rowToCleaner(data) : rowToPublicCleaner(data)
-  );
+  // Return full profile to owner (with isVip flag), public-safe profile to everyone else
+  if (isOwner) {
+    const { data: { user: authUser } } = await supabase.auth.getUser(token!);
+    const cleaner = rowToCleaner(data);
+    cleaner.isVip = isVipEmail(authUser?.email ?? "");
+    return NextResponse.json(cleaner);
+  }
+  return NextResponse.json(rowToPublicCleaner(data));
 }
 
 // ── PUT /api/cleaners/[id] ────────────────────────────────────────────────────
