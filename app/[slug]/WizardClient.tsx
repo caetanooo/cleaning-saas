@@ -18,6 +18,8 @@ export type CustomerProfile = {
   name: string | null;
   phone: string | null;
   address: string | null;
+  city: string | null;
+  state: string | null;
   bedrooms: number | null;
   bathrooms: number | null;
   has_pets: boolean;
@@ -319,14 +321,16 @@ function initFromProfile(profile: CustomerProfile | null | undefined): WizardSta
   if (!profile) return BLANK;
   return {
     ...BLANK,
-    bedrooms:       profile.bedrooms  ?? null,
-    bathrooms:      profile.bathrooms ?? null,
-    customerName:   profile.name      ?? "",
-    customerPhone:  profile.phone     ?? "",
-    customerAddress: profile.address  ?? "",
-    hasPets:        profile.has_pets,
-    hasChildren:    profile.has_children,
-    hasCarpet:      profile.has_carpet,
+    bedrooms:        profile.bedrooms  ?? null,
+    bathrooms:       profile.bathrooms ?? null,
+    customerName:    profile.name      ?? "",
+    customerPhone:   profile.phone     ?? "",
+    customerAddress: profile.address   ?? "",
+    customerCity:    profile.city      ?? "",
+    customerState:   profile.state     ?? "",
+    hasPets:         profile.has_pets,
+    hasChildren:     profile.has_children,
+    hasCarpet:       profile.has_carpet,
   };
 }
 
@@ -454,7 +458,9 @@ export default function WizardClient({
           id:           customerId,
           name:         state.customerName.trim(),
           phone:        state.customerPhone.trim(),
-          address:      fullAddress || state.customerAddress.trim(),
+          address:      state.customerAddress.trim(),
+          city:         state.customerCity.trim(),
+          state:        state.customerState.trim(),
           bedrooms:     state.bedrooms,
           bathrooms:    state.bathrooms,
           has_pets:     state.hasPets,
@@ -947,7 +953,6 @@ export default function WizardClient({
                       <input
                         id="zipCode"
                         type="text"
-                        required
                         value={state.customerZip}
                         onChange={(e) => update({ customerZip: e.target.value })}
                         placeholder="78701"
