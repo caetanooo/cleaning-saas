@@ -48,6 +48,13 @@ All persistence is in Supabase (PostgreSQL). Two tables:
 | `/api/availability` | GET `?cleanerId=&date=` | Returns `{morning, afternoon}` booleans after checking weekly schedule, `blocked_dates`, existing bookings, and time-of-day cutoffs (+30 min buffer). |
 | `/api/bookings` | GET `?cleanerId=`, POST | List bookings for a cleaner; create a booking (calculates price server-side, race-condition guard via pre-insert conflict check → 409). |
 | `/api/bookings/[id]` | PATCH | Cancel a booking. Requires auth token; verifies the booking belongs to the authenticated cleaner. |
+| `/api/vip/check` | GET | Returns `{isVip: boolean}` for the authenticated user. VIP users bypass the subscription paywall. |
+
+### VIP system (`lib/vip.ts`)
+
+Users in the VIP list get free access to the dashboard without a paid subscription. The check is server-side — `GET /api/vip/check` validates the auth token via Supabase and compares the user's email against `VIP_EMAILS` in `lib/vip.ts`.
+
+**To add a new VIP:** edit `lib/vip.ts`, add the email to the `VIP_EMAILS` array, and redeploy. No environment variables needed — works in all environments.
 
 ### Pricing formula (server-side, also mirrored client-side for display)
 
