@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { createServiceClient } from "@/lib/supabase";
 import { extractBearerToken } from "@/lib/auth";
+import { isVipEmail } from "@/lib/vip";
 
 type StripeStatus =
   | "active"
@@ -46,6 +47,12 @@ export async function POST(req: Request) {
 
   // Always use the verified email from the JWT — never trust the request body
   const email = user.email ?? "";
+
+  // VIPs never lose access — return active without touching Stripe or DB
+  if (isVipEmail(email)) {
+    await supabase.from("cleaners").update({ subscription_status: "active" }).eq("id", body.cleanerId);
+    return NextResponse.json({ status: "active" });
+  }
 
   // 2. Search Stripe for customer by email
   const customers = await stripe.customers.list({ email, limit: 5 });
