@@ -353,7 +353,7 @@ export default function WizardClient({
 
   async function handleLogout() {
     await supabase.auth.signOut();
-    window.location.reload();
+    window.location.href = `/customer/login?redirectTo=${encodeURIComponent(window.location.pathname)}`;
   }
 
   function update(patch: Partial<WizardState>) {
