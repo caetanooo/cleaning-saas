@@ -834,6 +834,23 @@ export default function CleanerAgendaPage() {
                 </p>
               )}
 
+              {/* Quick-schedule button — only for future/today days */}
+              {!modalIsPast && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setManualForm({ ...EMPTY_MANUAL_FORM, date: modalDate });
+                    setManualError("");
+                    setModalDate(null);
+                    setManualOpen(true);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 border-2 border-sky-200 hover:border-sky-400 hover:bg-sky-50 text-sky-600 font-semibold py-2.5 rounded-xl text-sm transition-colors"
+                >
+                  <span className="text-base leading-none">+</span>
+                  Agendar cliente neste dia
+                </button>
+              )}
+
               {/* Feature 1: Block management (future days only) */}
               {!modalIsPast && (
                 <div className="pt-2 border-t border-slate-100 space-y-3">
