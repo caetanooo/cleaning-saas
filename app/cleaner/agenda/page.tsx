@@ -553,9 +553,10 @@ export default function CleanerAgendaPage() {
               const past         = isPast(day);
               const today_       = isToday(day);
               const dayBlocked   = getDayBlockedPeriods(blockedDates, ds);
-              const hasMorning   = dayBookings.some((b) => b.timeBlock === "morning");
-              const hasAfternoon = dayBookings.some((b) => b.timeBlock === "afternoon");
-              const fullyBlocked = dayBlocked.morning && dayBlocked.afternoon;
+              const hasMorning    = dayBookings.some((b) => b.timeBlock === "morning"   && b.status !== "completed");
+              const hasAfternoon  = dayBookings.some((b) => b.timeBlock === "afternoon" && b.status !== "completed");
+              const hasCompleted  = dayBookings.some((b) => b.status === "completed");
+              const fullyBlocked  = dayBlocked.morning && dayBlocked.afternoon;
 
               return (
                 <button
@@ -580,10 +581,11 @@ export default function CleanerAgendaPage() {
 
                   {/* Booking + block indicators */}
                   <div className="flex gap-0.5 mt-1">
-                    {hasMorning   && <span className="w-1.5 h-1.5 rounded-full bg-sky-500"    />}
-                    {hasAfternoon && <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />}
-                    {!hasMorning   && dayBlocked.morning   && <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />}
-                    {!hasAfternoon && dayBlocked.afternoon && <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />}
+                    {hasMorning    && <span className="w-1.5 h-1.5 rounded-full bg-sky-500"      />}
+                    {hasAfternoon  && <span className="w-1.5 h-1.5 rounded-full bg-violet-500"   />}
+                    {hasCompleted  && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"  />}
+                    {!hasMorning   && dayBlocked.morning   && <span className="w-1.5 h-1.5 rounded-full bg-amber-400"  />}
+                    {!hasAfternoon && dayBlocked.afternoon && <span className="w-1.5 h-1.5 rounded-full bg-rose-400"   />}
                   </div>
 
                   {/* Full block label */}
@@ -606,11 +608,15 @@ export default function CleanerAgendaPage() {
               Tarde agendada
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block" />
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
+              Concluída
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" />
               Manhã bloqueada
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-slate-300 inline-block" />
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-400 inline-block" />
               Tarde bloqueada
             </span>
           </div>
