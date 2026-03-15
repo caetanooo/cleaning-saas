@@ -122,11 +122,21 @@ export default function CleanerAgendaPage() {
   const [viewMonth, setViewMonth] = useState(todayDate.getMonth());
 
   // Day modal
-  const [modalDate,    setModalDate]    = useState<string | null>(null);
-  const [cancelling,   setCancelling]   = useState<string | null>(null);
-  const [completing,   setCompleting]   = useState<string | null>(null);
-  const [blockSaving,  setBlockSaving]  = useState(false);
-  const [blockPeriod,  setBlockPeriod]  = useState<BlockedPeriod>("ALL_DAY");
+  const [modalDate,       setModalDate]       = useState<string | null>(null);
+  const [focusedBookingId, setFocusedBookingId] = useState<string | null>(null);
+  const [cancelling,      setCancelling]      = useState<string | null>(null);
+  const [completing,      setCompleting]      = useState<string | null>(null);
+  const [blockSaving,     setBlockSaving]     = useState(false);
+  const [blockPeriod,     setBlockPeriod]     = useState<BlockedPeriod>("ALL_DAY");
+
+  function openDayModal(date: string, focusId?: string) {
+    setModalDate(date);
+    setFocusedBookingId(focusId ?? null);
+  }
+  function closeDayModal() {
+    setModalDate(null);
+    setFocusedBookingId(null);
+  }
 
   // Manual booking modal
   const [manualOpen,   setManualOpen]   = useState(false);
@@ -230,7 +240,10 @@ export default function CleanerAgendaPage() {
 
   // ── Modal derived state ───────────────────────────────────────────────────────
 
-  const modalBookings  = modalDate ? (bookingsByDate[modalDate] ?? []) : [];
+  const allModalBookings = modalDate ? (bookingsByDate[modalDate] ?? []) : [];
+  const modalBookings    = focusedBookingId
+    ? allModalBookings.filter((b) => b.id === focusedBookingId)
+    : allModalBookings;
   const modalBlocks    = modalDate ? getDayBlockedPeriods(blockedDates, modalDate) : { morning: false, afternoon: false };
   const modalIsPast    = modalDate
     ? new Date(...(modalDate.split("-").map(Number) as [number, number, number])) < todayDate
@@ -263,7 +276,7 @@ export default function CleanerAgendaPage() {
         prev.map((b) => b.id === bookingId ? { ...b, status: "cancelled" as const } : b),
       );
       showToast("Agendamento cancelado. Dia liberado!");
-      setModalDate(null);
+      closeDayModal();
     } catch (err) {
       showToast(String(err));
     } finally {
@@ -562,7 +575,7 @@ export default function CleanerAgendaPage() {
                 <button
                   key={ds}
                   type="button"
-                  onClick={() => setModalDate(ds)}
+                  onClick={() => openDayModal(ds)}
                   className={`aspect-square flex flex-col items-center justify-start pt-2 px-1 border-t border-slate-50 transition-colors relative
                     ${today_       ? "bg-sky-50"                                    : ""}
                     ${fullyBlocked && !dayBookings.length ? "bg-slate-100"          : ""}
@@ -627,7 +640,12 @@ export default function CleanerAgendaPage() {
           const todayStr = toDateStr(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate());
           const upcoming = bookings
             .filter((b) => b.status === "confirmed" && b.date >= todayStr)
-            .sort((a, b) => a.date.localeCompare(b.date) || a.timeBlock.localeCompare(b.timeBlock));
+            .sort((a, b) => {
+              const dateCmp = a.date.localeCompare(b.date);
+              if (dateCmp !== 0) return dateCmp;
+              // morning (0) before afternoon (1)
+              return (a.timeBlock === "morning" ? 0 : 1) - (b.timeBlock === "morning" ? 0 : 1);
+            });
           if (!upcoming.length) return null;
           return (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
@@ -656,7 +674,7 @@ export default function CleanerAgendaPage() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => setModalDate(b.date)}
+                      onClick={() => openDayModal(b.date, b.id)}
                       className="text-xs text-sky-600 font-semibold hover:text-sky-700 shrink-0"
                     >
                       Ver
@@ -673,7 +691,7 @@ export default function CleanerAgendaPage() {
       {modalDate && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={(e) => e.target === e.currentTarget && setModalDate(null)}
+          onClick={(e) => e.target === e.currentTarget && closeDayModal()}
         >
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             {/* Modal header */}
@@ -682,7 +700,7 @@ export default function CleanerAgendaPage() {
                 {formatDateLong(modalDate)}
               </h3>
               <button
-                onClick={() => setModalDate(null)}
+                onClick={closeDayModal}
                 className="text-slate-400 hover:text-slate-600 text-xl leading-none"
               >
                 ×
@@ -841,7 +859,7 @@ export default function CleanerAgendaPage() {
                   onClick={() => {
                     setManualForm({ ...EMPTY_MANUAL_FORM, date: modalDate });
                     setManualError("");
-                    setModalDate(null);
+                    closeDayModal();
                     setManualOpen(true);
                   }}
                   className="w-full flex items-center justify-center gap-2 border-2 border-sky-200 hover:border-sky-400 hover:bg-sky-50 text-sky-600 font-semibold py-2.5 rounded-xl text-sm transition-colors"
