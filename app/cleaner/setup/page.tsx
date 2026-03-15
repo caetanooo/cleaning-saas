@@ -6,7 +6,7 @@ import Link from "next/link";
 import { CalendarDays, BadgeDollarSign, Phone, Link2, type LucideIcon } from "lucide-react";
 import { createBrowserClient } from "@/lib/supabase";
 import { isVipEmail } from "@/lib/vip";
-import type { Cleaner, DayOfWeek } from "@/types";
+import type { Cleaner, DayOfWeek, BlockedSlot, BlockedPeriod } from "@/types";
 import PhoneField from "@/components/PhoneField";
 
 const DAYS: { key: DayOfWeek; label: string }[] = [
@@ -45,7 +45,8 @@ export default function CleanerSetupPage() {
   const [apiError,        setApiError]        = useState("");
   const [draftPrices,     setDraftPrices]     = useState<Record<string, string>>({});
   const [draftDiscounts,  setDraftDiscounts]  = useState<Record<string, string>>({});
-  const [newBlockedDate,  setNewBlockedDate]  = useState("");
+  const [newBlockedDate,   setNewBlockedDate]   = useState("");
+  const [newBlockedPeriod, setNewBlockedPeriod] = useState<BlockedPeriod>("ALL_DAY");
   const [slug,            setSlug]            = useState("");
   const [slugSaving,      setSlugSaving]      = useState(false);
 
@@ -145,16 +146,40 @@ export default function CleanerSetupPage() {
     });
   }
 
+  const PERIOD_LABELS: Record<BlockedPeriod, string> = {
+    ALL_DAY:   "Dia Inteiro",
+    MORNING:   "Manhã",
+    AFTERNOON: "Tarde",
+  };
+
   function addBlockedDate() {
     if (!cleaner || !newBlockedDate) return;
-    if ((cleaner.blockedDates ?? []).includes(newBlockedDate)) return;
-    setCleaner({ ...cleaner, blockedDates: [...(cleaner.blockedDates ?? []), newBlockedDate].sort() });
+    const slots = (cleaner.blockedDates ?? []) as BlockedSlot[];
+    // Avoid exact duplicate
+    if (slots.some((s) => s.date === newBlockedDate && s.period === newBlockedPeriod)) return;
+    // If adding ALL_DAY, remove any existing MORNING/AFTERNOON for this date
+    let newSlots: BlockedSlot[];
+    if (newBlockedPeriod === "ALL_DAY") {
+      newSlots = [
+        ...slots.filter((s) => s.date !== newBlockedDate),
+        { date: newBlockedDate, period: "ALL_DAY" },
+      ];
+    } else {
+      // Remove ALL_DAY for this date if it exists, then add specific period
+      newSlots = [
+        ...slots.filter((s) => !(s.date === newBlockedDate && s.period === "ALL_DAY")),
+        { date: newBlockedDate, period: newBlockedPeriod },
+      ];
+    }
+    newSlots.sort((a, b) => a.date.localeCompare(b.date));
+    setCleaner({ ...cleaner, blockedDates: newSlots });
     setNewBlockedDate("");
   }
 
-  function removeBlockedDate(date: string) {
+  function removeBlockedDate(date: string, period: BlockedPeriod) {
     if (!cleaner) return;
-    setCleaner({ ...cleaner, blockedDates: (cleaner.blockedDates ?? []).filter((d) => d !== date) });
+    const slots = (cleaner.blockedDates ?? []) as BlockedSlot[];
+    setCleaner({ ...cleaner, blockedDates: slots.filter((s) => !(s.date === date && s.period === period)) });
   }
 
   function formatBlockedDate(dateStr: string): string {
@@ -400,6 +425,23 @@ export default function CleanerSetupPage() {
                 </p>
               </div>
               <div className="px-4 sm:px-6 py-5 space-y-4">
+                {/* Period selector pills */}
+                <div className="flex gap-2">
+                  {(["ALL_DAY", "MORNING", "AFTERNOON"] as BlockedPeriod[]).map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setNewBlockedPeriod(p)}
+                      className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-colors border ${
+                        newBlockedPeriod === p
+                          ? "bg-sky-500 text-white border-sky-500"
+                          : "bg-white text-slate-600 border-slate-200 hover:border-sky-300"
+                      }`}
+                    >
+                      {PERIOD_LABELS[p]}
+                    </button>
+                  ))}
+                </div>
                 <div className="flex gap-3">
                   <input
                     type="date"
@@ -421,12 +463,23 @@ export default function CleanerSetupPage() {
                   <p className="text-xs text-slate-400 italic">Nenhuma folga específica adicionada ainda.</p>
                 ) : (
                   <ul className="space-y-1.5">
-                    {(cleaner.blockedDates ?? []).map((d) => (
-                      <li key={d} className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-2.5">
-                        <span className="text-sm text-slate-700 font-medium capitalize">{formatBlockedDate(d)}</span>
+                    {(cleaner.blockedDates as BlockedSlot[]).map((s) => (
+                      <li key={`${s.date}-${s.period}`} className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-2.5">
+                        <div className="space-y-0.5">
+                          <span className="text-sm text-slate-700 font-medium capitalize">{formatBlockedDate(s.date)}</span>
+                          <span className={`ml-2 text-xs font-semibold px-1.5 py-0.5 rounded-full ${
+                            s.period === "ALL_DAY"
+                              ? "bg-slate-200 text-slate-600"
+                              : s.period === "MORNING"
+                              ? "bg-sky-100 text-sky-700"
+                              : "bg-violet-100 text-violet-700"
+                          }`}>
+                            {PERIOD_LABELS[s.period]}
+                          </span>
+                        </div>
                         <button
                           type="button"
-                          onClick={() => removeBlockedDate(d)}
+                          onClick={() => removeBlockedDate(s.date, s.period)}
                           className="text-slate-400 hover:text-red-500 transition-colors text-sm font-semibold ml-4 shrink-0"
                         >
                           Remover

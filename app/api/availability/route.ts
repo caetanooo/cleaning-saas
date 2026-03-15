@@ -1,10 +1,22 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
-import type { DayOfWeek, BlockAvailability, Cleaner } from "@/types";
+import type { DayOfWeek, BlockAvailability, Cleaner, BlockedSlot } from "@/types";
 
 const DAY_NAMES: DayOfWeek[] = [
   "sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday",
 ];
+
+/** Supports both legacy string[] and new BlockedSlot[] formats in blocked_dates. */
+function isSlotBlocked(
+  raw: (BlockedSlot | string)[],
+  date: string,
+  period: "MORNING" | "AFTERNOON",
+): boolean {
+  return raw.some((s) => {
+    if (typeof s === "string") return s === date;
+    return s.date === date && (s.period === "ALL_DAY" || s.period === period);
+  });
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -20,8 +32,6 @@ export async function GET(request: Request) {
 
   const supabase = createServiceClient();
 
-  // Fetch cleaner — use * so missing optional columns (e.g. blocked_dates)
-  // don't cause a PostgREST column-not-found error
   const { data: cleanerRow, error: cleanerError } = await supabase
     .from("cleaners")
     .select("*")
@@ -38,8 +48,10 @@ export async function GET(request: Request) {
     console.error("[availability] dayAvail missing for", dayName, "availability:", cleanerRow.availability);
     return NextResponse.json({ morning: false, afternoon: false });
   }
-  const blockedDates = (cleanerRow.blocked_dates as string[]) ?? [];
-  const isBlocked    = blockedDates.includes(date);
+
+  const rawBlocked = (cleanerRow.blocked_dates as (BlockedSlot | string)[]) ?? [];
+  const morningBlocked   = isSlotBlocked(rawBlocked, date, "MORNING");
+  const afternoonBlocked = isSlotBlocked(rawBlocked, date, "AFTERNOON");
 
   // Fetch existing bookings for this date
   const { data: bookings } = await supabase
@@ -60,8 +72,8 @@ export async function GET(request: Request) {
   const afternoonPast = date === todayStr && nowMinutes >= 18 * 60;
 
   const result: BlockAvailability = {
-    morning:   !isBlocked && dayAvail.morning   && !morningBooked   && !morningPast,
-    afternoon: !isBlocked && dayAvail.afternoon && !afternoonBooked && !afternoonPast,
+    morning:   !morningBlocked   && dayAvail.morning   && !morningBooked   && !morningPast,
+    afternoon: !afternoonBlocked && dayAvail.afternoon && !afternoonBooked && !afternoonPast,
   };
 
   return NextResponse.json(result);

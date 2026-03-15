@@ -158,7 +158,10 @@ function computeWeekDays(cleaner: Cleaner, weekOffset: number): DayCard[] {
       dayName:   d.toLocaleDateString("en-US", { weekday: "short" }),
       dayNum:    d.getDate(),
       monthName: d.toLocaleDateString("en-US", { month: "short" }),
-      isOff:     isPast || (!avail.morning && !avail.afternoon) || (cleaner.blockedDates ?? []).includes(dateStr),
+      isOff:     isPast || (!avail.morning && !avail.afternoon) || (cleaner.blockedDates ?? []).some((s) => {
+        if (typeof s === "string") return s === dateStr;
+        return s.date === dateStr && s.period === "ALL_DAY";
+      }),
       isToday:   d.getTime() === today.getTime(),
       isPast,
     };

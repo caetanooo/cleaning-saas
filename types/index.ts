@@ -1,4 +1,11 @@
-export type BookingStatus = "confirmed" | "cancelled";
+export type BookingStatus = "confirmed" | "cancelled" | "completed";
+
+export type BlockedPeriod = "ALL_DAY" | "MORNING" | "AFTERNOON";
+
+export interface BlockedSlot {
+  date: string;           // "YYYY-MM-DD"
+  period: BlockedPeriod;  // ALL_DAY | MORNING | AFTERNOON
+}
 
 export type DayOfWeek =
   | "monday"
@@ -44,7 +51,7 @@ export interface Cleaner {
   phone?: string;
   messengerUsername?: string;
   availability: Record<DayOfWeek, DayAvailability>;
-  blockedDates: string[];         // "YYYY-MM-DD" dates blocked regardless of weekly schedule
+  blockedDates: BlockedSlot[];    // specific date+period blocks (ALL_DAY | MORNING | AFTERNOON)
   pricingFormula: PricingFormula;
   frequencyDiscounts: FrequencyDiscounts;
   serviceAddons: ServiceAddons;
@@ -72,6 +79,7 @@ export interface Booking {
   endTime: string;     // "13:00" | "18:00"
   totalPrice: number;
   status: BookingStatus;
+  source: "platform" | "manual";
   createdAt: string;   // ISO string
 }
 
