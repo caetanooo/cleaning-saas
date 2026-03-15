@@ -1,4 +1,15 @@
-import type { Cleaner } from "@/types";
+import type { Cleaner, BlockedSlot } from "@/types";
+
+/** Normalises the legacy string[] format to BlockedSlot[].
+ *  Old: ["2024-03-15"]  → New: [{ date: "2024-03-15", period: "ALL_DAY" }]
+ */
+function normalizeBlockedDates(raw: unknown): BlockedSlot[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((item) => {
+    if (typeof item === "string") return { date: item, period: "ALL_DAY" as const };
+    return item as BlockedSlot;
+  });
+}
 
 // ── Defaults used when JSONB columns are NULL in the DB ───────────────────────
 
@@ -43,7 +54,7 @@ export function rowToCleaner(row: Record<string, unknown>): Cleaner {
     phone:              (row.phone              as string) || "",
     messengerUsername:  (row.messenger_username as string) || "",
     availability:       (row.availability        as Cleaner["availability"])        || DEFAULT_AVAILABILITY,
-    blockedDates:       (row.blocked_dates       as Cleaner["blockedDates"])        || DEFAULT_BLOCKED_DATES,
+    blockedDates:       normalizeBlockedDates(row.blocked_dates),
     pricingFormula:     (row.pricing_formula     as Cleaner["pricingFormula"])      || DEFAULT_FORMULA,
     frequencyDiscounts: (row.frequency_discounts as Cleaner["frequencyDiscounts"])  || DEFAULT_DISCOUNTS,
     serviceAddons:      (row.service_addons      as Cleaner["serviceAddons"])       || DEFAULT_ADDONS,
