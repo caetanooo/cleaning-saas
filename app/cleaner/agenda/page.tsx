@@ -406,7 +406,7 @@ export default function CleanerAgendaPage() {
         serviceType: CleaningServiceType; frequency: FrequencyType;
         bedrooms: number; bathrooms: number;
         hasPets: boolean; hasChildren: boolean; hasCarpet: boolean;
-        staffCount: number; totalPrice: number; estimatedDuration: number | null;
+        staffCount: number; totalPrice: number; estimatedDuration: number | undefined;
       };
       setBookings((prev) =>
         prev.map((b) =>
