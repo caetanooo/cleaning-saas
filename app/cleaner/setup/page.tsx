@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { CalendarDays, BadgeDollarSign, Phone, Link2, type LucideIcon } from "lucide-react";
+import { CalendarDays, BadgeDollarSign, Phone, Link2, Clock, ChevronDown, type LucideIcon } from "lucide-react";
 import { createBrowserClient } from "@/lib/supabase";
 import { isVipEmail } from "@/lib/vip";
-import type { Cleaner, DayOfWeek, BlockedSlot, BlockedPeriod } from "@/types";
+import type { Cleaner, DayOfWeek, BlockedSlot, BlockedPeriod, ProviderTimeConfig, CleaningServiceType, RoomType } from "@/types";
 import PhoneField from "@/components/PhoneField";
 
 const DAYS: { key: DayOfWeek; label: string }[] = [
@@ -19,14 +19,24 @@ const DAYS: { key: DayOfWeek; label: string }[] = [
   { key: "sunday",    label: "Domingo"       },
 ];
 
-type TabId = "agenda" | "precos" | "contato" | "link";
+type TabId = "agenda" | "precos" | "tempos" | "contato" | "link";
 
 const TABS: { id: TabId; label: string; icon: LucideIcon; color: string }[] = [
   { id: "agenda",  label: "Agenda",  icon: CalendarDays,    color: "text-sky-500"     },
   { id: "precos",  label: "Preços",  icon: BadgeDollarSign, color: "text-emerald-500" },
+  { id: "tempos",  label: "Tempos",  icon: Clock,           color: "text-sky-500"     },
   { id: "contato", label: "Contato", icon: Phone,           color: "text-violet-500"  },
   { id: "link",    label: "Link",    icon: Link2,           color: "text-orange-500"  },
 ];
+
+// ─── Time config constants ─────────────────────────────────────────────────
+
+const SERVICE_TYPES: { value: CleaningServiceType; label: string }[] = [
+  { value: "regular", label: "Regular"          },
+  { value: "deep",    label: "Deep Cleaning"    },
+  { value: "move",    label: "Move-in/Move-out" },
+];
+
 
 function calcBase(formula: Cleaner["pricingFormula"], beds: number, baths: number): number {
   return formula.base + (beds - 1) * formula.extraPerBedroom + (baths - 1) * formula.extraPerBathroom;
@@ -49,6 +59,24 @@ export default function CleanerSetupPage() {
   const [newBlockedPeriod, setNewBlockedPeriod] = useState<BlockedPeriod>("ALL_DAY");
   const [slug,            setSlug]            = useState("");
   const [slugSaving,      setSlugSaving]      = useState(false);
+  const [openDayDropdown, setOpenDayDropdown] = useState<DayOfWeek | null>(null);
+
+  // Time configs state
+  const [timeConfigsLoaded, setTimeConfigsLoaded] = useState(false);
+  const [timeConfigsSaving, setTimeConfigsSaving] = useState(false);
+  const [activeTimeService, setActiveTimeService] = useState<CleaningServiceType>("regular");
+  const [draftStaffCounts, setDraftStaffCounts]   = useState<{ regular: number; deep: number; move: number }>({ regular: 1, deep: 1, move: 1 });
+
+  type TimeFormRow = { baseDuration: string; bedroom: string; bathroom: string; kitchen: string; living_room: string };
+  type DraftTimeConfigs = Record<CleaningServiceType, TimeFormRow>;
+
+  const DEFAULT_DRAFT: DraftTimeConfigs = {
+    regular: { baseDuration: "120", bedroom: "30", bathroom: "20", kitchen: "15", living_room: "15" },
+    deep:    { baseDuration: "180", bedroom: "40", bathroom: "25", kitchen: "20", living_room: "20" },
+    move:    { baseDuration: "240", bedroom: "45", bathroom: "30", kitchen: "25", living_room: "25" },
+  };
+
+  const [draftTimeConfigs, setDraftTimeConfigs] = useState<DraftTimeConfigs>(DEFAULT_DRAFT);
 
   // ── Auth guard → fetch profile ────────────────────────────────────────────
   useEffect(() => {
@@ -96,6 +124,37 @@ export default function CleanerSetupPage() {
           }
           setCleaner(data);
           setSlug(data.slug ?? "");
+          if (data.defaultStaffCount) {
+            setDraftStaffCounts(data.defaultStaffCount);
+          }
+
+          // Load time configs (non-blocking — table may not exist yet)
+          try {
+            const tcRes = await fetch(`/api/cleaners/${session.user.id}/time-configs`, {
+              headers: { Authorization: `Bearer ${session.access_token}` },
+            });
+            if (tcRes.ok) {
+              const tcData = await tcRes.json() as { configs: ProviderTimeConfig[] };
+              const configs = tcData.configs ?? [];
+              if (configs.length > 0) {
+                setDraftTimeConfigs((prev) => {
+                  const next = { ...prev };
+                  for (const cfg of configs) {
+                    next[cfg.serviceType] = {
+                      ...next[cfg.serviceType],
+                      baseDuration: String(cfg.baseDuration),
+                      [cfg.roomType]: String(cfg.timePerRoom),
+                    };
+                  }
+                  return next;
+                });
+              }
+            }
+          } catch {
+            // Table not yet migrated — silently ignore
+          } finally {
+            setTimeConfigsLoaded(true);
+          }
         } else {
           setApiError(data?.error ?? "Não foi possível carregar o perfil. Verifique as tabelas no Supabase.");
         }
@@ -115,13 +174,36 @@ export default function CleanerSetupPage() {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function toggleBlock(day: DayOfWeek, block: "morning" | "afternoon") {
+  useEffect(() => {
+    if (!openDayDropdown) return;
+    function handleClick() { setOpenDayDropdown(null); }
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }, [openDayDropdown]);
+
+  function toggleDay(day: DayOfWeek) {
+    if (!cleaner) return;
+    const current = cleaner.availability[day];
+    const isActive = current.morning || current.afternoon;
+    setCleaner({
+      ...cleaner,
+      availability: {
+        ...cleaner.availability,
+        [day]: isActive
+          ? { ...current, morning: false, afternoon: false }
+          : { ...current, morning: true, afternoon: true,
+              startTime: current.startTime ?? "09:00" },
+      },
+    });
+  }
+
+  function setDayTime(day: DayOfWeek, field: "startTime" | "endTime", time: string) {
     if (!cleaner) return;
     setCleaner({
       ...cleaner,
       availability: {
         ...cleaner.availability,
-        [day]: { ...cleaner.availability[day], [block]: !cleaner.availability[day][block] },
+        [day]: { ...cleaner.availability[day], [field]: time },
       },
     });
   }
@@ -197,6 +279,74 @@ export default function CleanerSetupPage() {
       ...cleaner,
       frequencyDiscounts: { ...cleaner.frequencyDiscounts, [field]: isNaN(num) ? 0 : num },
     });
+  }
+
+  function updateDraftTime(svc: CleaningServiceType, field: string, value: string) {
+    setDraftTimeConfigs((prev) => ({
+      ...prev,
+      [svc]: { ...prev[svc], [field]: value },
+    }));
+  }
+
+  function calcTimePreview(svc: CleaningServiceType, beds: number, baths: number, staff: number): string {
+    const d = draftTimeConfigs[svc];
+    const base     = parseInt(d.baseDuration, 10) || 0;
+    const perBed   = parseInt(d.bedroom,      10) || 0;
+    const perBath  = parseInt(d.bathroom,     10) || 0;
+    const raw      = base + beds * perBed + baths * perBath;
+    const total    = Math.ceil(raw / Math.max(1, staff));
+    const h = Math.floor(total / 60);
+    const m = total % 60;
+    return h > 0 && m > 0 ? `${h}h${m}` : h > 0 ? `${h}h` : `${m}min`;
+  }
+
+  async function saveTimeConfigs() {
+    if (!cleanerId || !token) return;
+    setTimeConfigsSaving(true);
+    try {
+      const ROOM_KEYS: RoomType[] = ["bedroom", "bathroom", "kitchen", "living_room"];
+      const configs = (["regular", "deep", "move"] as CleaningServiceType[]).flatMap((svc) => {
+        const d    = draftTimeConfigs[svc];
+        const base = parseInt(d.baseDuration, 10) || 0;
+        return ROOM_KEYS.map((room) => ({
+          serviceType:  svc,
+          baseDuration: base,
+          roomType:     room,
+          timePerRoom:  parseInt(d[room], 10) || 0,
+        }));
+      });
+
+      // Save time configs and default staff count in parallel
+      const [tcRes, scRes] = await Promise.all([
+        fetch(`/api/cleaners/${cleanerId}/time-configs`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ configs }),
+        }),
+        fetch(`/api/cleaners/${cleanerId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ defaultStaffCount: draftStaffCounts }),
+        }),
+      ]);
+
+      if (!tcRes.ok) {
+        const err = await tcRes.json().catch(() => ({}));
+        throw new Error((err as { error?: string }).error ?? "Save failed");
+      }
+      if (!scRes.ok) {
+        const err = await scRes.json().catch(() => ({}));
+        throw new Error((err as { error?: string }).error ?? "Save failed");
+      }
+      // Update local cleaner state with new defaultStaffCount
+      setCleaner((prev) => prev ? { ...prev, defaultStaffCount: draftStaffCounts } : prev);
+      showToast("Configurações de tempo salvas!");
+    } catch (err) {
+      showToast("Erro ao salvar. Tente novamente.");
+      console.error("[saveTimeConfigs]", err);
+    } finally {
+      setTimeConfigsSaving(false);
+    }
   }
 
   async function handleSave() {
@@ -379,37 +529,99 @@ export default function CleanerSetupPage() {
             <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
               <div className="px-4 sm:px-6 py-4 border-b border-slate-100">
                 <h2 className="font-bold text-slate-800 text-lg">Rotina Semanal</h2>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Esta é sua agenda padrão. &nbsp;Manhã a partir das 9h &nbsp;|&nbsp; Tarde a partir das 14h
-                </p>
               </div>
-              <div className="divide-y divide-slate-50">
+              <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {DAYS.map(({ key, label }) => {
                   const day = cleaner.availability[key];
+                  const isActive = day.morning || day.afternoon;
+                  const startVal = day.startTime ?? "08:00";
+
+                  // Generate options every 30 min from 06:00 to 20:00 in 24h format
+                  const timeOptions: string[] = [];
+                  for (let h = 6; h <= 20; h++) {
+                    for (const m of ["00", "30"]) {
+                      timeOptions.push(`${String(h).padStart(2, "0")}:${m}`);
+                    }
+                  }
+
                   return (
-                    <div key={key} className="px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-3 sm:gap-6">
-                      <span className="w-24 sm:w-36 text-sm font-semibold text-slate-700 shrink-0">{label}</span>
-                      <label className="flex items-center gap-2 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={day.morning}
-                          onChange={() => toggleBlock(key, "morning")}
-                          className="w-4 h-4 accent-sky-500 cursor-pointer"
-                        />
-                        <span className={`text-sm ${day.morning ? "text-slate-700" : "text-slate-400"}`}>Manhã</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={day.afternoon}
-                          onChange={() => toggleBlock(key, "afternoon")}
-                          className="w-4 h-4 accent-sky-500 cursor-pointer"
-                        />
-                        <span className={`text-sm ${day.afternoon ? "text-slate-700" : "text-slate-400"}`}>Tarde</span>
-                      </label>
-                      {!day.morning && !day.afternoon && (
-                        <span className="text-xs text-slate-400 italic ml-auto">Folga</span>
-                      )}
+                    <div
+                      key={key}
+                      className={`rounded-xl border p-4 space-y-3 transition-colors ${
+                        isActive ? "border-slate-200 bg-white" : "border-slate-100 bg-slate-50"
+                      }`}
+                    >
+                      {/* Day name + toggle */}
+                      <div className="flex items-center justify-between">
+                        <span className={`font-bold text-base ${isActive ? "text-slate-800" : "text-slate-400"}`}>
+                          {label}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => toggleDay(key)}
+                          className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors focus:outline-none ${
+                            isActive ? "bg-blue-500" : "bg-slate-300"
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                              isActive ? "translate-x-6" : "translate-x-1"
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      {/* Start time dropdown */}
+                      <div className="relative">
+                        <button
+                          type="button"
+                          disabled={!isActive}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenDayDropdown(openDayDropdown === key ? null : key);
+                          }}
+                          className={`w-full flex items-center gap-2 border rounded-xl px-3 py-2.5 transition-colors ${
+                            isActive
+                              ? "border-slate-200 bg-white hover:border-slate-300 cursor-pointer"
+                              : "border-slate-100 bg-slate-100/60 cursor-not-allowed"
+                          }`}
+                        >
+                          <Clock size={15} className={isActive ? "text-slate-400 shrink-0" : "text-slate-300 shrink-0"} />
+                          <span className={`text-xs shrink-0 ${isActive ? "text-slate-500" : "text-slate-300"}`}>Início:</span>
+                          <span className={`flex-1 text-left text-sm font-medium ${isActive ? "text-slate-700" : "text-slate-400"}`}>
+                            {startVal}
+                          </span>
+                          <ChevronDown
+                            size={14}
+                            className={`shrink-0 transition-transform ${isActive ? "text-slate-400" : "text-slate-300"} ${openDayDropdown === key ? "rotate-180" : ""}`}
+                          />
+                        </button>
+                        {openDayDropdown === key && (
+                          <div
+                            className="absolute bottom-full left-0 right-0 mb-1 bg-white border border-slate-200 rounded-xl shadow-lg z-50 max-h-48 overflow-y-auto"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {timeOptions.map((opt) => (
+                              <button
+                                key={opt}
+                                type="button"
+                                onClick={() => {
+                                  setDayTime(key, "startTime", opt);
+                                  setOpenDayDropdown(null);
+                                }}
+                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                                  startVal === opt
+                                    ? "bg-sky-50 text-sky-600 font-semibold"
+                                    : "text-slate-700 hover:bg-slate-50"
+                                }`}
+                              >
+                                {opt}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
                     </div>
                   );
                 })}
@@ -650,6 +862,170 @@ export default function CleanerSetupPage() {
               className="w-full bg-sky-500 hover:bg-sky-600 disabled:opacity-60 text-white font-bold py-4 rounded-2xl transition-colors text-base"
             >
               {saving ? "Salvando…" : "Salvar Preços"}
+            </button>
+          </div>
+        )}
+
+        {/* ── Tab: Tempos ──────────────────────────────────────────────────────── */}
+        {activeTab === "tempos" && (
+          <div className="space-y-6">
+            {!timeConfigsLoaded && (
+              <p className="text-xs text-slate-400 italic animate-pulse px-1">Carregando configurações…</p>
+            )}
+
+            <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+              <div className="px-4 sm:px-6 py-4 border-b border-slate-100">
+                <h2 className="font-bold text-slate-800 text-lg">Duração dos Serviços</h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Defina o tempo base e o tempo adicional por cômodo. O sistema gera os horários disponíveis automaticamente.
+                </p>
+              </div>
+
+              <div className="px-4 sm:px-6 py-5 space-y-6">
+                {/* Service type pills */}
+                <div className="flex gap-2">
+                  {SERVICE_TYPES.map((svc) => (
+                    <button
+                      key={svc.value}
+                      type="button"
+                      onClick={() => setActiveTimeService(svc.value)}
+                      className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-colors border ${
+                        activeTimeService === svc.value
+                          ? "bg-amber-500 text-white border-amber-500"
+                          : "bg-white text-slate-600 border-slate-200 hover:border-amber-300"
+                      }`}
+                    >
+                      {svc.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Formula description */}
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Fórmula de Tempo</p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Tempo = Tempo Base + Quartos × min/Quarto + Banheiros × min/Banheiro + …
+                    </p>
+                  </div>
+
+                  {/* Base duration */}
+                  <div className="flex items-center gap-4">
+                    <label className="flex-1 text-sm font-semibold text-slate-700">
+                      Tempo Base (casa 1/1)
+                    </label>
+                    <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-amber-400 w-[120px] shrink-0">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="120"
+                        value={draftTimeConfigs[activeTimeService].baseDuration}
+                        onChange={(e) => updateDraftTime(activeTimeService, "baseDuration", e.target.value)}
+                        onFocus={(e) => e.target.select()}
+                        className="flex-1 px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none"
+                      />
+                      <span className="px-2.5 text-slate-400 text-sm bg-slate-50 border-l border-slate-200 py-2 select-none">min</span>
+                    </div>
+                  </div>
+
+                  {/* Per-room extras */}
+                  {([
+                    { field: "bedroom"     as RoomType, label: "Quarto adicional",   color: "text-slate-700" },
+                    { field: "bathroom"    as RoomType, label: "Banheiro adicional",  color: "text-slate-700" },
+                    { field: "kitchen"     as RoomType, label: "Cozinha",             color: "text-slate-500" },
+                    { field: "living_room" as RoomType, label: "Sala de estar",       color: "text-slate-500" },
+                  ]).map(({ field, label, color }) => (
+                    <div key={field} className="flex items-center gap-4">
+                      <label className={`flex-1 text-sm font-semibold ${color}`}>{label}</label>
+                      <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-amber-400 w-[120px] shrink-0">
+                        <span className="px-2.5 text-slate-400 text-sm bg-slate-50 border-r border-slate-200 py-2 select-none">+</span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="0"
+                          value={draftTimeConfigs[activeTimeService][field]}
+                          onChange={(e) => updateDraftTime(activeTimeService, field, e.target.value)}
+                          onFocus={(e) => e.target.select()}
+                          className="flex-1 px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none"
+                        />
+                        <span className="px-2.5 text-slate-400 text-sm bg-slate-50 border-l border-slate-200 py-2 select-none">min</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Live preview table */}
+                <div className="pt-1 border-t border-slate-100">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wide pt-2 mb-3">
+                    Pré-visualização — {SERVICE_TYPES.find((s) => s.value === activeTimeService)?.label}
+                  </p>
+                  <div className="rounded-xl border border-slate-100 overflow-hidden text-xs">
+                    <div className="grid grid-cols-4 bg-slate-50 border-b border-slate-100">
+                      <div className="px-3 py-2 font-bold text-slate-500">Casa</div>
+                      <div className="px-3 py-2 font-bold text-slate-600 text-center">1 func.</div>
+                      <div className="px-3 py-2 font-bold text-amber-600 text-center">2 func.</div>
+                      <div className="px-3 py-2 font-bold text-emerald-600 text-center">3 func.</div>
+                    </div>
+                    {previewRows.map(({ beds, baths }, i) => (
+                      <div
+                        key={`${beds}-${baths}`}
+                        className={`grid grid-cols-4 ${i % 2 === 0 ? "bg-white" : "bg-slate-50/50"}`}
+                      >
+                        <div className="px-3 py-2.5 text-slate-500">
+                          {beds} {beds > 1 ? "qtos" : "qto"} · {baths} {baths > 1 ? "bnhs" : "bnh"}
+                        </div>
+                        <div className="px-3 py-2.5 font-semibold text-slate-800 text-center">{calcTimePreview(activeTimeService, beds, baths, 1)}</div>
+                        <div className="px-3 py-2.5 font-semibold text-amber-600 text-center">{calcTimePreview(activeTimeService, beds, baths, 2)}</div>
+                        <div className="px-3 py-2.5 font-semibold text-emerald-600 text-center">{calcTimePreview(activeTimeService, beds, baths, 3)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Default staff count per service */}
+            <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+              <div className="px-4 sm:px-6 py-4 border-b border-slate-100">
+                <h2 className="font-bold text-slate-800 text-lg">Equipe Padrão por Serviço</h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Quantas funcionárias vão para cada tipo de serviço? Isso define o tempo de duração e libera os horários corretos.
+                </p>
+              </div>
+              <div className="px-4 sm:px-6 py-5 space-y-4">
+                {SERVICE_TYPES.map((svc) => (
+                  <div key={svc.value} className="flex items-center justify-between gap-4">
+                    <span className="text-sm font-semibold text-slate-700 w-32 shrink-0">{svc.label}</span>
+                    <div className="flex gap-2">
+                      {([1, 2, 3] as const).map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => setDraftStaffCounts((prev) => ({ ...prev, [svc.value]: n }))}
+                          className={`w-12 py-2 rounded-xl text-sm font-bold transition-colors border ${
+                            draftStaffCounts[svc.value] === n
+                              ? "bg-amber-500 text-white border-amber-500"
+                              : "bg-white text-slate-600 border-slate-200 hover:border-amber-300"
+                          }`}
+                        >
+                          {n}×
+                        </button>
+                      ))}
+                    </div>
+                    <span className="text-xs text-slate-400 hidden sm:block">
+                      {calcTimePreview(svc.value, 2, 1, draftStaffCounts[svc.value])} p/ casa 2/1
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <button
+              onClick={saveTimeConfigs}
+              disabled={timeConfigsSaving}
+              className="w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white font-bold py-4 rounded-2xl transition-colors text-base"
+            >
+              {timeConfigsSaving ? "Salvando…" : "Salvar Durações"}
             </button>
           </div>
         )}

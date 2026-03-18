@@ -60,5 +60,6 @@ export function rowToCleaner(row: Record<string, unknown>): Cleaner {
     serviceAddons:      (row.service_addons      as Cleaner["serviceAddons"])       || DEFAULT_ADDONS,
     slug:               (row.slug                as string)                         || undefined,
     subscriptionStatus: (row.subscription_status as string)                         || "trialing",
+    defaultStaffCount:  (row.default_staff_count as Cleaner["defaultStaffCount"])   || { regular: 1, deep: 1, move: 1 },
   };
 }

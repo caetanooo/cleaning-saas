@@ -13,6 +13,12 @@ import type {
   DayOfWeek,
 } from "@/types";
 
+interface DynamicSlot {
+  time:     string;   // "HH:MM"
+  startMin: number;
+  endMin:   number;
+}
+
 export type CustomerProfile = {
   id: string;
   name: string | null;
@@ -37,7 +43,7 @@ type ConfirmedSlot = {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const STEPS = ["House Details", "Frequency", "Date & Time", "Your Details"];
+const STEPS = ["Detalhes da Casa", "Frequência", "Data e Hora", "Seus Dados"];
 
 const REQUIRED_DATES: Record<FrequencyType, number> = {
   one_time: 1,
@@ -256,6 +262,27 @@ function BoxIcon() {
   );
 }
 
+function KitchenIcon() {
+  return (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="7" width="20" height="14" rx="2" />
+      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+      <line x1="12" y1="12" x2="12" y2="16" />
+      <line x1="10" y1="14" x2="14" y2="14" />
+    </svg>
+  );
+}
+
+function SofaIcon() {
+  return (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v3" />
+      <path d="M2 11a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-5z" />
+      <path d="M6 18v2M18 18v2" />
+    </svg>
+  );
+}
+
 const SERVICE_ICONS: Record<CleaningServiceType, React.ReactNode> = {
   regular: <BroomIcon />,
   deep:    <SparklesIcon />,
@@ -268,14 +295,19 @@ interface WizardState {
   step:              number;
   bedrooms:          number | null;
   bathrooms:         number | null;
+  kitchens:          number;
+  livingRooms:       number;
   serviceType:       CleaningServiceType;
   frequency:         FrequencyType | null;
-  selectedDates:     Array<{ dateStr: string; timeBlock: TimeBlock }>;
+  selectedDates:     Array<{ dateStr: string; timeBlock: TimeBlock; startTime?: string }>;
   activeDate:        string | null;
   activeDateAvail:   BlockAvailability | null;
+  activeDateSlots:   DynamicSlot[];       // dynamic slots (empty = use legacy blocks)
+  fallbackToBlocks:  boolean;             // true when cleaner has no time configs
   activeDateLoading: boolean;
   blockError:        string;
   weekOffset:        number;
+  estimatedDuration: number | null;       // calculated from /api/bookings/calculate
   customerName:      string;
   customerPhone:     string;
   customerAddress:   string;
@@ -296,14 +328,19 @@ const BLANK: WizardState = {
   step:              0,
   bedrooms:          null,
   bathrooms:         null,
+  kitchens:          0,
+  livingRooms:       0,
   serviceType:       "regular",
   frequency:         null,
   selectedDates:     [],
   activeDate:        null,
   activeDateAvail:   null,
+  activeDateSlots:   [],
+  fallbackToBlocks:  true,
   activeDateLoading: false,
   blockError:        "",
   weekOffset:        0,
+  estimatedDuration: null,
   customerName:      "",
   customerPhone:     "",
   customerAddress:   "",
@@ -380,9 +417,37 @@ export default function WizardClient({
     update({ step: 1 });
   }
 
-  function goStep2() {
+  async function goStep2() {
     if (!state.frequency) return;
-    update({ step: 2, selectedDates: [], activeDate: null, activeDateAvail: null, blockError: "" });
+    update({ step: 2, selectedDates: [], activeDate: null, activeDateAvail: null, activeDateSlots: [], blockError: "" });
+
+    // Fetch estimated duration from calculate API (best-effort)
+    if (state.bedrooms !== null && state.bathrooms !== null) {
+      try {
+        const res = await fetch("/api/bookings/calculate", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cleanerId,
+            serviceType: state.serviceType,
+            bedrooms:    state.bedrooms,
+            bathrooms:   state.bathrooms,
+            kitchens:    state.kitchens,
+            livingRooms: state.livingRooms,
+            staffCount:  1,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json() as { estimatedDuration: number | null; hasConfig: boolean };
+          update({
+            estimatedDuration: data.estimatedDuration,
+            fallbackToBlocks:  !data.hasConfig,
+          });
+        }
+      } catch {
+        // Silently fall back to legacy blocks
+      }
+    }
   }
 
   async function handleDateClick(dateStr: string) {
@@ -392,18 +457,56 @@ export default function WizardClient({
     }
     if (state.selectedDates.length >= required) return;
     if (state.activeDate === dateStr) {
-      update({ activeDate: null, activeDateAvail: null });
+      update({ activeDate: null, activeDateAvail: null, activeDateSlots: [] });
       return;
     }
-    update({ activeDate: dateStr, activeDateAvail: null, activeDateLoading: true, blockError: "" });
+    update({ activeDate: dateStr, activeDateAvail: null, activeDateSlots: [], activeDateLoading: true, blockError: "" });
+
     try {
-      const res  = await fetch(`/api/availability?cleanerId=${cleanerId}&date=${dateStr}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Failed to check availability");
-      update({ activeDateAvail: data as BlockAvailability, activeDateLoading: false });
+      if (!state.fallbackToBlocks && state.estimatedDuration) {
+        // Dynamic slot mode
+        const res  = await fetch(
+          `/api/bookings/slots?cleanerId=${cleanerId}&date=${dateStr}&duration=${state.estimatedDuration}`
+        );
+        const data = await res.json() as { slots: DynamicSlot[]; fallbackToBlocks: boolean };
+        if (!res.ok) throw new Error("Failed to check availability");
+        update({
+          activeDateSlots:  data.slots,
+          fallbackToBlocks: data.fallbackToBlocks,
+          activeDateLoading: false,
+        });
+        if (data.fallbackToBlocks) {
+          // Fetch legacy availability as fallback
+          const avRes  = await fetch(`/api/availability?cleanerId=${cleanerId}&date=${dateStr}`);
+          const avData = await avRes.json();
+          update({ activeDateAvail: avData as BlockAvailability });
+        }
+      } else {
+        // Legacy block mode
+        const res  = await fetch(`/api/availability?cleanerId=${cleanerId}&date=${dateStr}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Failed to check availability");
+        update({ activeDateAvail: data as BlockAvailability, activeDateLoading: false });
+      }
     } catch (err) {
       update({ activeDateLoading: false, blockError: (err as Error).message });
     }
+  }
+
+  function handleDynamicSlotSelect(slot: DynamicSlot) {
+    if (!state.activeDate) return;
+    // Map to legacy timeBlock for API compatibility
+    const timeBlock: TimeBlock = slot.startMin < 13 * 60 + 30 ? "morning" : "afternoon";
+    update({
+      selectedDates: [...state.selectedDates, {
+        dateStr:   state.activeDate,
+        timeBlock,
+        startTime: slot.time,
+      }],
+      activeDate:       null,
+      activeDateAvail:  null,
+      activeDateSlots:  [],
+    });
   }
 
   function handleBlockSelect(block: TimeBlock) {
@@ -427,24 +530,26 @@ export default function WizardClient({
     const selectedDates = state.selectedDates;
     try {
       const results: ConfirmedSlot[] = [];
-      for (const { dateStr, timeBlock } of selectedDates) {
+      for (const { dateStr, timeBlock, startTime } of selectedDates) {
         const res = await fetch("/api/bookings", {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             cleanerId,
-            customerName:    state.customerName.trim(),
-            customerPhone:   state.customerPhone.trim(),
-            customerAddress: fullAddress || state.customerAddress.trim(),
-            hasPets:         state.hasPets,
-            hasChildren:     state.hasChildren,
-            hasCarpet:       state.hasCarpet,
-            bedrooms:        state.bedrooms,
-            bathrooms:       state.bathrooms,
-            serviceType:     state.serviceType,
-            frequency:       state.frequency,
-            date:            dateStr,
+            customerName:       state.customerName.trim(),
+            customerPhone:      state.customerPhone.trim(),
+            customerAddress:    fullAddress || state.customerAddress.trim(),
+            hasPets:            state.hasPets,
+            hasChildren:        state.hasChildren,
+            hasCarpet:          state.hasCarpet,
+            bedrooms:           state.bedrooms,
+            bathrooms:          state.bathrooms,
+            serviceType:        state.serviceType,
+            frequency:          state.frequency,
+            date:               dateStr,
             timeBlock,
+            scheduledStartTime: startTime,
+            estimatedDuration:  state.estimatedDuration ?? undefined,
           }),
         });
         if (res.status === 409) {
@@ -811,8 +916,36 @@ export default function WizardClient({
               </div>
             </div>
 
-            {/* Morning / Afternoon toggles */}
-            {state.activeDate && !state.activeDateLoading && state.activeDateAvail && (
+            {/* Dynamic time slots (when cleaner has time configs) */}
+            {state.activeDate && !state.activeDateLoading && !state.fallbackToBlocks && state.activeDateSlots.length > 0 && (
+              <div>
+                <p className="text-sm font-semibold text-slate-700 mb-3">
+                  Pick an arrival time for {formatDateShort(state.activeDate)}
+                </p>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  {state.activeDateSlots.map((slot) => (
+                    <button
+                      key={slot.time}
+                      type="button"
+                      onClick={() => handleDynamicSlotSelect(slot)}
+                      className="border-2 border-slate-200 bg-white hover:border-sky-500 hover:bg-sky-500 active:bg-sky-600 rounded-xl px-3 py-3 text-sm font-semibold text-slate-800 hover:text-white transition-colors"
+                    >
+                      {slot.time}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* No dynamic slots available */}
+            {state.activeDate && !state.activeDateLoading && !state.fallbackToBlocks && state.activeDateSlots.length === 0 && (
+              <p className="text-center text-slate-400 text-sm py-2">
+                No availability on this date. Please try another day.
+              </p>
+            )}
+
+            {/* Morning / Afternoon toggles (legacy fallback) */}
+            {state.activeDate && !state.activeDateLoading && state.fallbackToBlocks && state.activeDateAvail && (
               <div>
                 <p className="text-sm font-semibold text-slate-700 mb-3">
                   Pick a time for {formatDateShort(state.activeDate)}
@@ -848,8 +981,8 @@ export default function WizardClient({
               </div>
             )}
 
-            {/* No availability message */}
-            {state.activeDate && !state.activeDateLoading && state.activeDateAvail &&
+            {/* No availability message (legacy fallback) */}
+            {state.activeDate && !state.activeDateLoading && state.fallbackToBlocks && state.activeDateAvail &&
               !state.activeDateAvail.morning && !state.activeDateAvail.afternoon && (
               <p className="text-center text-slate-400 text-sm py-2">
                 No availability on this date. Please try another day.
@@ -860,9 +993,9 @@ export default function WizardClient({
             {state.selectedDates.length > 0 && (
               <p className="text-center text-sm text-slate-600 bg-white rounded-xl border border-slate-100 px-4 py-3">
                 <span className="font-semibold text-sky-600">Selected: </span>
-                {state.selectedDates.map(({ dateStr, timeBlock }, i) => (
+                {state.selectedDates.map(({ dateStr, timeBlock, startTime }, i) => (
                   <span key={dateStr}>
-                    {formatDateShort(dateStr)}, {BLOCK_INFO[timeBlock].label}
+                    {formatDateShort(dateStr)}, {startTime ?? BLOCK_INFO[timeBlock].start}
                     {i < state.selectedDates.length - 1 ? " · " : ""}
                   </span>
                 ))}

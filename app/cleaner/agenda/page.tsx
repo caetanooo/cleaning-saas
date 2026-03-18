@@ -57,6 +57,16 @@ function mapsUrl(address: string): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 }
 
+/** Returns the precise time range if available, otherwise the legacy block label. */
+function formatBookingTime(b: Booking): string {
+  if (b.scheduledStartAt && b.scheduledEndAt) {
+    const fmt = (iso: string) =>
+      new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    return `${fmt(b.scheduledStartAt)} – ${fmt(b.scheduledEndAt)}`;
+  }
+  return `${BLOCK_INFO[b.timeBlock].label} (${BLOCK_INFO[b.timeBlock].hours})`;
+}
+
 /** Returns which periods are blocked for a given date */
 function getDayBlockedPeriods(
   blockedDates: BlockedSlot[],
@@ -146,6 +156,23 @@ export default function CleanerAgendaPage() {
 
   // Completed bookings animation (id → true while animating)
   const [justCompleted, setJustCompleted] = useState<Record<string, boolean>>({});
+
+  // Customize panel state
+  const [customizingId,   setCustomizingId]   = useState<string | null>(null);
+  const [savingDetails,   setSavingDetails]   = useState<string | null>(null);
+
+  interface BookingDraft {
+    serviceType: CleaningServiceType;
+    frequency: FrequencyType;
+    bedrooms: number;
+    bathrooms: number;
+    hasPets: boolean;
+    hasChildren: boolean;
+    hasCarpet: boolean;
+    staffCount: number;
+    totalPrice: string;
+  }
+  const [draftDetails, setDraftDetails] = useState<Record<string, BookingDraft>>({});
 
   // ── Auth + data load ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -240,7 +267,16 @@ export default function CleanerAgendaPage() {
 
   // ── Modal derived state ───────────────────────────────────────────────────────
 
-  const allModalBookings = modalDate ? (bookingsByDate[modalDate] ?? []) : [];
+  const allModalBookings = (modalDate ? (bookingsByDate[modalDate] ?? []) : [])
+    .slice()
+    .sort((a, b) => {
+      const blockOrder = (b: Booking) => b.timeBlock === "morning" ? 0 : 1;
+      const blockCmp = blockOrder(a) - blockOrder(b);
+      if (blockCmp !== 0) return blockCmp;
+      if (a.scheduledStartAt && b.scheduledStartAt)
+        return a.scheduledStartAt.localeCompare(b.scheduledStartAt);
+      return 0;
+    });
   const modalBookings    = focusedBookingId
     ? allModalBookings.filter((b) => b.id === focusedBookingId)
     : allModalBookings;
@@ -275,6 +311,7 @@ export default function CleanerAgendaPage() {
       setBookings((prev) =>
         prev.map((b) => b.id === bookingId ? { ...b, status: "cancelled" as const } : b),
       );
+      setCustomizingId(null);
       showToast("Agendamento cancelado. Dia liberado!");
       closeDayModal();
     } catch (err) {
@@ -310,6 +347,80 @@ export default function CleanerAgendaPage() {
       showToast(String(err));
     } finally {
       setCompleting(null);
+    }
+  }
+
+  async function reopenBooking(bookingId: string) {
+    if (!token) return;
+    setCompleting(bookingId);
+    try {
+      const res = await fetch(`/api/bookings/${bookingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ action: "reopen" }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error((body as { error?: string }).error ?? "Erro ao reabrir");
+      }
+      setBookings((prev) =>
+        prev.map((b) => b.id === bookingId ? { ...b, status: "confirmed" as const } : b),
+      );
+      setJustCompleted((prev) => { const n = { ...prev }; delete n[bookingId]; return n; });
+      showToast("Agendamento reaberto!");
+    } catch (err) {
+      showToast(String(err));
+    } finally {
+      setCompleting(null);
+    }
+  }
+
+  async function saveDetails(bookingId: string) {
+    if (!token) return;
+    const draft = draftDetails[bookingId];
+    if (!draft) return;
+    setSavingDetails(bookingId);
+    try {
+      const priceNum = parseFloat(draft.totalPrice);
+      const res = await fetch(`/api/bookings/${bookingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          action:      "update_details",
+          serviceType: draft.serviceType,
+          frequency:   draft.frequency,
+          bedrooms:    draft.bedrooms,
+          bathrooms:   draft.bathrooms,
+          hasPets:     draft.hasPets,
+          hasChildren: draft.hasChildren,
+          hasCarpet:   draft.hasCarpet,
+          staffCount:  draft.staffCount,
+          ...(isNaN(priceNum) ? {} : { totalPrice: priceNum }),
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error((body as { error?: string }).error ?? "Erro ao salvar");
+      }
+      const result = await res.json() as {
+        serviceType: CleaningServiceType; frequency: FrequencyType;
+        bedrooms: number; bathrooms: number;
+        hasPets: boolean; hasChildren: boolean; hasCarpet: boolean;
+        staffCount: number; totalPrice: number; estimatedDuration: number | null;
+      };
+      setBookings((prev) =>
+        prev.map((b) =>
+          b.id === bookingId
+            ? { ...b, ...result }
+            : b,
+        ),
+      );
+      setCustomizingId(null);
+      showToast("Agendamento atualizado!");
+    } catch (err) {
+      showToast(String(err));
+    } finally {
+      setSavingDetails(null);
     }
   }
 
@@ -566,9 +677,11 @@ export default function CleanerAgendaPage() {
               const past         = isPast(day);
               const today_       = isToday(day);
               const dayBlocked   = getDayBlockedPeriods(blockedDates, ds);
-              const hasMorning    = dayBookings.some((b) => b.timeBlock === "morning"   && b.status !== "completed");
-              const hasAfternoon  = dayBookings.some((b) => b.timeBlock === "afternoon" && b.status !== "completed");
-              const hasCompleted  = dayBookings.some((b) => b.status === "completed");
+              const morningActive   = dayBookings.filter((b) => b.timeBlock === "morning"   && b.status !== "completed");
+              const afternoonActive = dayBookings.filter((b) => b.timeBlock === "afternoon" && b.status !== "completed");
+              const completedList   = dayBookings.filter((b) => b.status === "completed");
+              const hasMorning    = morningActive.length > 0;
+              const hasAfternoon  = afternoonActive.length > 0;
               const fullyBlocked  = dayBlocked.morning && dayBlocked.afternoon;
 
               return (
@@ -593,10 +706,10 @@ export default function CleanerAgendaPage() {
                   </span>
 
                   {/* Booking + block indicators */}
-                  <div className="flex gap-0.5 mt-1">
-                    {hasMorning    && <span className="w-1.5 h-1.5 rounded-full bg-sky-500"      />}
-                    {hasAfternoon  && <span className="w-1.5 h-1.5 rounded-full bg-violet-500"   />}
-                    {hasCompleted  && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"  />}
+                  <div className="flex gap-0.5 mt-1 flex-wrap justify-center">
+                    {morningActive.map((_, i) => <span key={`m${i}`} className="w-1.5 h-1.5 rounded-full bg-sky-500" />)}
+                    {afternoonActive.map((_, i) => <span key={`a${i}`} className="w-1.5 h-1.5 rounded-full bg-violet-500" />)}
+                    {completedList.map((_, i) => <span key={`c${i}`} className="w-1.5 h-1.5 rounded-full bg-emerald-500" />)}
                     {!hasMorning   && dayBlocked.morning   && <span className="w-1.5 h-1.5 rounded-full bg-amber-400"  />}
                     {!hasAfternoon && dayBlocked.afternoon && <span className="w-1.5 h-1.5 rounded-full bg-rose-400"   />}
                   </div>
@@ -643,8 +756,11 @@ export default function CleanerAgendaPage() {
             .sort((a, b) => {
               const dateCmp = a.date.localeCompare(b.date);
               if (dateCmp !== 0) return dateCmp;
-              // morning (0) before afternoon (1)
-              return (a.timeBlock === "morning" ? 0 : 1) - (b.timeBlock === "morning" ? 0 : 1);
+              const blockCmp = (a.timeBlock === "morning" ? 0 : 1) - (b.timeBlock === "morning" ? 0 : 1);
+              if (blockCmp !== 0) return blockCmp;
+              if (a.scheduledStartAt && b.scheduledStartAt)
+                return a.scheduledStartAt.localeCompare(b.scheduledStartAt);
+              return 0;
             });
           if (!upcoming.length) return null;
           return (
@@ -667,8 +783,7 @@ export default function CleanerAgendaPage() {
                         )}
                       </div>
                       <p className="text-xs text-slate-500">
-                        {BLOCK_INFO[b.timeBlock].label} ({BLOCK_INFO[b.timeBlock].hours}) ·{" "}
-                        {b.customerName}
+                        {formatBookingTime(b)} · {b.customerName}
                       </p>
                       <p className="text-xs text-slate-400">{b.customerAddress}</p>
                     </div>
@@ -735,7 +850,7 @@ export default function CleanerAgendaPage() {
                             isCompleted ? "text-emerald-700" :
                             b.timeBlock === "morning" ? "text-sky-700" : "text-violet-700"
                           }`}>
-                            {BLOCK_INFO[b.timeBlock].label} — {BLOCK_INFO[b.timeBlock].hours}
+                            {formatBookingTime(b)}
                           </span>
                           {/* Source badge */}
                           {b.source === "manual" && (
@@ -762,6 +877,7 @@ export default function CleanerAgendaPage() {
                             ["Pets",      b.hasPets                    ? "Sim" : "Não"],
                             ["Crianças",  (b.hasChildren ?? false)    ? "Sim" : "Não"],
                             ["Carpete",   (b.hasCarpet   ?? false)    ? "Sim" : "Não"],
+                            ["Equipe",    `${b.staffCount ?? 1} pessoa${(b.staffCount ?? 1) > 1 ? "s" : ""}`],
                             ["Valor",           `$${b.totalPrice.toFixed(2)}`],
                           ].map(([label, value]) => (
                             <div key={label} className="flex justify-between gap-4">
@@ -803,10 +919,195 @@ export default function CleanerAgendaPage() {
                           </div>
                         </div>
 
-                        {/* Action buttons — Feature 2 */}
+                        {/* Customise panel — full booking edit */}
+                        {!isCompleted && customizingId === b.id && draftDetails[b.id] && (() => {
+                          const draft = draftDetails[b.id];
+                          const setDraft = (patch: Partial<BookingDraft>) =>
+                            setDraftDetails((prev) => ({ ...prev, [b.id]: { ...prev[b.id], ...patch } }));
+                          return (
+                            <div className="mx-4 mb-3 border border-amber-200 bg-amber-50 rounded-xl px-4 py-4 space-y-4">
+                              <p className="text-xs font-bold text-amber-700 uppercase tracking-wide">Personalizar Agendamento</p>
+
+                              {/* Service type */}
+                              <div className="space-y-1.5">
+                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Tipo de serviço</span>
+                                <div className="flex gap-1.5 flex-wrap">
+                                  {(["regular", "deep", "move"] as CleaningServiceType[]).map((st) => (
+                                    <button key={st} type="button"
+                                      onClick={() => setDraft({ serviceType: st })}
+                                      className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                                        draft.serviceType === st
+                                          ? "bg-amber-500 text-white border-amber-500"
+                                          : "bg-white text-slate-600 border-slate-200 hover:border-amber-300"
+                                      }`}
+                                    >
+                                      {SERVICE_LABELS[st]}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Frequency */}
+                              <div className="space-y-1.5">
+                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Frequência</span>
+                                <div className="flex gap-1.5 flex-wrap">
+                                  {(["one_time", "monthly", "biweekly", "weekly"] as FrequencyType[]).map((fr) => (
+                                    <button key={fr} type="button"
+                                      onClick={() => setDraft({ frequency: fr })}
+                                      className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                                        draft.frequency === fr
+                                          ? "bg-amber-500 text-white border-amber-500"
+                                          : "bg-white text-slate-600 border-slate-200 hover:border-amber-300"
+                                      }`}
+                                    >
+                                      {FREQ_LABELS[fr]}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Bedrooms / Bathrooms */}
+                              <div className="flex gap-6">
+                                {(["bedrooms", "bathrooms"] as const).map((field) => (
+                                  <div key={field} className="space-y-1.5">
+                                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                                      {field === "bedrooms" ? "Quartos" : "Banheiros"}
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                      <button type="button"
+                                        onClick={() => setDraft({ [field]: Math.max(1, draft[field] - 1) })}
+                                        className="w-7 h-7 rounded-lg border border-slate-200 bg-white text-slate-600 font-bold text-sm hover:border-amber-300 transition-colors"
+                                      >−</button>
+                                      <span className="text-sm font-bold text-slate-800 w-4 text-center">{draft[field]}</span>
+                                      <button type="button"
+                                        onClick={() => setDraft({ [field]: Math.min(10, draft[field] + 1) })}
+                                        className="w-7 h-7 rounded-lg border border-slate-200 bg-white text-slate-600 font-bold text-sm hover:border-amber-300 transition-colors"
+                                      >+</button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+
+                              {/* Extras (pets / children / carpet) */}
+                              <div className="space-y-1.5">
+                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Extras</span>
+                                <div className="flex gap-3 flex-wrap">
+                                  {([
+                                    { key: "hasPets",      label: "Pets"     },
+                                    { key: "hasChildren",  label: "Crianças" },
+                                    { key: "hasCarpet",    label: "Carpete"  },
+                                  ] as { key: keyof BookingDraft; label: string }[]).map(({ key, label }) => (
+                                    <button key={key} type="button"
+                                      onClick={() => setDraft({ [key]: !draft[key as "hasPets" | "hasChildren" | "hasCarpet"] })}
+                                      className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                                        draft[key as "hasPets" | "hasChildren" | "hasCarpet"]
+                                          ? "bg-amber-500 text-white border-amber-500"
+                                          : "bg-white text-slate-600 border-slate-200 hover:border-amber-300"
+                                      }`}
+                                    >
+                                      {label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Team size */}
+                              <div className="space-y-1.5">
+                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Equipe</span>
+                                <div className="flex gap-1.5">
+                                  {([1, 2, 3] as const).map((n) => (
+                                    <button key={n} type="button"
+                                      onClick={() => setDraft({ staffCount: n })}
+                                      className={`w-11 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                                        draft.staffCount === n
+                                          ? "bg-amber-500 text-white border-amber-500"
+                                          : "bg-white text-slate-600 border-slate-200 hover:border-amber-300"
+                                      }`}
+                                    >
+                                      {n}×
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Price */}
+                              <div className="space-y-1.5">
+                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Valor (R$)</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={draft.totalPrice}
+                                  onChange={(e) => setDraft({ totalPrice: e.target.value })}
+                                  className="w-32 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-800 focus:outline-none focus:border-amber-400 bg-white"
+                                />
+                                <p className="text-[10px] text-slate-400">Deixe em branco para recalcular automaticamente.</p>
+                              </div>
+
+                              {/* Save button */}
+                              <button
+                                type="button"
+                                disabled={savingDetails === b.id}
+                                onClick={() => saveDetails(b.id)}
+                                className="w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white font-bold py-2.5 rounded-xl text-sm transition-colors"
+                              >
+                                {savingDetails === b.id ? "Salvando…" : "Salvar alterações"}
+                              </button>
+                            </div>
+                          );
+                        })()}
+
+                        {/* Reopen button — completed bookings only */}
+                        {isCompleted && (
+                          <div className="px-4 pb-4">
+                            <button
+                              type="button"
+                              disabled={completing === b.id}
+                              onClick={() => reopenBooking(b.id)}
+                              className="w-full border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 disabled:opacity-60 text-slate-500 font-semibold py-2.5 rounded-xl text-sm transition-colors"
+                            >
+                              {completing === b.id ? "Reabrindo…" : "↩ Desfazer conclusão"}
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Action buttons */}
                         {!isCompleted && (
                           <div className="px-4 pb-4 flex gap-2">
-                            {/* Complete button */}
+                            {/* Customise toggle */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (customizingId === b.id) {
+                                  setCustomizingId(null);
+                                } else {
+                                  setCustomizingId(b.id);
+                                  setDraftDetails((prev) => ({
+                                    ...prev,
+                                    [b.id]: prev[b.id] ?? {
+                                      serviceType: (b.serviceType ?? "regular") as CleaningServiceType,
+                                      frequency:   (b.frequency   ?? "one_time") as FrequencyType,
+                                      bedrooms:    b.bedrooms  ?? 2,
+                                      bathrooms:   b.bathrooms ?? 1,
+                                      hasPets:     b.hasPets      ?? false,
+                                      hasChildren: b.hasChildren  ?? false,
+                                      hasCarpet:   b.hasCarpet    ?? false,
+                                      staffCount:  b.staffCount   ?? 1,
+                                      totalPrice:  b.totalPrice.toFixed(2),
+                                    },
+                                  }));
+                                }
+                              }}
+                              className={`px-3 py-2.5 rounded-xl text-sm font-bold transition-colors border ${
+                                customizingId === b.id
+                                  ? "bg-amber-500 text-white border-amber-500"
+                                  : "bg-white text-slate-600 border-slate-200 hover:border-amber-300"
+                              }`}
+                            >
+                              ✎
+                            </button>
+                            {/* Complete + Cancel buttons — hidden while customizing */}
+                            {customizingId !== b.id && (<>
                             <button
                               type="button"
                               disabled={completing === b.id}
@@ -816,21 +1117,18 @@ export default function CleanerAgendaPage() {
                               {completing === b.id ? (
                                 <span className="animate-spin">⟳</span>
                               ) : (
-                                <>
-                                  <span>✓</span>
-                                  <span>Concluir</span>
-                                </>
+                                <>✓ Limpeza concluída</>
                               )}
                             </button>
-                            {/* Cancel button */}
                             <button
                               type="button"
                               disabled={cancelling === b.id}
                               onClick={() => cancelBooking(b.id)}
                               className="flex-1 bg-red-500 hover:bg-red-600 disabled:opacity-60 text-white font-bold py-2.5 rounded-xl text-sm transition-colors"
                             >
-                              {cancelling === b.id ? "Cancelando…" : "Cancelar"}
+                              {cancelling === b.id ? "Cancelando…" : "Limpeza cancelada"}
                             </button>
+                            </>)}
                           </div>
                         )}
                       </div>

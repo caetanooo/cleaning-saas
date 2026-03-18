@@ -106,6 +106,7 @@ export async function PUT(
   if (body.serviceAddons       !== undefined) patch.service_addons       = body.serviceAddons;
   if (body.blockedDates        !== undefined) patch.blocked_dates        = body.blockedDates;
   if (body.slug                !== undefined) patch.slug                 = body.slug ?? null;
+  if (body.defaultStaffCount   !== undefined) patch.default_staff_count  = body.defaultStaffCount;
 
   const { data, error } = await supabase
     .from("cleaners")
