@@ -505,19 +505,19 @@ export default function CleanerSetupPage() {
         </div>
 
         {/* Tab bar */}
-        <div className="flex gap-1 bg-white border border-slate-200 rounded-2xl p-1.5 mb-6 overflow-x-auto">
+        <div className="flex flex-wrap gap-1 bg-white border border-slate-200 rounded-2xl p-1.5 mb-6">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 min-w-[80px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${
+              className={`flex-1 min-w-[calc(33%-4px)] sm:min-w-[80px] flex items-center justify-center gap-1.5 px-2 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                 activeTab === tab.id
                   ? "bg-sky-500 text-white shadow-sm"
                   : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
               }`}
             >
-              <tab.icon size={16} className={activeTab === tab.id ? "text-white" : tab.color} />
-              <span className="hidden sm:inline">{tab.label}</span>
+              <tab.icon size={15} className={activeTab === tab.id ? "text-white" : tab.color} />
+              <span>{tab.label}</span>
             </button>
           ))}
         </div>
