@@ -99,7 +99,6 @@ export async function GET(request: Request) {
 
   // Determine work window based on availability + partial blocks
   const morningBlocked   = isSlotBlocked(rawBlocked, date, "MORNING");
-  const afternoonBlocked = isSlotBlocked(rawBlocked, date, "AFTERNOON");
 
   const defaultStart = (dayAvail.morning && !morningBlocked) ? 9 * 60 : 13 * 60 + 30;
   const workStartMin = dayAvail.startTime ? timeToMinutes(dayAvail.startTime) : defaultStart;

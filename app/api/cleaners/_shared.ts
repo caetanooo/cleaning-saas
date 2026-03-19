@@ -42,6 +42,7 @@ export const DEFAULT_BLOCKED_DATES: Cleaner["blockedDates"] = [];
 
 /** Public shape — omits private contact fields (email, phone). Used for unauthenticated requests. */
 export function rowToPublicCleaner(row: Record<string, unknown>): Omit<Cleaner, "email" | "phone"> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { email: _e, phone: _p, ...pub } = rowToCleaner(row);
   return pub;
 }
